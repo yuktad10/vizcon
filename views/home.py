@@ -23,11 +23,10 @@ def render():
                        background: linear-gradient(135deg, #667eea, #764ba2);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        margin-bottom: 8px;">
-                What's in a Name?
+                Passport for a Name
             </h1>
             <p style="font-size:1.2em; color:#6b7280; max-width:700px; margin:0 auto;">
-                8 countries. 1 language. 27 years of baby names.<br>
-                Do they name babies the same way? The answer is more surprising than you think.
+                Some names travel the world. Others never leave home.
             </p>
         </div>
         """,
