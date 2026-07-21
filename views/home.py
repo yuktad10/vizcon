@@ -18,14 +18,14 @@ def render():
     # ─── Hero Section ─────────────────────────────────────────────
     st.markdown(
         """
-        <div style="text-align:center; padding: 30px 0 20px;">
-            <h1 style="font-size:2.8em; font-weight:800; 
+        <div style="text-align:center; padding: 20px 0 10px;">
+            <h1 style="font-size:2.4em; font-weight:800; 
                        background: linear-gradient(135deg, #667eea, #764ba2);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                       margin-bottom: 8px;">
+                       margin-bottom: 5px;">
                 Passport for a Name
             </h1>
-            <p style="font-size:1.2em; color:#6b7280; max-width:700px; margin:0 auto;">
+            <p style="font-size:1.05em; color:#6b7280; max-width:700px; margin:0 auto;">
                 Some names travel the world. Others never leave home.
             </p>
         </div>
@@ -36,15 +36,15 @@ def render():
     # ─── Story Hook ───────────────────────────────────────────────
     st.markdown(
         """
-        <div style="text-align:center; width:100%; margin:2rem auto; padding:25px 40px;
+        <div style="text-align:center; width:100%; margin:1rem auto; padding:18px 30px;
             background: linear-gradient(135deg, #f8f9ff 0%, #eef1ff 100%);
             border: 1px solid rgba(102,126,234,0.2);
-            border-radius:12px;
+            border-radius:10px;
             box-shadow: 0 4px 20px rgba(102,126,234,0.1);">
-            <p style="font-size:1.2em; color:#374151; line-height:1.6; margin:0;">
+            <p style="font-size:1.05em; color:#374151; line-height:1.6; margin:0;">
                 Eight nations. One language. The tightest alliance in modern history. They share armies. Intelligence. Borders.
                 &nbsp;&nbsp;But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong>
-                &nbsp;&nbsp;<span style="font-size:1.2em; font-weight:700; color:#667eea;">This is THAT STORY.</span>
+                &nbsp;&nbsp;<span style="font-size:1.1em; font-weight:700; color:#667eea;">This is THAT STORY.</span>
             </p>
         </div>
         """,
@@ -55,13 +55,12 @@ def render():
     st.markdown("")
     st.markdown("### 🌍 The Anglosphere")
     st.markdown(
-        "Eight countries united by one language — English. "
-        "Connected through colonization, migration, and shared media. "
-        "But each carries its **own cultural currents** beneath the surface."
+        'The term "Anglosphere" was coined by sci-fi writer **Neal Stephenson** '
+        "in his 1995 novel *The Diamond Age*. A fictional concept that became a geopolitical reality."
     )
 
     # ─── Map Image (reduced size) ────────────────────────────────
-    col_left, col_center, col_right = st.columns([1, 3, 1])
+    col_left, col_center, col_right = st.columns([1.5, 3, 1.5])
     with col_center:
         st.image("assets/world_map.png", use_container_width=True)
 
@@ -87,10 +86,12 @@ def render():
         unsafe_allow_html=True,
     )
 
-    col_pop, col_trad = st.columns(2)
+    col_pop, col_trad = st.columns([1, 1])
 
     with col_pop:
-        st.image("assets/baby_popculture.png", use_container_width=True)
+        col_pad1, col_img1, col_pad2 = st.columns([0.5, 4, 0.5])
+        with col_img1:
+            st.image("assets/baby_popculture.png", use_container_width=True)
         st.markdown(
             """
             <div style="text-align:center; padding:14px 20px; 
@@ -118,7 +119,9 @@ def render():
             )
 
     with col_trad:
-        st.image("assets/baby_traditional.png", use_container_width=True)
+        col_pad3, col_img2, col_pad4 = st.columns([0.5, 4, 0.5])
+        with col_img2:
+            st.image("assets/baby_traditional.png", use_container_width=True)
         st.markdown(
             """
             <div style="text-align:center; padding:14px 20px;
