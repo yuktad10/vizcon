@@ -36,16 +36,15 @@ def render():
     # ─── Story Hook ───────────────────────────────────────────────
     st.markdown(
         """
-        <div style="text-align:center; max-width:800px; margin:2rem auto; padding:40px 45px;
+        <div style="text-align:center; width:100%; margin:2rem auto; padding:25px 40px;
             background: linear-gradient(135deg, #f8f9ff 0%, #eef1ff 100%);
             border: 1px solid rgba(102,126,234,0.2);
-            border-radius:16px;
+            border-radius:12px;
             box-shadow: 0 4px 20px rgba(102,126,234,0.1);">
-            <p style="font-size:1.3em; color:#374151; line-height:2; margin:0;">
-                Eight nations. One language. The tightest alliance in modern history.<br>
-                They share armies. Intelligence. Borders.<br><br>
-                <span style="font-size:1.2em;">But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong></span><br><br>
-                <span style="font-size:1.4em; font-weight:700; color:#667eea;">This is that story.</span>
+            <p style="font-size:1.2em; color:#374151; line-height:1.6; margin:0; text-transform:uppercase; letter-spacing:1px;">
+                Eight nations. One language. The tightest alliance in modern history. They share armies. Intelligence. Borders.
+                &nbsp;&nbsp;But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong>
+                &nbsp;&nbsp;<span style="font-size:1.2em; font-weight:700; color:#667eea;">This is that story.</span>
             </p>
         </div>
         """,
