@@ -56,13 +56,12 @@ def render():
     st.markdown("### 🌍 The Anglosphere")
     st.markdown(
         'The term "Anglosphere" was coined by sci-fi writer **Neal Stephenson** '
-        "in his 1995 novel *The Diamond Age*. A fictional concept that became a geopolitical reality."
+        "in his 1995 novel *The Diamond Age*. A fictional concept that became a geopolitical reality. "
+        "Today it represents just **6% of the world's population** — but over **30% of its economy**."
     )
 
-    # ─── Map Image (reduced size) ────────────────────────────────
-    col_left, col_center, col_right = st.columns([1.5, 3, 1.5])
-    with col_center:
-        st.image("assets/world_map.png", use_container_width=True)
+    # ─── Map Image (full width) ──────────────────────────────────
+    st.image("assets/world_map.png", use_container_width=True)
 
     st.markdown("---")
 
