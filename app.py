@@ -7,14 +7,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 st.set_page_config(
     page_title="Passport for a Name",
-    page_icon="👶",
+    page_icon="🛂",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
 # ─── Top Tab Navigation ───────────────────────────────────────────
 tab_home, tab_conv, tab_borders, tab_disc, tab_methods = st.tabs(
-    ["🏠 Home", "🤝 Convergence", "🧱 Invisible Borders", "🎉 Discoveries", "📋 Methods"]
+    ["🌍 Home", "🎧 The Global Playlist", "💿 The Local Vinyl", "🎉 Discoveries", "📋 Methods"]
 )
 
 with tab_home:
