@@ -33,133 +33,29 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # Stats bar — from actual data
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Unique Names", f"{unique_names:,}")
-    with col2:
-        st.metric("Countries", str(num_countries))
-    with col3:
-        st.metric("Time Span", f"{year_min}–{year_max}")
-    with col4:
-        st.metric("Records", f"{total_records:,}")
-
-       # ─── The Anglosphere — Globe ──────────────────────────────────
-    st.markdown("### 🌍 The Anglosphere")
+    # ─── Story Hook ───────────────────────────────────────────────
     st.markdown(
-        "Eight countries united by one language — English. "
-        "Connected through colonization, migration, and shared media. "
-        "But each carries its **own cultural currents** beneath the surface."
+        """
+        <div style="text-align:center; max-width:700px; margin:1.5rem auto; padding:30px 35px;
+            background: linear-gradient(135deg, #f8f9ff 0%, #eef1ff 100%);
+            border: 1px solid rgba(102,126,234,0.2);
+            border-radius:12px;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.08);">
+            <p style="font-size:1.1em; color:#374151; line-height:1.9; margin:0;">
+                Eight nations. One language. The tightest alliance in modern history.<br>
+                They share armies. Intelligence. Borders.<br><br>
+                <span style="font-size:1.15em;">But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong></span><br><br>
+                <span style="font-size:1.2em; font-weight:700; color:#667eea;">This is that story.</span>
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    import plotly.graph_objects as go
-
-    # Show custom map image instead of interactive globe
+    # ─── Map Image ────────────────────────────────────────────────
     st.image("assets/world_map.png", use_container_width=True)
 
-    # Country detail cards below the globe
-    countries = {
-        "🇺🇸 USA": "Hispanic heritage, melting pot",
-        "🇬🇧 England & Wales": "Commonwealth hub, trend bridge",
-        "🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland": "Celtic identity",
-        "🏴 Northern Ireland": "Gaelic revival (political)",
-        "🇮🇪 Ireland": "Gaelic heritage",
-        "🇨🇦 Canada": "Francophone Quebec",
-        "🇦🇺 Australia": "Early adopter, exporter",
-        "🇳🇿 New Zealand": "Pacific connections",
-    }
-
-    cols = st.columns(4)
-    for i, (country, desc) in enumerate(countries.items()):
-        with cols[i % 4]:
-            st.markdown(
-                f"""
-                <div style="background:#f5f5fa; border:1px solid #e5e7eb; 
-                            border-radius:8px; padding:12px; margin-bottom:10px; text-align:center;">
-                    <div style="font-size:1.1em; font-weight:600;">{country}</div>
-                    <div style="font-size:0.8em; color:#6b7280;">{desc}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
     st.markdown("---")
-
-    # ─── Core Question ────────────────────────────────────────────
-    st.markdown("### 🔬 Language vs Culture")
-    st.markdown(
-        """
-        > *"These 8 countries share a language. Does that mean they share a culture?
-        > Baby names — the most personal choice a family makes — give us the answer."*
-        """
-    )
-
-    st.markdown(
-        """
-        We measured cultural distinctness using a **"countryness" score**:
-        - **Low** (1–2) → Name used equally everywhere (e.g. Noah, Olivia)
-        - **High** (500+) → Name locked to one culture (e.g. Sadhbh, Frédérique)
-        """
-    )
-
-    # ─── Two Truths ───────────────────────────────────────────────
-    st.markdown("#### The Answer: Both Are True")
-
-    col_yes, col_no = st.columns(2)
-    with col_yes:
-        st.markdown(
-            """
-            <div style="background:#f0fdf4; border-left:4px solid #06d6a0; 
-                        border-radius:8px; padding:20px;">
-                <div style="font-weight:700; color:#06d6a0; font-size:1.1em;">
-                    ✅ YES — Names ARE Converging
-                </div>
-                <div style="font-size:2em; font-weight:800; color:#06d6a0; margin:8px 0;">
-                    −50%
-                </div>
-                <div style="color:#4b5563;">
-                    Countryness dropped from 22 (1997) to 11 (2023).
-                    Countries are naming babies more similarly than ever.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col_no:
-        st.markdown(
-            """
-            <div style="background:#fef2f2; border-left:4px solid #e63946; 
-                        border-radius:8px; padding:20px;">
-                <div style="font-weight:700; color:#e63946; font-size:1.1em;">
-                    ❌ BUT — Cultural Borders Persist
-                </div>
-                <div style="font-size:2em; font-weight:800; color:#e63946; margin:8px 0;">
-                    39%
-                </div>
-                <div style="color:#4b5563;">
-                    of names remain culturally distinct — locked to specific countries.
-                    N. Ireland is getting MORE distinct, not less.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("")
-
-    # ─── Key Chart ────────────────────────────────────────────────
-    st.markdown("#### Cultural Distinctness Over Time (1997–2023)")
-    st.caption("Lower = more converged across countries")
-
-    df = load_metrics()
-    fig = countryness_over_time(df)
-    st.plotly_chart(fig, use_container_width=True)
-
-    # ─── Transition ───────────────────────────────────────────────
-    st.info(
-        "💡 **Two opposite truths coexist.** "
-        "Use the sidebar to explore both sides: "
-        "**Convergence** (coming together) and **Invisible Borders** (staying apart)."
-    )
 
     # ─── Baby Images: Two Worlds ─────────────────────────────────
     st.markdown("---")
