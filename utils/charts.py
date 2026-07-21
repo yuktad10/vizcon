@@ -20,6 +20,17 @@ COLORS = {
     "muted": "#6b7280",
 }
 
+COUNTRY_COLORS = {
+    "USA": "#A8D8F0",
+    "England and Wales": "#F5D68A",
+    "Scotland": "#C8A8E8",
+    "Northern Ireland": "#9FE6C8",
+    "Ireland": "#A8E6C8",
+    "Canada": "#F5B7C5",
+    "Australia": "#F5C878",
+    "New Zealand": "#C8A8E8",
+}
+
 
 def countryness_over_time(df):
     """Area chart: avg countryness by year (1997-2023)."""
