@@ -17,7 +17,7 @@ def render():
 
     # ─── Hero Section ─────────────────────────────────────────────
     st.markdown(
-        """
+        "
         <div style="text-align:center; padding: 30px 0 20px;">
             <h1 style="font-size:2.8em; font-weight:800; 
                        background: linear-gradient(135deg, #667eea, #764ba2);
@@ -29,7 +29,7 @@ def render():
                 Some names travel the world. Others never leave home.
             </p>
         </div>
-        """,
+        ",
         unsafe_allow_html=True,
     )
 
