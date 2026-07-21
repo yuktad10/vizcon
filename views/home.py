@@ -41,10 +41,10 @@ def render():
             border: 1px solid rgba(102,126,234,0.2);
             border-radius:12px;
             box-shadow: 0 4px 20px rgba(102,126,234,0.1);">
-            <p style="font-size:1.2em; color:#374151; line-height:1.6; margin:0; text-transform:uppercase; letter-spacing:1px;">
+            <p style="font-size:1.2em; color:#374151; line-height:1.6; margin:0;">
                 Eight nations. One language. The tightest alliance in modern history. They share armies. Intelligence. Borders.
                 &nbsp;&nbsp;But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong>
-                &nbsp;&nbsp;<span style="font-size:1.2em; font-weight:700; color:#667eea;">This is that story.</span>
+                &nbsp;&nbsp;<span style="font-size:1.2em; font-weight:700; color:#667eea;">This is THAT STORY.</span>
             </p>
         </div>
         """,
