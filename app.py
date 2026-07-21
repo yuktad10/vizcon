@@ -14,7 +14,7 @@ st.set_page_config(
 
 # ─── Top Tab Navigation ───────────────────────────────────────────
 tab_home, tab_conv, tab_borders, tab_disc, tab_methods = st.tabs(
-    ["🌍 Home", "🎧 The Global Playlist", "💿 The Local Vinyl", "🎉 Discoveries", "📋 Methods"]
+    ["🌍 Globe", "🎧 The Global Playlist", "💿 The Local Vinyl", "🎉 Discoveries", "📋 Methods"]
 )
 
 with tab_home:
