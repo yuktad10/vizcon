@@ -54,55 +54,8 @@ def render():
 
     import plotly.graph_objects as go
 
-    # Anglosphere countries with lat/lon for markers
-    anglosphere = {
-        "USA": {"lat": 39.8, "lon": -98.5, "culture": "Hispanic heritage, melting pot"},
-        "England & Wales": {"lat": 52.3, "lon": -1.2, "culture": "Commonwealth hub, trend bridge"},
-        "Scotland": {"lat": 56.5, "lon": -4.2, "culture": "Celtic identity"},
-        "Northern Ireland": {"lat": 54.6, "lon": -6.7, "culture": "Gaelic revival (political)"},
-        "Ireland": {"lat": 53.1, "lon": -7.7, "culture": "Gaelic heritage"},
-        "Canada": {"lat": 56.1, "lon": -106.3, "culture": "Francophone Quebec"},
-        "Australia": {"lat": -25.3, "lon": 133.8, "culture": "Early adopter, exporter"},
-        "New Zealand": {"lat": -40.9, "lon": 174.9, "culture": "Pacific connections"},
-    }
-
-    fig = go.Figure()
-
-    # Add globe with highlighted countries
-    fig.add_trace(
-        go.Scattergeo(
-            lat=[v["lat"] for v in anglosphere.values()],
-            lon=[v["lon"] for v in anglosphere.values()],
-            text=[f"<b>{k}</b><br>{v['culture']}" for k, v in anglosphere.items()],
-            hoverinfo="text",
-            mode="markers+text",
-            marker=dict(size=14, color="#667eea", opacity=0.9, line=dict(width=1, color="#ffffff")),
-            textfont=dict(size=9, color="#1a1a2e"),
-            textposition="top center",
-        )
-    )
-
-    fig.update_geos(
-        projection_type="orthographic",
-        showland=True,
-        landcolor="#f0f0f5",
-        showocean=True,
-        oceancolor="#e8edf5",
-        showcountries=True,
-        countrycolor="#d1d5db",
-        showlakes=False,
-        projection_rotation=dict(lon=-30, lat=30),  # centered on Atlantic
-        bgcolor="rgba(0,0,0,0)",
-    )
-
-    fig.update_layout(
-        height=450,
-        margin=dict(l=0, r=0, t=0, b=0),
-        paper_bgcolor="rgba(0,0,0,0)",
-        geo=dict(bgcolor="rgba(0,0,0,0)"),
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
+    # Show custom map image instead of interactive globe
+    st.image("assets/world_map.png", use_container_width=True)
 
     # Country detail cards below the globe
     countries = {
@@ -220,6 +173,9 @@ def render():
             <h2 style="color:#1a1a2e; font-size:1.8rem; margin:0; font-weight:700;">
                 Same Language. Different Cultures. One Choice.
             </h2>
+            <p style="color:#6b7280; font-size:0.95rem; margin-top:8px;">
+                👆 Click on a baby to explore their world
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -235,17 +191,25 @@ def render():
                 background:#f0fdf4; border:1px solid #06d6a0; 
                 border-radius:10px; margin-top:10px;">
                 <p style="font-size:1.4rem; margin:0; color:#06d6a0; font-weight:700;">
-                    🤝 "Maverick"
+                    🎧 "Maverick"
                 </p>
                 <p style="font-size:0.88rem; color:#4b5563; margin:6px 0 0;">
-                    Pop culture baby — named after a movie,<br>
-                    trending in ALL 8 countries simultaneously.<br>
+                    Pop culture baby — trending in ALL 8 countries.<br>
                     <strong style="color:#06d6a0;">Countryness: 1.2</strong> (global)
                 </p>
             </div>
             """,
             unsafe_allow_html=True,
         )
+        if st.button("▶ Explore The Global Playlist", key="btn_playlist", use_container_width=True):
+            st.session_state["active_tab"] = 1
+            st.markdown(
+                """<script>
+                var tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+                if (tabs.length > 1) tabs[1].click();
+                </script>""",
+                unsafe_allow_html=True,
+            )
 
     with col_trad:
         st.image("assets/baby_traditional.png", use_container_width=True)
@@ -255,17 +219,25 @@ def render():
                 background:#fef2f2; border:1px solid #e63946;
                 border-radius:10px; margin-top:10px;">
                 <p style="font-size:1.4rem; margin:0; color:#e63946; font-weight:700;">
-                    🧱 "Sadhbh"
+                    💿 "Sadhbh"
                 </p>
                 <p style="font-size:0.88rem; color:#4b5563; margin:6px 0 0;">
-                    Traditional Gaelic baby — locked to Ireland,<br>
-                    unpronounceable elsewhere. A cultural fortress.<br>
+                    Gaelic baby — locked to Ireland, unpronounceable elsewhere.<br>
                     <strong style="color:#e63946;">Countryness: 8,171</strong> (fortress)
                 </p>
             </div>
             """,
             unsafe_allow_html=True,
         )
+        if st.button("▶ Explore The Local Vinyl", key="btn_vinyl", use_container_width=True):
+            st.session_state["active_tab"] = 2
+            st.markdown(
+                """<script>
+                var tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+                if (tabs.length > 2) tabs[2].click();
+                </script>""",
+                unsafe_allow_html=True,
+            )
 
     # Closing quote
     st.markdown("")
