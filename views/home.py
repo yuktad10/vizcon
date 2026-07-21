@@ -63,22 +63,20 @@ def render():
     # ─── Map Image (full width) ──────────────────────────────────
     st.image("assets/world_map.png", use_container_width=True)
 
-    st.markdown("---")
-
-    # ─── Baby Images: Two Worlds ─────────────────────────────────
-    st.markdown("---")
+    # ─── The Two Worlds (integrated baby section) ─────────────────
     st.markdown(
         """
-        <div style="text-align:center; margin: 2rem 0 1.5rem;">
-            <p style="font-size:0.8rem; color:#667eea; text-transform:uppercase; 
+        <div style="text-align:center; margin: 2.5rem 0 1.5rem;">
+            <p style="font-size:0.75rem; color:#667eea; text-transform:uppercase; 
                       letter-spacing:3px; margin-bottom:6px;">
                 THE TWO WORLDS OF NAMING
             </p>
-            <h2 style="color:#1a1a2e; font-size:1.8rem; margin:0; font-weight:700;">
+            <h2 style="color:#1a1a2e; font-size:1.6rem; margin:0 0 8px; font-weight:700;">
                 Same Language. Different Cultures. One Choice.
             </h2>
-            <p style="color:#6b7280; font-size:0.95rem; margin-top:8px;">
-                👆 Click on a baby to explore their world
+            <p style="color:#6b7280; font-size:0.9rem; margin:0;">
+                We measured how "locked" a name is to one country using a <strong>countryness score</strong>.<br>
+                Low (1-2) = global. High (500+) = cultural fortress.
             </p>
         </div>
         """,
