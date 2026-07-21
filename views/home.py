@@ -36,24 +36,35 @@ def render():
     # ─── Story Hook ───────────────────────────────────────────────
     st.markdown(
         """
-        <div style="text-align:center; max-width:700px; margin:1.5rem auto; padding:30px 35px;
+        <div style="text-align:center; max-width:800px; margin:2rem auto; padding:40px 45px;
             background: linear-gradient(135deg, #f8f9ff 0%, #eef1ff 100%);
             border: 1px solid rgba(102,126,234,0.2);
-            border-radius:12px;
-            box-shadow: 0 4px 15px rgba(102,126,234,0.08);">
-            <p style="font-size:1.1em; color:#374151; line-height:1.9; margin:0;">
+            border-radius:16px;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.1);">
+            <p style="font-size:1.3em; color:#374151; line-height:2; margin:0;">
                 Eight nations. One language. The tightest alliance in modern history.<br>
                 They share armies. Intelligence. Borders.<br><br>
-                <span style="font-size:1.15em;">But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong></span><br><br>
-                <span style="font-size:1.2em; font-weight:700; color:#667eea;">This is that story.</span>
+                <span style="font-size:1.2em;">But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong></span><br><br>
+                <span style="font-size:1.4em; font-weight:700; color:#667eea;">This is that story.</span>
             </p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # ─── Map Image ────────────────────────────────────────────────
-    st.image("assets/world_map.png", use_container_width=True)
+    # ─── Anglosphere Context ──────────────────────────────────────
+    st.markdown("")
+    st.markdown("### 🌍 The Anglosphere")
+    st.markdown(
+        "Eight countries united by one language — English. "
+        "Connected through colonization, migration, and shared media. "
+        "But each carries its **own cultural currents** beneath the surface."
+    )
+
+    # ─── Map Image (reduced size) ────────────────────────────────
+    col_left, col_center, col_right = st.columns([1, 3, 1])
+    with col_center:
+        st.image("assets/world_map.png", use_container_width=True)
 
     st.markdown("---")
 
