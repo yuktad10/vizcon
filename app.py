@@ -1,8 +1,8 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="What's in a Name? | VizCon 2026",
-    page_icon="👶",
+    page_title="Passport for a Name",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed",  # hide sidebar
 )
