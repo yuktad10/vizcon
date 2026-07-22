@@ -72,7 +72,7 @@ def render():
             </p>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
                 Every year, millions of babies are named across the English-speaking world — from New York to New Zealand,
-                London to Lagos. We had <strong>decades of baby name records</strong> across <strong>8 Anglosphere nations</strong>.
+                London to Lagos. <strong>27 years. 8 countries. 117 million babies. 17,575 unique names.</strong>
             </p>
             <p style="font-size:1.1rem; color:#1f2937; font-weight:700; margin:0 0 12px;">
                 The question was simple: Does a name travel — or does it stay home?
