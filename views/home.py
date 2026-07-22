@@ -46,7 +46,9 @@ def render():
             <p style="font-size:1.05em; color:#374151; line-height:1.6; margin:0;">
                 Eight nations. One language. The tightest alliance in modern history. They share armies. Intelligence. Borders.
                 &nbsp;&nbsp;But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong>
-                &nbsp;&nbsp;<span style="font-size:1.1em; font-weight:700; color:#667eea;">This is THAT STORY.</span>
+            </p>
+            <p style="font-size:1.2em; font-weight:700; color:#667eea; margin:12px 0 0; text-align:center;">
+                This is THAT STORY.
             </p>
         </div>
         """,
@@ -394,3 +396,4 @@ def render():
     """
 
     components.html(quiz_html, height=320)
+
