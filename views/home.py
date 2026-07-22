@@ -381,19 +381,4 @@ def render():
     </html>
     """
 
-    components.html(quiz_html, height=250)
-
-    # ─── Closing Quote ────────────────────────────────────────────
-    st.markdown("")
-    st.markdown(
-        """
-        <div style="text-align:center; margin:1.5rem 0; padding:20px;
-            background:#f5f5fa; border-radius:10px; border:1px solid #e5e7eb;">
-            <p style="font-size:1.05rem; color:#4b5563; font-style:italic; margin:0;">
-                "One baby named for the world. One named for home.<br>
-                Both are real. Both are happening right now. That's the story."
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    components.html(quiz_html, height=280)
