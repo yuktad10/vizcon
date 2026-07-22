@@ -131,6 +131,8 @@ def render():
             justify-content: center;
             flex-wrap: wrap;
             padding: 10px;
+            max-width: 900px;
+            margin: 0 auto;
         }}
         .flip-card {{
             perspective: 1000px;
