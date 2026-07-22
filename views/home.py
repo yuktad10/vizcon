@@ -307,7 +307,15 @@ def render():
         }
         .result-emoji { font-size: 2rem; margin-bottom: 8px; }
         .result-text { font-size: 1.05rem; color: #374151; font-weight: 600; }
-        .result-cta { font-size: 0.85rem; color: #6b7280; margin-top: 8px; }
+        .result-cta {
+            font-size: 0.9rem;
+            color: #667eea;
+            margin-top: 10px;
+            font-weight: 600;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .result-cta:hover { color: #4f46e5; }
         .reset-btn {
             display: none;
             margin: 16px auto 0;
@@ -339,13 +347,13 @@ def render():
         <div class="quiz-result global" id="result-global" onclick="switchTab(1)">
             <p class="result-emoji">🎧</p>
             <p class="result-text">✈️ Passport APPROVED — welcome to The Global Playlist</p>
-            <p class="result-cta">👆 Step inside →</p>
+            <p class="result-cta" onclick="switchTab(1)">👆 Step inside →</p>
         </div>
 
         <div class="quiz-result local" id="result-local" onclick="switchTab(2)">
             <p class="result-emoji">💿</p>
             <p class="result-text">🚫 Passport DENIED — you're on The Local Vinyl</p>
-            <p class="result-cta">👆 Step inside →</p>
+            <p class="result-cta" onclick="switchTab(2)">👆 Step inside →</p>
         </div>
 
         <button class="reset-btn" id="reset-btn" onclick="resetQuiz()">↩ Reset</button>
