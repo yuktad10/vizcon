@@ -142,7 +142,7 @@ def render():
         .flip-card-inner {{
             position: relative;
             width: 100%;
-            padding-bottom: 95%;
+            height: 400px;
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
         }}
@@ -152,7 +152,8 @@ def render():
         .flip-card-front, .flip-card-back {{
             position: absolute;
             top: 0; left: 0;
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
             backface-visibility: hidden;
             border-radius: 12px;
             overflow: hidden;
@@ -239,7 +240,7 @@ def render():
     </html>
     """
 
-    components.html(flip_html, height=600)
+    components.html(flip_html, height=450)
 
 
     # ─── Interactive Name Quiz ────────────────────────────────────
