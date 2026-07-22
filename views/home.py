@@ -76,7 +76,7 @@ def render():
         unsafe_allow_html=True,
     )
     st.markdown('<div class="map-container">', unsafe_allow_html=True)
-    st.image("assets/world_map.png", use_container_width=True)
+    st.image("assets/world_map.png", width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ─── The Two Worlds (integrated baby section) ─────────────────
@@ -102,62 +102,62 @@ def render():
     st.markdown(
         f"""
         <style>
-            .flip-container {
+            .flip-container {{
                 display: flex;
                 gap: 20px;
                 justify-content: center;
                 flex-wrap: wrap;
-            }
-            .flip-card {
+            }}
+            .flip-card {{
                 perspective: 1000px;
                 width: 48%;
                 min-width: 280px;
                 cursor: pointer;
-            }
-            .flip-card-inner {
+            }}
+            .flip-card-inner {{
                 position: relative;
                 width: 100%;
                 padding-bottom: 75%;  /* aspect ratio */
                 transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
                 transform-style: preserve-3d;
-            }
-            .flip-card.flipped .flip-card-inner {
+            }}
+            .flip-card.flipped .flip-card-inner {{
                 transform: rotateY(180deg);
-            }
-            .flip-card-front, .flip-card-back {
+            }}
+            .flip-card-front, .flip-card-back {{
                 position: absolute;
                 top: 0; left: 0;
                 width: 100%; height: 100%;
                 backface-visibility: hidden;
                 border-radius: 12px;
                 overflow: hidden;
-            }
-            .flip-card-front img {
+            }}
+            .flip-card-front img {{
                 width: 100%; height: 100%;
                 object-fit: cover;
                 border-radius: 12px;
-            }
-            .flip-card-back {
+            }}
+            .flip-card-back {{
                 transform: rotateY(180deg);
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 padding: 24px;
-            }
-            .flip-card-back.pop-back {
+            }}
+            .flip-card-back.pop-back {{
                 background: #f0fdf4;
                 border: 2px solid #06d6a0;
-            }
-            .flip-card-back.trad-back {
+            }}
+            .flip-card-back.trad-back {{
                 background: #fef2f2;
                 border: 2px solid #e63946;
-            }
-            .flip-hint {
+            }}
+            .flip-hint {{
                 text-align: center;
                 font-size: 0.85rem;
                 color: #9ca3af;
                 margin-top: 8px;
-            }
+            }}
         </style>
 
         <div class="flip-container">
