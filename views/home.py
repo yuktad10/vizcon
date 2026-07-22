@@ -320,8 +320,8 @@ def render():
     </head>
     <body>
     <div class="quiz-container">
-        <p class="quiz-question">Which name would you give your baby?</p>
-        <p class="quiz-subtitle">Pick one and find out where it belongs.</p>
+        <p class="quiz-question">🔍 Two Names. One Passport. Zero Clues.</p>
+        <p class="quiz-subtitle">Which one do you think got the passport?</p>
 
         <div class="quiz-options" id="options">
             <button class="quiz-btn nevaeh" onclick="showResult('global')">Nevaeh</button>
@@ -330,14 +330,14 @@ def render():
 
         <div class="quiz-result global" id="result-global" onclick="switchTab(1)">
             <p class="result-emoji">🎧</p>
-            <p class="result-text">You belong to The Global Playlist!</p>
-            <p class="result-cta">👆 Click here to explore it →</p>
+            <p class="result-text">✈️ Passport APPROVED — welcome to The Global Playlist</p>
+            <p class="result-cta">👆 Step inside →</p>
         </div>
 
         <div class="quiz-result local" id="result-local" onclick="switchTab(2)">
             <p class="result-emoji">💿</p>
-            <p class="result-text">You belong to The Local Vinyl!</p>
-            <p class="result-cta">👆 Click here to explore it →</p>
+            <p class="result-text">🚫 Passport DENIED — you're on The Local Vinyl</p>
+            <p class="result-cta">👆 Step inside →</p>
         </div>
     </div>
 
