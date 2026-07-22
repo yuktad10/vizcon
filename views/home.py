@@ -77,15 +77,9 @@ def render():
                 <div style="text-align:center; padding:16px 20px; 
                     background:#f0fdf4; border:2px solid #06d6a0; 
                     border-radius:10px; margin-top:5px;">
-                    <p style="font-size:1.3rem; margin:0; color:#06d6a0; font-weight:700;">
-                        🎧 "Maverick"
-                    </p>
-                    <p style="font-size:0.95rem; color:#374151; margin:8px 0 0; line-height:1.6;">
-                        Some names hit #1 in all 8 countries —<br>
+                    <p style="font-size:1.1rem; color:#374151; margin:0; line-height:1.6;">
+                        🎧 Some names hit #1 in all 8 countries —<br>
                         like a global chart-topper.
-                    </p>
-                    <p style="font-size:0.8rem; color:#6b7280; margin-top:8px;">
-                        <strong style="color:#06d6a0;">Countryness: 1.2</strong> (global)
                     </p>
                 </div>
                 """,
@@ -100,20 +94,58 @@ def render():
                 <div style="text-align:center; padding:16px 20px;
                     background:#fef2f2; border:2px solid #e63946;
                     border-radius:10px; margin-top:5px;">
-                    <p style="font-size:1.3rem; margin:0; color:#e63946; font-weight:700;">
-                        💿 "Sadhbh"
-                    </p>
-                    <p style="font-size:0.95rem; color:#374151; margin:8px 0 0; line-height:1.6;">
+                    <p style="font-size:0.95rem; color:#374151; margin:0; line-height:1.6;">
                         Some never leave their homeland —<br>
                         like a vinyl that only plays in one shop.
-                    </p>
-                    <p style="font-size:0.8rem; color:#6b7280; margin-top:8px;">
-                        <strong style="color:#e63946;">Countryness: 8,171</strong> (fortress)
                     </p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+
+    # ─── Countryness Definition ───────────────────────────────────
+    st.markdown("")
+    st.markdown(
+        """
+        <div style="text-align:center; margin:1.5rem auto; padding:14px 24px;
+            max-width:720px; background:#f8f9ff; border-radius:10px;
+            border:1px solid rgba(102,126,234,0.15);">
+            <p style="font-size:0.95rem; color:#374151; margin:0; line-height:1.6;">
+                We measured cultural distinctness using a <strong style="color:#667eea;">"countryness"</strong> score —
+                how geographically concentrated a name is across the Anglosphere.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    col_low, col_high = st.columns(2)
+    with col_low:
+        st.markdown(
+            """
+            <div style="padding:16px 20px; background:#f0fdf4; border:1px solid #06d6a0;
+                border-radius:10px;">
+                <p style="margin:0 0 4px; color:#06d6a0; font-weight:700;">✅ Low Countryness (1–2)</p>
+                <p style="margin:0; font-size:0.9rem; color:#374151;">
+                    Name used equally everywhere — a global citizen.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col_high:
+        st.markdown(
+            """
+            <div style="padding:16px 20px; background:#fef2f2; border:1px solid #e63946;
+                border-radius:10px;">
+                <p style="margin:0 0 4px; color:#e63946; font-weight:700;">❌ High Countryness (500+)</p>
+                <p style="margin:0; font-size:0.9rem; color:#374151;">
+                    Name locked to one culture — a fortress name.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Closing quote
     st.markdown("")
