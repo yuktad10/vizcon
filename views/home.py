@@ -91,12 +91,12 @@ def render():
     def audio_to_base64(path):
         with open(path, "rb") as f:
             data = base64.b64encode(f.read()).decode()
-        return f"data:audio/mpeg;base64,{data}"
+        return f"data:audio/wav;base64,{data}"
 
     img_pop = img_to_base64("assets/baby_popculture.png")
     img_trad = img_to_base64("assets/baby_traditional.png")
-    aud_pop = audio_to_base64("assets/audio_pop.mp3")
-    aud_trad = audio_to_base64("assets/audio_trad.mp3")
+    aud_pop = audio_to_base64("assets/audio_pop.wav")
+    aud_trad = audio_to_base64("assets/audio_trad.wav")
 
     # ─── Baby Images with flip-on-click + audio ───────────────────
     st.markdown(
