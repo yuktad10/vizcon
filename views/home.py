@@ -25,7 +25,7 @@ def render():
                        background: linear-gradient(135deg, #667eea, #764ba2);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        margin-bottom: 5px;">
-                Passport for a Name ✈️
+                Passport for a Name <span style="-webkit-text-fill-color: initial;">✈️</span>
             </h1>
             <p style="font-size:1.05em; color:#6b7280; max-width:700px; margin:0 auto;">
                 Some names travel the world. Others never leave home.
@@ -82,18 +82,7 @@ def render():
                 in our dataset an imaginary passport stamp. Names popular across all 8 countries got their passport
                 <strong>approved</strong> ✈️. Names locked to just one nation got <strong>denied</strong> 🚫.
             </p>
-            <p style="text-align:center; margin:0;">
-                <span style="font-size:1rem; color:#667eea; font-weight:600; animation: bounce 2s infinite;">
-                    👇 Explore more to know more
-                </span>
-            </p>
         </div>
-        <style>
-            @keyframes bounce {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(6px); }
-            }
-        </style>
         """,
         unsafe_allow_html=True,
     )
