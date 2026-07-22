@@ -251,61 +251,71 @@ def render():
 
     # ─── Countryness Definition ───────────────────────────────────
     st.markdown("")
-    st.markdown(
-        """
-        <div style="text-align:center; margin:1.5rem auto; padding:14px 24px;
-            max-width:720px; background:#f8f9ff; border-radius:10px;
-            border:1px solid rgba(102,126,234,0.15);">
-            <p style="font-size:0.95rem; color:#374151; margin:0; line-height:1.6;">
-                We measured cultural distinctness using a <strong style="color:#667eea;">"countryness"</strong> score —
-                how geographically concentrated a name is across the Anglosphere.
+    countryness_html = """
+    <html>
+    <head>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 10px 20px; }
+    </style>
+    </head>
+    <body>
+        <!-- Definition -->
+        <div style="text-align:center; padding:18px 30px; background:#f8f9ff;
+            border-radius:12px; border:1px solid rgba(102,126,234,0.15);">
+            <p style="font-size:1rem; color:#374151; margin:0; line-height:1.7;">
+                How do you measure whether a name belongs to the world or just one country?
+                We use a <strong style="color:#667eea;">"countryness"</strong> score —
+                the higher it is, the more a name is concentrated in a single nation.
             </p>
         </div>
 
-        <!-- Scale Bar -->
-        <div style="max-width:720px; margin:1.2rem auto 0; padding:0 10px;">
-            <!-- Gradient bar -->
-            <div style="position:relative; height:18px; border-radius:9px;
+        <!-- Scale Bar Section -->
+        <div style="margin:24px auto 0; padding:0;">
+            <!-- Gradient Bar -->
+            <div style="position:relative; height:20px; border-radius:10px;
                 background: linear-gradient(to right, #06d6a0 0%, #a7f3d0 20%, #fde68a 50%, #fca5a5 80%, #e63946 100%);
-                box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                <!-- Marker: Low -->
-                <div style="position:absolute; top:-2px; left:5%; width:22px; height:22px;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.08);">
+                <!-- Marker Low -->
+                <div style="position:absolute; top:-3px; left:5%; width:26px; height:26px;
                     background:white; border:3px solid #06d6a0; border-radius:50%;
-                    box-shadow: 0 2px 6px rgba(6,214,160,0.3);"></div>
-                <!-- Marker: High -->
-                <div style="position:absolute; top:-2px; right:5%; width:22px; height:22px;
+                    box-shadow: 0 2px 8px rgba(6,214,160,0.4);"></div>
+                <!-- Marker High -->
+                <div style="position:absolute; top:-3px; right:5%; width:26px; height:26px;
                     background:white; border:3px solid #e63946; border-radius:50%;
-                    box-shadow: 0 2px 6px rgba(230,57,70,0.3);"></div>
+                    box-shadow: 0 2px 8px rgba(230,57,70,0.4);"></div>
             </div>
 
-            <!-- Labels -->
-            <div style="display:flex; justify-content:space-between; margin-top:12px;">
-                <div style="text-align:left; max-width:45%;">
-                    <p style="margin:0; font-size:0.85rem; font-weight:700; color:#06d6a0;">
-                        ✅ Low (1–2)
+            <!-- Labels Row -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:14px;">
+                <div style="text-align:left; max-width:40%;">
+                    <p style="margin:0; font-size:0.9rem; font-weight:700; color:#06d6a0;">
+                        🎧 Global Citizen (1–2)
                     </p>
-                    <p style="margin:2px 0 0; font-size:0.8rem; color:#6b7280;">
-                        Global citizen — used equally everywhere
+                    <p style="margin:4px 0 0; font-size:0.8rem; color:#6b7280;">
+                        Popular everywhere — no single homeland
                     </p>
                 </div>
                 <div style="text-align:center;">
-                    <p style="margin:0; font-size:0.75rem; color:#9ca3af;">
-                        ← more global &nbsp;|&nbsp; more local →
+                    <p style="margin:0; font-size:0.75rem; color:#9ca3af; white-space:nowrap;">
+                        ← plays everywhere &nbsp;&nbsp;|&nbsp;&nbsp; one shop only →
                     </p>
                 </div>
-                <div style="text-align:right; max-width:45%;">
-                    <p style="margin:0; font-size:0.85rem; font-weight:700; color:#e63946;">
-                        ❌ High (500+)
+                <div style="text-align:right; max-width:40%;">
+                    <p style="margin:0; font-size:0.9rem; font-weight:700; color:#e63946;">
+                        💿 Fortress Name (500+)
                     </p>
-                    <p style="margin:2px 0 0; font-size:0.8rem; color:#6b7280;">
-                        Fortress name — locked to one culture
+                    <p style="margin:4px 0 0; font-size:0.8rem; color:#6b7280;">
+                        Locked to one nation — rarely seen elsewhere
                     </p>
                 </div>
             </div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    </body>
+    </html>
+    """
+
+    components.html(countryness_html, height=200)
 
     # Closing quote
     st.markdown("")
