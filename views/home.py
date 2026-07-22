@@ -131,8 +131,7 @@ def render():
             justify-content: center;
             flex-wrap: wrap;
             padding: 10px;
-            max-width: 900px;
-            margin: 0 auto;
+            width: 100%;
         }}
         .flip-card {{
             perspective: 1000px;
@@ -252,7 +251,7 @@ def render():
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 5px 20px; }
         .quiz-container {
             text-align: center;
-            max-width: 600px;
+            max-width: 100%;
             margin: 0 auto;
         }
         .quiz-question {
