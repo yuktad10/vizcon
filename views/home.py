@@ -57,23 +57,45 @@ def render():
 
     # ─── Anglosphere Context ──────────────────────────────────────
     st.markdown("")
-    st.markdown("### 🌍 The Anglosphere")
     st.markdown(
-        'The term "Anglosphere" was coined by sci-fi writer **Neal Stephenson** '
-        "in his 1995 novel *The Diamond Age*. A fictional concept that became a geopolitical reality. "
-        "Today it represents just **6% of the world's population** — but over **30% of its economy**."
-    )
-    st.markdown(
-        "Every year, millions of babies are named across the English-speaking world — from New York to New Zealand, "
-        "London to Lagos. We had **decades of baby name records** across **8 Anglosphere nations**."
-    )
-    st.markdown(
-        'The question was simple: **Does a name travel — or does it stay home?**'
-    )
-    st.markdown(
-        '"Passport for a Name" is exactly that — we gave every name in our dataset an imaginary passport stamp. '
-        "Names popular across all 8 countries got their passport **approved** ✈️. "
-        "Names locked to just one nation got **denied** 🚫. Explore more to know more."
+        """
+        <div style="padding:28px 32px; background:white; border-radius:14px;
+            border:1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            margin-bottom:1rem;">
+            <h3 style="margin:0 0 14px; color:#1f2937; font-size:1.4rem;">
+                🌍 The Anglosphere
+            </h3>
+            <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
+                The term "Anglosphere" was coined by sci-fi writer <strong>Neal Stephenson</strong>
+                in his 1995 novel <em>The Diamond Age</em>. A fictional concept that became a geopolitical reality.
+                Today it represents just <strong>6% of the world's population</strong> — but over <strong>30% of its economy</strong>.
+            </p>
+            <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
+                Every year, millions of babies are named across the English-speaking world — from New York to New Zealand,
+                London to Lagos. We had <strong>decades of baby name records</strong> across <strong>8 Anglosphere nations</strong>.
+            </p>
+            <p style="font-size:1.1rem; color:#1f2937; font-weight:700; margin:0 0 12px;">
+                The question was simple: Does a name travel — or does it stay home?
+            </p>
+            <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 16px;">
+                <strong style="color:#667eea;">"Passport for a Name"</strong> is exactly that — we gave every name
+                in our dataset an imaginary passport stamp. Names popular across all 8 countries got their passport
+                <strong>approved</strong> ✈️. Names locked to just one nation got <strong>denied</strong> 🚫.
+            </p>
+            <p style="text-align:center; margin:0;">
+                <span style="font-size:1rem; color:#667eea; font-weight:600; animation: bounce 2s infinite;">
+                    👇 Explore more to know more
+                </span>
+            </p>
+        </div>
+        <style>
+            @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(6px); }
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
 
     # ─── Map Image (reduced height) ──────────────────────────────
@@ -96,6 +118,14 @@ def render():
 
     # ─── The Two Worlds (integrated baby section) ─────────────────
     st.markdown("")
+
+    # ─── Visual Divider ───────────────────────────────────────────
+    st.markdown(
+        """
+        <hr style="border:none; border-top:2px solid #e5e7eb; margin:1rem 0 2rem;">
+        """,
+        unsafe_allow_html=True,
+    )
 
     # ─── Section Header: Two Worlds of Naming ─────────────────────
     st.markdown(
@@ -258,6 +288,13 @@ def render():
 
 
     # ─── Interactive Name Quiz ────────────────────────────────────
+    st.markdown(
+        """
+        <hr style="border:none; border-top:2px solid #e5e7eb; margin:2rem 0 1.5rem;">
+        """,
+        unsafe_allow_html=True,
+    )
+
     quiz_html = """
     <html>
     <head>
@@ -309,6 +346,13 @@ def render():
         }
         .quiz-btn.nevaeh:hover { border-color: #06d6a0; color: #06d6a0; }
         .quiz-btn.trevor:hover { border-color: #e63946; color: #e63946; }
+        .quiz-btn span {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
         .quiz-result {
             display: none;
             margin-top: 24px;
@@ -363,8 +407,8 @@ def render():
         <p class="quiz-subtitle">Which one do you think got the passport?</p>
 
         <div class="quiz-options" id="options">
-            <button class="quiz-btn nevaeh" onclick="showResult('global')">Nevaeh</button>
-            <button class="quiz-btn trevor" onclick="showResult('local')">Trevor</button>
+            <button class="quiz-btn nevaeh" onclick="showResult('global')">Nevaeh<span>"heaven" spelled backwards</span></button>
+            <button class="quiz-btn trevor" onclick="showResult('local')">Trevor<span>classic Welsh origin</span></button>
         </div>
 
         <div class="quiz-result global" id="result-global">
