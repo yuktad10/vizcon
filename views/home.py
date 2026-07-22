@@ -269,14 +269,22 @@ def render():
             max-width: 100%;
             margin: 0 auto;
         }
+        .quiz-preheading {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
         .quiz-question {
-            font-size: 1.3rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: #1f2937;
             margin-bottom: 8px;
         }
         .quiz-subtitle {
-            font-size: 0.95rem;
+            font-size: 1.05rem;
             color: #6b7280;
             margin-bottom: 24px;
         }
@@ -350,6 +358,7 @@ def render():
     </head>
     <body>
     <div class="quiz-container">
+        <p class="quiz-preheading">🎲 Let's Take a Guess</p>
         <p class="quiz-question">🔍 Two Names. One Passport. Zero Clues.</p>
         <p class="quiz-subtitle">Which one do you think got the passport?</p>
 
