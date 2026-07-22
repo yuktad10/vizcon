@@ -67,7 +67,7 @@ def render():
         """
         <style>
             .map-container img {
-                max-height: 220px;
+                max-height: 160px;
                 object-fit: cover;
                 object-position: center;
                 border-radius: 10px;
@@ -87,7 +87,7 @@ def render():
     st.markdown(
         """
         <div style="text-align:center; padding: 30px 0 10px;">
-            <p style="font-size:0.85rem; font-weight:600; letter-spacing:3px;
+            <p style="font-size:1.05rem; font-weight:600; letter-spacing:3px;
                       text-transform:uppercase; color:#667eea; margin-bottom:10px;">
                 THE TWO WORLDS OF NAMING
             </p>
@@ -263,7 +263,7 @@ def render():
         <!-- Definition -->
         <div style="text-align:center; padding:18px 30px; background:#f8f9ff;
             border-radius:12px; border:1px solid rgba(102,126,234,0.15);">
-            <p style="font-size:1rem; color:#374151; margin:0; line-height:1.7;">
+            <p style="font-size:1.15rem; color:#374151; margin:0; line-height:1.7;">
                 How do you measure whether a name belongs to the world or just one country?
                 We use a <strong style="color:#667eea;">"countryness"</strong> score —
                 the higher it is, the more a name is concentrated in a single nation.
