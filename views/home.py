@@ -249,85 +249,119 @@ def render():
     components.html(flip_html, height=550)
 
 
-    # ─── Countryness Definition ───────────────────────────────────
+    # ─── Interactive Name Quiz ────────────────────────────────────
     st.markdown("")
-    countryness_html = """
+    quiz_html = """
     <html>
     <head>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 10px 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+        .quiz-container {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .quiz-question {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        .quiz-subtitle {
+            font-size: 0.95rem;
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+        .quiz-options {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+        .quiz-btn {
+            padding: 14px 36px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .quiz-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .quiz-btn.nevaeh:hover { border-color: #06d6a0; color: #06d6a0; }
+        .quiz-btn.trevor:hover { border-color: #e63946; color: #e63946; }
+        .quiz-result {
+            display: none;
+            margin-top: 24px;
+            padding: 20px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .quiz-result:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        .quiz-result.global {
+            background: #f0fdf4;
+            border: 2px solid #06d6a0;
+        }
+        .quiz-result.local {
+            background: #fef2f2;
+            border: 2px solid #e63946;
+        }
+        .result-emoji { font-size: 2rem; margin-bottom: 8px; }
+        .result-text { font-size: 1.05rem; color: #374151; font-weight: 600; }
+        .result-cta { font-size: 0.85rem; color: #6b7280; margin-top: 8px; }
     </style>
     </head>
     <body>
-        <!-- Definition -->
-        <div style="text-align:center; padding:18px 30px; background:#f8f9ff;
-            border-radius:12px; border:1px solid rgba(102,126,234,0.15);">
-            <p style="font-size:1.15rem; color:#374151; margin:0; line-height:1.7;">
-                How do you measure whether a name belongs to the world or just one country?
-                We use a <strong style="color:#667eea;">"countryness"</strong> score —
-                the higher it is, the more a name is concentrated in a single nation.
-            </p>
+    <div class="quiz-container">
+        <p class="quiz-question">Which name would you give your baby?</p>
+        <p class="quiz-subtitle">Pick one and find out where it belongs.</p>
+
+        <div class="quiz-options" id="options">
+            <button class="quiz-btn nevaeh" onclick="showResult('global')">Nevaeh</button>
+            <button class="quiz-btn trevor" onclick="showResult('local')">Trevor</button>
         </div>
 
-        <!-- Scale Bar Section -->
-        <div style="margin:24px auto 0; padding:0;">
-            <!-- Gradient Bar -->
-            <div style="position:relative; height:20px; border-radius:10px;
-                background: linear-gradient(to right, #06d6a0 0%, #a7f3d0 20%, #fde68a 50%, #fca5a5 80%, #e63946 100%);
-                box-shadow: 0 3px 10px rgba(0,0,0,0.08);">
-                <!-- Marker Low -->
-                <div style="position:absolute; top:-3px; left:5%; width:26px; height:26px;
-                    background:white; border:3px solid #06d6a0; border-radius:50%;
-                    box-shadow: 0 2px 8px rgba(6,214,160,0.4);"></div>
-                <!-- Marker High -->
-                <div style="position:absolute; top:-3px; right:5%; width:26px; height:26px;
-                    background:white; border:3px solid #e63946; border-radius:50%;
-                    box-shadow: 0 2px 8px rgba(230,57,70,0.4);"></div>
-            </div>
-
-            <!-- Labels Row -->
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:14px;">
-                <div style="text-align:left; max-width:40%;">
-                    <p style="margin:0; font-size:0.9rem; font-weight:700; color:#06d6a0;">
-                        🎧 Global Citizen (1–2)
-                    </p>
-                    <p style="margin:4px 0 0; font-size:0.8rem; color:#6b7280;">
-                        Popular everywhere — no single homeland
-                    </p>
-                </div>
-                <div style="text-align:center;">
-                    <p style="margin:0; font-size:0.75rem; color:#9ca3af; white-space:nowrap;">
-                        ← plays everywhere &nbsp;&nbsp;|&nbsp;&nbsp; one shop only →
-                    </p>
-                </div>
-                <div style="text-align:right; max-width:40%;">
-                    <p style="margin:0; font-size:0.9rem; font-weight:700; color:#e63946;">
-                        💿 Fortress Name (500+)
-                    </p>
-                    <p style="margin:4px 0 0; font-size:0.8rem; color:#6b7280;">
-                        Locked to one nation — rarely seen elsewhere
-                    </p>
-                </div>
-            </div>
+        <div class="quiz-result global" id="result-global" onclick="switchTab(1)">
+            <p class="result-emoji">🎧</p>
+            <p class="result-text">You belong to The Global Playlist!</p>
+            <p class="result-cta">👆 Click here to explore it →</p>
         </div>
+
+        <div class="quiz-result local" id="result-local" onclick="switchTab(2)">
+            <p class="result-emoji">💿</p>
+            <p class="result-text">You belong to The Local Vinyl!</p>
+            <p class="result-cta">👆 Click here to explore it →</p>
+        </div>
+    </div>
+
+    <script>
+        function showResult(type) {
+            document.getElementById('options').style.display = 'none';
+            if (type === 'global') {
+                document.getElementById('result-global').style.display = 'block';
+            } else {
+                document.getElementById('result-local').style.display = 'block';
+            }
+        }
+
+        function switchTab(tabIndex) {
+            // Access the parent Streamlit page and click the tab
+            const tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+            if (tabs && tabs[tabIndex]) {
+                tabs[tabIndex].click();
+            }
+        }
+    </script>
     </body>
     </html>
     """
 
-    components.html(countryness_html, height=200)
-
-    # Closing quote
-    st.markdown("")
-    st.markdown(
-        """
-        <div style="text-align:center; margin:1.5rem 0; padding:20px;
-            background:#f5f5fa; border-radius:10px; border:1px solid #e5e7eb;">
-            <p style="font-size:1.05rem; color:#4b5563; font-style:italic; margin:0;">
-                "One baby named for the world. One named for home.<br>
-                Both are real. Both are happening right now. That's the story."
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    components.html(quiz_html, height=250)
