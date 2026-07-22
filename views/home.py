@@ -347,13 +347,13 @@ def render():
         <div class="quiz-result global" id="result-global">
             <p class="result-emoji">🎧</p>
             <p class="result-text">✈️ Passport APPROVED — welcome to The Global Playlist</p>
-            <p class="result-cta" onclick="switchTab(1)">👆 Head to the 🎧 Global Playlist tab →</p>
+            <p class="result-cta">👆 Head to the 🎧 Global Playlist tab above to explore →</p>
         </div>
 
         <div class="quiz-result local" id="result-local">
             <p class="result-emoji">💿</p>
             <p class="result-text">🚫 Passport DENIED — you're on The Local Vinyl</p>
-            <p class="result-cta" onclick="switchTab(2)">👆 Head to the 💿 Local Vinyl tab →</p>
+            <p class="result-cta">👆 Head to the 💿 Local Vinyl tab above to explore →</p>
         </div>
 
         <button class="reset-btn" id="reset-btn" onclick="resetQuiz()">↩ Reset</button>
@@ -370,25 +370,6 @@ def render():
             document.getElementById('reset-btn').style.display = 'block';
         }
 
-        function switchTab(tabIndex) {
-            // Try multiple approaches to switch tabs
-            try {
-                // Approach 1: Direct DOM access (works if same-origin)
-                const tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
-                if (tabs && tabs[tabIndex]) {
-                    tabs[tabIndex].click();
-                    return;
-                }
-            } catch(e) {}
-            // Approach 2: Navigate parent with query param to trigger tab switch
-            try {
-                window.parent.location.href = window.parent.location.pathname + '?tab=' + tabIndex;
-            } catch(e) {
-                // Approach 3: Open in top frame
-                window.top.location.href = window.top.location.pathname + '?tab=' + tabIndex;
-            }
-        }
-
         function resetQuiz() {
             document.getElementById('options').style.display = 'flex';
             document.getElementById('result-global').style.display = 'none';
@@ -400,4 +381,4 @@ def render():
     </html>
     """
 
-    components.html(quiz_html, height=280)
+    components.html(quiz_html, height=250)
