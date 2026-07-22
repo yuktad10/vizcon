@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 from utils.data_loader import load_metrics
 from utils.charts import countryness_over_time, COLORS
 
@@ -81,9 +82,25 @@ def render():
     # ─── The Two Worlds (integrated baby section) ─────────────────
     st.markdown("")
 
+    # ─── Helper: encode image to base64 data URI ──────────────────
+    def img_to_base64(path):
+        with open(path, "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+        return f"data:image/png;base64,{data}"
+
+    def audio_to_base64(path):
+        with open(path, "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+        return f"data:audio/mpeg;base64,{data}"
+
+    img_pop = img_to_base64("assets/baby_popculture.png")
+    img_trad = img_to_base64("assets/baby_traditional.png")
+    aud_pop = audio_to_base64("assets/audio_pop.mp3")
+    aud_trad = audio_to_base64("assets/audio_trad.mp3")
+
     # ─── Baby Images with flip-on-click + audio ───────────────────
     st.markdown(
-        """
+        f"""
         <style>
             .flip-container {
                 display: flex;
@@ -148,7 +165,7 @@ def render():
             <div class="flip-card" onclick="this.classList.toggle('flipped'); document.getElementById('audio-pop').play();">
                 <div class="flip-card-inner">
                     <div class="flip-card-front">
-                        <img src="app/static/baby_popculture.png" alt="Pop culture babies">
+                        <img src="{img_pop}" alt="Pop culture babies">
                     </div>
                     <div class="flip-card-back pop-back">
                         <div style="text-align:center;">
@@ -167,7 +184,7 @@ def render():
             <div class="flip-card" onclick="this.classList.toggle('flipped'); document.getElementById('audio-trad').play();">
                 <div class="flip-card-inner">
                     <div class="flip-card-front">
-                        <img src="app/static/baby_traditional.png" alt="Traditional babies">
+                        <img src="{img_trad}" alt="Traditional babies">
                     </div>
                     <div class="flip-card-back trad-back">
                         <div style="text-align:center;">
@@ -184,8 +201,8 @@ def render():
         </div>
 
         <!-- Audio elements (hidden) -->
-        <audio id="audio-pop" src="assets/audio_pop.mp3" preload="auto"></audio>
-        <audio id="audio-trad" src="assets/audio_trad.mp3" preload="auto"></audio>
+        <audio id="audio-pop" src="{aud_pop}" preload="auto"></audio>
+        <audio id="audio-trad" src="{aud_trad}" preload="auto"></audio>
         """,
         unsafe_allow_html=True,
     )
