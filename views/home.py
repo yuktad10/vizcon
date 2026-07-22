@@ -344,16 +344,16 @@ def render():
             <button class="quiz-btn trevor" onclick="showResult('local')">Trevor</button>
         </div>
 
-        <div class="quiz-result global" id="result-global" onclick="switchTab(1)">
+        <div class="quiz-result global" id="result-global">
             <p class="result-emoji">🎧</p>
             <p class="result-text">✈️ Passport APPROVED — welcome to The Global Playlist</p>
-            <p class="result-cta" onclick="switchTab(1)">👆 Step inside →</p>
+            <p class="result-cta" onclick="switchTab(1)">👆 Head to the 🎧 Global Playlist tab →</p>
         </div>
 
-        <div class="quiz-result local" id="result-local" onclick="switchTab(2)">
+        <div class="quiz-result local" id="result-local">
             <p class="result-emoji">💿</p>
             <p class="result-text">🚫 Passport DENIED — you're on The Local Vinyl</p>
-            <p class="result-cta" onclick="switchTab(2)">👆 Step inside →</p>
+            <p class="result-cta" onclick="switchTab(2)">👆 Head to the 💿 Local Vinyl tab →</p>
         </div>
 
         <button class="reset-btn" id="reset-btn" onclick="resetQuiz()">↩ Reset</button>
@@ -371,10 +371,21 @@ def render():
         }
 
         function switchTab(tabIndex) {
-            // Access the parent Streamlit page and click the tab
-            const tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
-            if (tabs && tabs[tabIndex]) {
-                tabs[tabIndex].click();
+            // Try multiple approaches to switch tabs
+            try {
+                // Approach 1: Direct DOM access (works if same-origin)
+                const tabs = window.parent.document.querySelectorAll('[data-baseweb="tab"]');
+                if (tabs && tabs[tabIndex]) {
+                    tabs[tabIndex].click();
+                    return;
+                }
+            } catch(e) {}
+            // Approach 2: Navigate parent with query param to trigger tab switch
+            try {
+                window.parent.location.href = window.parent.location.pathname + '?tab=' + tabIndex;
+            } catch(e) {
+                // Approach 3: Open in top frame
+                window.top.location.href = window.top.location.pathname + '?tab=' + tabIndex;
             }
         }
 
