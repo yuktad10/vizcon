@@ -81,44 +81,114 @@ def render():
     # ─── The Two Worlds (integrated baby section) ─────────────────
     st.markdown("")
 
-    # ─── Baby Images with reveal on click ─────────────────────────
-    col_pop, col_trad = st.columns(2)
+    # ─── Baby Images with flip-on-click + audio ───────────────────
+    st.markdown(
+        """
+        <style>
+            .flip-container {
+                display: flex;
+                gap: 20px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .flip-card {
+                perspective: 1000px;
+                width: 48%;
+                min-width: 280px;
+                cursor: pointer;
+            }
+            .flip-card-inner {
+                position: relative;
+                width: 100%;
+                padding-bottom: 75%;  /* aspect ratio */
+                transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                transform-style: preserve-3d;
+            }
+            .flip-card.flipped .flip-card-inner {
+                transform: rotateY(180deg);
+            }
+            .flip-card-front, .flip-card-back {
+                position: absolute;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                backface-visibility: hidden;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            .flip-card-front img {
+                width: 100%; height: 100%;
+                object-fit: cover;
+                border-radius: 12px;
+            }
+            .flip-card-back {
+                transform: rotateY(180deg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 24px;
+            }
+            .flip-card-back.pop-back {
+                background: #f0fdf4;
+                border: 2px solid #06d6a0;
+            }
+            .flip-card-back.trad-back {
+                background: #fef2f2;
+                border: 2px solid #e63946;
+            }
+            .flip-hint {
+                text-align: center;
+                font-size: 0.85rem;
+                color: #9ca3af;
+                margin-top: 8px;
+            }
+        </style>
 
-    with col_pop:
-        st.image("assets/baby_popculture.png", use_container_width=True)
-        with st.expander("🎧 Flip the record →", expanded=False):
-            st.markdown(
-                """
-                <div style="text-align:center; padding:14px 18px; 
-                    background:#f0fdf4; border:2px solid #06d6a0; 
-                    border-radius:10px;">
-                    <p style="font-size:1.6rem; margin:0;">�</p>
-                    <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
-                        Some names hit <strong>#1 in all 8 countries</strong> —<br>
-                        like a global chart-topper that plays everywhere.
-                    </p>
+        <div class="flip-container">
+            <!-- Pop Culture Card -->
+            <div class="flip-card" onclick="this.classList.toggle('flipped'); document.getElementById('audio-pop').play();">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <img src="app/static/baby_popculture.png" alt="Pop culture babies">
+                    </div>
+                    <div class="flip-card-back pop-back">
+                        <div style="text-align:center;">
+                            <p style="font-size:1.6rem; margin:0;">🎧</p>
+                            <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
+                                Some names hit <strong>#1 in all 8 countries</strong> —<br>
+                                like a global chart-topper that plays everywhere.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                <p class="flip-hint">🎧 Click to flip the record</p>
+            </div>
 
-    with col_trad:
-        st.image("assets/baby_traditional.png", use_container_width=True)
-        with st.expander("💿 Flip the vinyl →", expanded=False):
-            st.markdown(
-                """
-                <div style="text-align:center; padding:14px 18px;
-                    background:#fef2f2; border:2px solid #e63946;
-                    border-radius:10px;">
-                    <p style="font-size:1.6rem; margin:0;">💿</p>
-                    <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
-                        Some never leave their homeland —<br>
-                        like a vinyl that only plays in <strong>one shop</strong>.
-                    </p>
+            <!-- Traditional Card -->
+            <div class="flip-card" onclick="this.classList.toggle('flipped'); document.getElementById('audio-trad').play();">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <img src="app/static/baby_traditional.png" alt="Traditional babies">
+                    </div>
+                    <div class="flip-card-back trad-back">
+                        <div style="text-align:center;">
+                            <p style="font-size:1.6rem; margin:0;">💿</p>
+                            <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
+                                Some never leave their homeland —<br>
+                                like a vinyl that only plays in <strong>one shop</strong>.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                <p class="flip-hint">💿 Click to flip the vinyl</p>
+            </div>
+        </div>
+
+        <!-- Audio elements (hidden) -->
+        <audio id="audio-pop" src="assets/audio_pop.mp3" preload="auto"></audio>
+        <audio id="audio-trad" src="assets/audio_trad.mp3" preload="auto"></audio>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # ─── Countryness Definition ───────────────────────────────────
     st.markdown("")
