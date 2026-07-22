@@ -61,6 +61,18 @@ def render():
         "in his 1995 novel *The Diamond Age*. A fictional concept that became a geopolitical reality. "
         "Today it represents just **6% of the world's population** — but over **30% of its economy**."
     )
+    st.markdown(
+        "Every year, millions of babies are named across the English-speaking world — from New York to New Zealand, "
+        "London to Lagos. We had **decades of baby name records** across **8 Anglosphere nations**."
+    )
+    st.markdown(
+        'The question was simple: **Does a name travel — or does it stay home?**'
+    )
+    st.markdown(
+        '"Passport for a Name" is exactly that — we gave every name in our dataset an imaginary passport stamp. '
+        "Names popular across all 8 countries got their passport **approved** ✈️. "
+        "Names locked to just one nation got **denied** 🚫. Explore more to know more."
+    )
 
     # ─── Map Image (reduced height) ──────────────────────────────
     st.markdown(
@@ -382,4 +394,3 @@ def render():
     """
 
     components.html(quiz_html, height=320)
-
