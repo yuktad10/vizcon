@@ -25,7 +25,7 @@ def render():
                        background: linear-gradient(135deg, #667eea, #764ba2);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        margin-bottom: 5px;">
-                Passport for a Name
+                Passport for a Name 🛂
             </h1>
             <p style="font-size:1.05em; color:#6b7280; max-width:700px; margin:0 auto;">
                 Some names travel the world. Others never leave home.
