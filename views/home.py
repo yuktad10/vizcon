@@ -309,13 +309,11 @@ def render():
         .result-text { font-size: 1.05rem; color: #374151; font-weight: 600; }
         .result-cta {
             font-size: 0.9rem;
-            color: #667eea;
+            color: #6b7280;
             margin-top: 10px;
-            font-weight: 600;
-            text-decoration: underline;
-            cursor: pointer;
+            font-weight: 500;
+            font-style: italic;
         }
-        .result-cta:hover { color: #4f46e5; }
         .reset-btn {
             display: none;
             margin: 16px auto 0;
@@ -381,4 +379,4 @@ def render():
     </html>
     """
 
-    components.html(quiz_html, height=250)
+    components.html(quiz_html, height=300)
