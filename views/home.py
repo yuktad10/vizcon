@@ -308,6 +308,22 @@ def render():
         .result-emoji { font-size: 2rem; margin-bottom: 8px; }
         .result-text { font-size: 1.05rem; color: #374151; font-weight: 600; }
         .result-cta { font-size: 0.85rem; color: #6b7280; margin-top: 8px; }
+        .reset-btn {
+            display: none;
+            margin: 16px auto 0;
+            padding: 8px 20px;
+            font-size: 0.85rem;
+            color: #667eea;
+            background: none;
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .reset-btn:hover {
+            background: #667eea;
+            color: white;
+        }
     </style>
     </head>
     <body>
@@ -331,6 +347,8 @@ def render():
             <p class="result-text">🚫 Passport DENIED — you're on The Local Vinyl</p>
             <p class="result-cta">👆 Step inside →</p>
         </div>
+
+        <button class="reset-btn" id="reset-btn" onclick="resetQuiz()">↩ Reset</button>
     </div>
 
     <script>
@@ -341,6 +359,7 @@ def render():
             } else {
                 document.getElementById('result-local').style.display = 'block';
             }
+            document.getElementById('reset-btn').style.display = 'block';
         }
 
         function switchTab(tabIndex) {
@@ -349,6 +368,13 @@ def render():
             if (tabs && tabs[tabIndex]) {
                 tabs[tabIndex].click();
             }
+        }
+
+        function resetQuiz() {
+            document.getElementById('options').style.display = 'flex';
+            document.getElementById('result-global').style.display = 'none';
+            document.getElementById('result-local').style.display = 'none';
+            document.getElementById('reset-btn').style.display = 'none';
         }
     </script>
     </body>
