@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import base64
 from utils.data_loader import load_metrics
