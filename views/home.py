@@ -177,12 +177,6 @@ def render():
             background: #fef2f2;
             border: 2px solid #e63946;
         }}
-        .flip-hint {{
-            text-align: center;
-            font-size: 0.85rem;
-            color: #9ca3af;
-            margin-top: 8px;
-        }}
     </style>
     </head>
     <body>
@@ -203,7 +197,6 @@ def render():
                     </div>
                 </div>
             </div>
-            <p class="flip-hint">🎧 Click to flip the record</p>
         </div>
 
         <!-- Traditional Card -->
@@ -222,7 +215,6 @@ def render():
                     </div>
                 </div>
             </div>
-            <p class="flip-hint">💿 Click to flip the vinyl</p>
         </div>
     </div>
 
@@ -246,7 +238,7 @@ def render():
     </html>
     """
 
-    components.html(flip_html, height=550)
+    components.html(flip_html, height=480)
 
 
     # ─── Interactive Name Quiz ────────────────────────────────────
