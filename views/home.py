@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import streamlit.components.v1 as components
 from utils.data_loader import load_metrics
 from utils.charts import countryness_over_time, COLORS
 
@@ -98,114 +99,136 @@ def render():
     aud_pop = audio_to_base64("assets/audio_pop.wav")
     aud_trad = audio_to_base64("assets/audio_trad.wav")
 
-    # ─── Baby Images with flip-on-click + audio ───────────────────
-    st.markdown(
-        f"""
-        <style>
-            .flip-container {{
-                display: flex;
-                gap: 20px;
-                justify-content: center;
-                flex-wrap: wrap;
-            }}
-            .flip-card {{
-                perspective: 1000px;
-                width: 48%;
-                min-width: 280px;
-                cursor: pointer;
-            }}
-            .flip-card-inner {{
-                position: relative;
-                width: 100%;
-                padding-bottom: 75%;  /* aspect ratio */
-                transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-                transform-style: preserve-3d;
-            }}
-            .flip-card.flipped .flip-card-inner {{
-                transform: rotateY(180deg);
-            }}
-            .flip-card-front, .flip-card-back {{
-                position: absolute;
-                top: 0; left: 0;
-                width: 100%; height: 100%;
-                backface-visibility: hidden;
-                border-radius: 12px;
-                overflow: hidden;
-            }}
-            .flip-card-front img {{
-                width: 100%; height: 100%;
-                object-fit: cover;
-                border-radius: 12px;
-            }}
-            .flip-card-back {{
-                transform: rotateY(180deg);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 24px;
-            }}
-            .flip-card-back.pop-back {{
-                background: #f0fdf4;
-                border: 2px solid #06d6a0;
-            }}
-            .flip-card-back.trad-back {{
-                background: #fef2f2;
-                border: 2px solid #e63946;
-            }}
-            .flip-hint {{
-                text-align: center;
-                font-size: 0.85rem;
-                color: #9ca3af;
-                margin-top: 8px;
-            }}
-        </style>
-
-        <div class="flip-container">
-            <!-- Pop Culture Card -->
-            <div class="flip-card" onclick="this.classList.toggle('flipped'); document.getElementById('audio-pop').play();">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <img src="{img_pop}" alt="Pop culture babies">
-                    </div>
-                    <div class="flip-card-back pop-back">
-                        <div style="text-align:center;">
-                            <p style="font-size:1.6rem; margin:0;">🎧</p>
-                            <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
-                                Some names hit <strong>#1 in all 8 countries</strong> —<br>
-                                like a global chart-topper that plays everywhere.
-                            </p>
-                        </div>
+    # ─── Baby Images with flip-on-click + audio (using components.html) ───
+    flip_html = f"""
+    <html>
+    <head>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
+        .flip-container {{
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 10px;
+        }}
+        .flip-card {{
+            perspective: 1000px;
+            width: 48%;
+            min-width: 280px;
+            cursor: pointer;
+        }}
+        .flip-card-inner {{
+            position: relative;
+            width: 100%;
+            padding-bottom: 75%;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }}
+        .flip-card.flipped .flip-card-inner {{
+            transform: rotateY(180deg);
+        }}
+        .flip-card-front, .flip-card-back {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            overflow: hidden;
+        }}
+        .flip-card-front img {{
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }}
+        .flip-card-back {{
+            transform: rotateY(180deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            border-radius: 12px;
+        }}
+        .flip-card-back.pop-back {{
+            background: #f0fdf4;
+            border: 2px solid #06d6a0;
+        }}
+        .flip-card-back.trad-back {{
+            background: #fef2f2;
+            border: 2px solid #e63946;
+        }}
+        .flip-hint {{
+            text-align: center;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-top: 8px;
+        }}
+    </style>
+    </head>
+    <body>
+    <div class="flip-container">
+        <!-- Pop Culture Card -->
+        <div class="flip-card" id="card-pop">
+            <div class="flip-card-inner">
+                <div class="flip-card-front">
+                    <img src="{img_pop}" alt="Pop culture babies">
+                </div>
+                <div class="flip-card-back pop-back">
+                    <div style="text-align:center;">
+                        <p style="font-size:1.6rem; margin:0;">🎧</p>
+                        <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
+                            Some names hit <strong>#1 in all 8 countries</strong> —<br>
+                            like a global chart-topper that plays everywhere.
+                        </p>
                     </div>
                 </div>
-                <p class="flip-hint">🎧 Click to flip the record</p>
             </div>
-
-            <!-- Traditional Card -->
-            <div class="flip-card" onclick="this.classList.toggle('flipped'); document.getElementById('audio-trad').play();">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <img src="{img_trad}" alt="Traditional babies">
-                    </div>
-                    <div class="flip-card-back trad-back">
-                        <div style="text-align:center;">
-                            <p style="font-size:1.6rem; margin:0;">💿</p>
-                            <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
-                                Some never leave their homeland —<br>
-                                like a vinyl that only plays in <strong>one shop</strong>.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <p class="flip-hint">💿 Click to flip the vinyl</p>
-            </div>
+            <p class="flip-hint">🎧 Click to flip the record</p>
         </div>
 
-        <!-- Audio elements (hidden) -->
-        <audio id="audio-pop" src="{aud_pop}" preload="auto"></audio>
-        <audio id="audio-trad" src="{aud_trad}" preload="auto"></audio>
-        """,
-        unsafe_allow_html=True,
-    )
+        <!-- Traditional Card -->
+        <div class="flip-card" id="card-trad">
+            <div class="flip-card-inner">
+                <div class="flip-card-front">
+                    <img src="{img_trad}" alt="Traditional babies">
+                </div>
+                <div class="flip-card-back trad-back">
+                    <div style="text-align:center;">
+                        <p style="font-size:1.6rem; margin:0;">💿</p>
+                        <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
+                            Some never leave their homeland —<br>
+                            like a vinyl that only plays in <strong>one shop</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <p class="flip-hint">💿 Click to flip the vinyl</p>
+        </div>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="audio-pop" src="{aud_pop}" preload="auto"></audio>
+    <audio id="audio-trad" src="{aud_trad}" preload="auto"></audio>
+
+    <script>
+        document.getElementById('card-pop').addEventListener('click', function() {{
+            this.classList.toggle('flipped');
+            document.getElementById('audio-pop').currentTime = 0;
+            document.getElementById('audio-pop').play();
+        }});
+        document.getElementById('card-trad').addEventListener('click', function() {{
+            this.classList.toggle('flipped');
+            document.getElementById('audio-trad').currentTime = 0;
+            document.getElementById('audio-trad').play();
+        }});
+    </script>
+    </body>
+    </html>
+    """
+
+    components.html(flip_html, height=450)
+
 
     # ─── Countryness Definition ───────────────────────────────────
     st.markdown("")
