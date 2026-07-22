@@ -250,13 +250,12 @@ def render():
 
 
     # ─── Interactive Name Quiz ────────────────────────────────────
-    st.markdown("")
     quiz_html = """
     <html>
     <head>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 5px 20px; }
         .quiz-container {
             text-align: center;
             max-width: 600px;
@@ -365,3 +364,18 @@ def render():
     """
 
     components.html(quiz_html, height=250)
+
+    # ─── Closing Quote ────────────────────────────────────────────
+    st.markdown("")
+    st.markdown(
+        """
+        <div style="text-align:center; margin:1.5rem 0; padding:20px;
+            background:#f5f5fa; border-radius:10px; border:1px solid #e5e7eb;">
+            <p style="font-size:1.05rem; color:#4b5563; font-style:italic; margin:0;">
+                "One baby named for the world. One named for home.<br>
+                Both are real. Both are happening right now. That's the story."
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
