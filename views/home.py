@@ -60,8 +60,23 @@ def render():
         "Today it represents just **6% of the world's population** — but over **30% of its economy**."
     )
 
-    # ─── Map Image (full width) ──────────────────────────────────
+    # ─── Map Image (reduced height) ──────────────────────────────
+    st.markdown(
+        """
+        <style>
+            .map-container img {
+                max-height: 220px;
+                object-fit: cover;
+                object-position: center;
+                border-radius: 10px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div class="map-container">', unsafe_allow_html=True)
     st.image("assets/world_map.png", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ─── The Two Worlds (integrated baby section) ─────────────────
     st.markdown("")
@@ -71,15 +86,16 @@ def render():
 
     with col_pop:
         st.image("assets/baby_popculture.png", use_container_width=True)
-        if st.button("🎧 Flip to reveal", key="flip_pop", use_container_width=True):
+        with st.expander("🎧 Flip the record →", expanded=False):
             st.markdown(
                 """
-                <div style="text-align:center; padding:16px 20px; 
+                <div style="text-align:center; padding:14px 18px; 
                     background:#f0fdf4; border:2px solid #06d6a0; 
-                    border-radius:10px; margin-top:5px;">
-                    <p style="font-size:1.1rem; color:#374151; margin:0; line-height:1.6;">
-                        🎧 Some names hit #1 in all 8 countries —<br>
-                        like a global chart-topper.
+                    border-radius:10px;">
+                    <p style="font-size:1.6rem; margin:0;">�</p>
+                    <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
+                        Some names hit <strong>#1 in all 8 countries</strong> —<br>
+                        like a global chart-topper that plays everywhere.
                     </p>
                 </div>
                 """,
@@ -88,15 +104,16 @@ def render():
 
     with col_trad:
         st.image("assets/baby_traditional.png", use_container_width=True)
-        if st.button("� Flip to reveal", key="flip_trad", use_container_width=True):
+        with st.expander("💿 Flip the vinyl →", expanded=False):
             st.markdown(
                 """
-                <div style="text-align:center; padding:16px 20px;
+                <div style="text-align:center; padding:14px 18px;
                     background:#fef2f2; border:2px solid #e63946;
-                    border-radius:10px; margin-top:5px;">
-                    <p style="font-size:0.95rem; color:#374151; margin:0; line-height:1.6;">
+                    border-radius:10px;">
+                    <p style="font-size:1.6rem; margin:0;">💿</p>
+                    <p style="font-size:1rem; color:#374151; margin:6px 0 0; line-height:1.6;">
                         Some never leave their homeland —<br>
-                        like a vinyl that only plays in one shop.
+                        like a vinyl that only plays in <strong>one shop</strong>.
                     </p>
                 </div>
                 """,
