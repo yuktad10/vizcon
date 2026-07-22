@@ -67,7 +67,7 @@ def render():
         """
         <style>
             .map-container img {
-                max-height: 220px;
+                max-height: 200px;
                 object-fit: cover;
                 object-position: center;
                 border-radius: 10px;
@@ -227,7 +227,7 @@ def render():
     </html>
     """
 
-    components.html(flip_html, height=450)
+    components.html(flip_html, height=500)
 
 
     # ─── Countryness Definition ───────────────────────────────────
