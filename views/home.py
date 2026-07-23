@@ -63,7 +63,7 @@ def render():
             border:1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
             margin-bottom:1rem;">
             <h3 style="margin:0 0 14px; color:#1f2937; font-size:1.4rem;">
-                🎧 The Anglosphere Mixtape
+                📼 The Anglosphere Mixtape
             </h3>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
                 The term "Anglosphere" was coined by sci-fi writer <strong>Neal Stephenson</strong>
@@ -305,7 +305,7 @@ def render():
             letter-spacing: 3px;
             text-transform: uppercase;
             color: #667eea;
-            margin-bottom: 8px;
+            margin-bottom: 18px;
         }
         .quiz-question {
             font-size: 1.6rem;
