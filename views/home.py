@@ -94,10 +94,10 @@ def render():
         """
         <style>
             .map-container img {
-                max-height: 120px;
+                max-height: 70px;
                 object-fit: cover;
                 object-position: center;
-                border-radius: 10px;
+                border-radius: 5px;
             }
         </style>
         """,
