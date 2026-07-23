@@ -97,7 +97,7 @@ def render():
                 max-height: 70px;
                 object-fit: cover;
                 object-position: center;
-                border-radius: 5px;
+                border-radius: 10px;
             }
         </style>
         """,
