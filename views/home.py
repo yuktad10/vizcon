@@ -63,7 +63,7 @@ def render():
             border:1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
             margin-bottom:1rem;">
             <h3 style="margin:0 0 14px; color:#1f2937; font-size:1.4rem;">
-                🌍 The Anglosphere
+                🎧 The Anglosphere Mixtape
             </h3>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
                 The term "Anglosphere" was coined by sci-fi writer <strong>Neal Stephenson</strong>
@@ -395,9 +395,9 @@ def render():
     </head>
     <body>
     <div class="quiz-container">
-        <p class="quiz-preheading">🎲 Let's Take a Guess</p>
-        <p class="quiz-question">🔍 Two Names. One Passport. Zero Clues.</p>
-        <p class="quiz-subtitle">Which one do you think got the passport?</p>
+        <p class="quiz-preheading">🎵 Can You Read the Charts?</p>
+        <p class="quiz-question">🔍 Two Names. One Playlist. Zero Clues.</p>
+        <p class="quiz-subtitle">Which one made it to the Global Playlist?</p>
 
         <div class="quiz-options" id="options">
             <button class="quiz-btn nevaeh" onclick="showResult('global')">Nevaeh<span>"heaven" spelled backwards</span></button>
@@ -406,13 +406,13 @@ def render():
 
         <div class="quiz-result global" id="result-global">
             <p class="result-emoji">🎧</p>
-            <p class="result-text">✈️ Passport APPROVED — welcome to The Global Playlist</p>
+            <p class="result-text">🎉 This name became a cross-country favorite.</p>
             <p class="result-cta">👆 Head to the 🎧 Global Playlist tab above to explore →</p>
         </div>
 
         <div class="quiz-result local" id="result-local">
             <p class="result-emoji">💿</p>
-            <p class="result-text">🚫 Passport DENIED — you're on The Local Vinyl</p>
+            <p class="result-text">🏠 This name remained a hometown classic.</p>
             <p class="result-cta">👆 Head to the 💿 Local Vinyl tab above to explore →</p>
         </div>
 
@@ -442,4 +442,3 @@ def render():
     """
 
     components.html(quiz_html, height=320)
-
