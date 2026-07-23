@@ -66,21 +66,23 @@ def render():
                 🌍 The Anglosphere
             </h3>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
-                The term "Anglosphere" was coined by sci-fi writer <strong>Neal Stephenson</strong>
-                in his 1995 novel <em>The Diamond Age</em>. A fictional concept that became a geopolitical reality.
-                Today it represents just <strong>6% of the world's population</strong> — but over <strong>30% of its economy</strong>.
+                Every year, millions of babies receive a name across the English-speaking world—from
+                New York to New Zealand, London to Lagos.
             </p>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
-                Every year, millions of babies are named across the English-speaking world — from New York to New Zealand,
-                London to Lagos. <strong>27 years. 8 countries. 117 million babies. 17,575 unique names.</strong>
+                Our dataset spans <strong>27 years, 8 countries, 117 million babies, and 17,575 unique names.</strong>
             </p>
-            <p style="font-size:1.1rem; color:#1f2937; font-weight:700; margin:0 0 12px;">
-                The question was simple: Does a name travel — or does it stay home?
+            <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
+                We asked one simple question: <strong>Which names become global hits</strong>, crossing borders and
+                topping the charts everywhere—and which remain <strong>timeless local favorites</strong>, never leaving home?
             </p>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 16px;">
-                <strong style="color:#667eea;">"Passport for a Name"</strong> is exactly that — we gave every name
-                in our dataset an imaginary passport stamp. Names popular across all 8 countries got their passport
-                <strong>approved</strong> ✈️. Names locked to just one nation got <strong>denied</strong> 🚫.
+                So we turned every name into a track. Some earned a place on the
+                <strong style="color:#06d6a0;">Global Playlist</strong>. Others stayed on
+                <strong style="color:#e63946;">Local Vinyl</strong>.
+            </p>
+            <p style="font-size:1.15rem; font-weight:700; color:#667eea; margin:0; text-align:center;">
+                🎶 Now Playing: The Name Playlist.
             </p>
         </div>
         """,
