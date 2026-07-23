@@ -25,7 +25,7 @@ def render():
                        background: linear-gradient(135deg, #667eea, #764ba2);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        margin-bottom: 5px;">
-                <span style="-webkit-text-fill-color: initial;">🎶</span> Now Playing: The Name Playlist
+                <span style="-webkit-text-fill-color: initial;"> 📼</span> The Anglosphere Mixtape
             </h1>
             <p style="font-size:1.05em; color:#6b7280; max-width:700px; margin:0 auto;">
                 Where names become hits—or hidden gems.
@@ -63,14 +63,12 @@ def render():
             border:1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
             margin-bottom:1rem;">
             <h3 style="margin:0 0 14px; color:#1f2937; font-size:1.4rem;">
-                📼 The Anglosphere Mixtape
+                🌍 The Anglosphere
             </h3>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
                 The term "Anglosphere" was coined by sci-fi writer <strong>Neal Stephenson</strong>
                 in his 1995 novel <em>The Diamond Age</em>. A fictional concept that became a geopolitical reality.
                 Today it represents just <strong>6% of the world's population</strong> — but over <strong>30% of its economy</strong>.
-            </p>
-            <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
                 Every year, millions of babies receive a name across the English-speaking world—from
                 New York to New Zealand, London to Lagos. Our dataset spans <strong>27 years, 8 countries, 117 million babies, and 17,575 unique names.</strong>
             </p>
@@ -132,7 +130,7 @@ def render():
                 Same Language. Different Cultures. One Choice.
             </h2>
             <p style="font-size:0.95rem; color:#9ca3af; margin:0;">
-                👆 Click on a baby to explore their world
+               👇 Click on a baby to explore their world
             </p>
         </div>
         """,
