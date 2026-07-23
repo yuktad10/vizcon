@@ -94,7 +94,7 @@ def render():
         """
         <style>
             .map-container img {
-                max-height: 160px;
+                max-height: 120px;
                 object-fit: cover;
                 object-position: center;
                 border-radius: 10px;
