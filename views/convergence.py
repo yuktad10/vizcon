@@ -30,10 +30,10 @@ def render():
                     border-radius: 16px; padding: 50px 30px; text-align: center; 
                     margin-bottom: 20px; border: 1px solid #E2E8F0;">
             <h1 style="font-size: 2.8em; font-weight: 800; color: #2D3748; margin: 0 0 12px 0;">
-                🎧 The Local Vinyl
+                🎧 The Global Playlist
             </h1>
-            <p style="font-size: 1.2em; color: #4A5568; max-width: 650px; margin: 0 auto; line-height: 1.7;">
-                Featuring the greatest hits.<br>
+            <p style="font-size: 1.5em; color: #4A5568; max-width: 650px; margin: 0 auto; line-height: 1.7;">
+                Featuring the Greatest Hits.<br>
             </p>
         </div>
         """,
