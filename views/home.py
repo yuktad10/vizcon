@@ -48,7 +48,7 @@ def render():
                 &nbsp;&nbsp;But do they share something as simple as… <strong style="color:#667eea;">a baby name?</strong>
             </p>
             <p style="font-size:1.2em; font-weight:700; color:#667eea; margin:12px 0 0; text-align:center;">
-                This is that story.
+                This is THAT STORY.
             </p>
         </div>
         """,
@@ -66,11 +66,13 @@ def render():
                 🌍 The Anglosphere
             </h3>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
-                Every year, millions of babies receive a name across the English-speaking world—from
-                New York to New Zealand, London to Lagos.
+                The term "Anglosphere" was coined by sci-fi writer <strong>Neal Stephenson</strong>
+                in his 1995 novel <em>The Diamond Age</em>. A fictional concept that became a geopolitical reality.
+                Today it represents just <strong>6% of the world's population</strong> — but over <strong>30% of its economy</strong>.
             </p>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
-                Our dataset spans <strong>27 years, 8 countries, 117 million babies, and 17,575 unique names.</strong>
+                Every year, millions of babies receive a name across the English-speaking world—from
+                New York to New Zealand, London to Lagos. Our dataset spans <strong>27 years, 8 countries, 117 million babies, and 17,575 unique names.</strong>
             </p>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
                 We asked one simple question: <strong>Which names become global hits</strong>, crossing borders and
@@ -78,8 +80,8 @@ def render():
             </p>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 16px;">
                 So we turned every name into a track. Some earned a place on the
-                <strong style="color:#06d6a0;">Global Playlist</strong>. Others stayed on
-                <strong style="color:#e63946;">Local Vinyl</strong>.
+                <strong style="color:#7c9a8e;">Global Playlist</strong>. Others stayed on
+                <strong style="color:#c99e85;">Local Vinyl</strong>.
             </p>
             <p style="font-size:1.15rem; font-weight:700; color:#667eea; margin:0; text-align:center;">
                 🎶 Now Playing: The Name Playlist.
