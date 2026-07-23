@@ -296,10 +296,10 @@ def render():
 # ─── Countryness score ────────────────────
 
 st.markdown("### :convenience_store: What Stayed in the Shop?")
-    st.markdown(
+    st.markdown("
         "Could you read all of those? Probably not — and that's the point. "
         "But before we explore *why*, we need a way to **measure** how locked a name is."
-    )
+    ")
 
 # ─── Formula + Classification side by side ────────────────────
     st.markdown("""
