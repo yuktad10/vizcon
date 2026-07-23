@@ -1,3 +1,8 @@
+"""
+Global Playlist — The Global Playlist Tab
+Part of "Now Playing: The Name Playlist" baby naming data visualization project.
+"""
+
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
@@ -8,8 +13,28 @@ from utils.data_loader import load_metrics, load_summary
 from utils.charts import CHART_LAYOUT, COLORS, COUNTRY_COLORS
 
 
-def render():
-    # Fixed layout — sticky tabs + wider content
+# ─── Color Theme ─────────────────────────────────────────────────────────────
+PURPLE = "#667eea"
+SAGE = "#7c9a8e"
+CORAL = "#c99e85"
+DARK_BG = "#1a1a2e"
+CARD_BG = "#f8f9fa"
+TEXT_DARK = "#2d3436"
+TEXT_MUTED = "#636e72"
+
+
+# ─── Load the detailed per-country data for sparklines ────────────────────────
+@st.cache_data
+def load_all_names():
+    """Load the full per-country yearly dataset for the Track Lookup sparklines."""
+    path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "all-names-long.csv.gz")
+    if not os.path.exists(path):
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "all-names-long.csv.gz")
+    return pd.read_csv(path)
+
+
+# ─── Shared Styles ────────────────────────────────────────────────────────────
+def inject_styles():
     st.markdown("""
     <style>
         .stTabs [data-baseweb="tab-list"] {
@@ -22,63 +47,6 @@ def render():
             max-width: 1200px;
             padding-left: 2rem;
             padding-right: 2rem;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    # ─── Header ───────────────────────────────────────────────────
-    st.markdown(
-        """
-        <div style="background: linear-gradient(135deg, #EEF2FF, #E8F4FD, #F0FFF4); 
-                    border-radius: 16px; padding: 50px 30px; text-align: center; 
-                    margin-bottom: 20px; border: 1px solid #E2E8F0;">
-            <h1 style="font-size: 2.8em; font-weight: 800; color: #2D3748; margin: 0 0 12px 0;">
-                🎧 The Global Playlist
-            </h1>
-            <p style="font-size: 1.5em; color: #4A5568; max-width: 650px; margin: 0 auto; line-height: 1.7;">
-                Featuring the Greatest Hits.<br>
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("---")
-
-"""
-Global Playlist — Convergence Analysis
-Part of "Passport for a Name" baby naming data visualization project.
-"""
-
-# ─── Color Theme ───────────────────────────────────────────────────────────────
-PURPLE = "#667eea"
-SAGE = "#7c9a8e"
-CORAL = "#c99e85"
-DARK_BG = "#1a1a2e"
-CARD_BG = "#f8f9fa"
-TEXT_DARK = "#2d3436"
-TEXT_MUTED = "#636e72"
-
-
-# ─── Shared Styles ─────────────────────────────────────────────────────────────
-def inject_styles():
-    st.markdown("""
-    <style>
-        .playlist-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem 2.5rem;
-            border-radius: 16px;
-            color: white;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-        .playlist-header h1 {
-            margin: 0;
-            font-size: 2.2rem;
-            font-weight: 800;
-        }
-        .playlist-header p {
-            margin: 0.5rem 0 0 0;
-            opacity: 0.85;
-            font-size: 1.05rem;
         }
         .chart-entry {
             display: flex;
@@ -247,11 +215,293 @@ def inject_styles():
             font-size: 0.78rem;
             font-weight: 500;
         }
+        .track-lookup-box {
+            background: linear-gradient(135deg, #EEF2FF, #F0FFF4);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid #E2E8F0;
+            margin-bottom: 1rem;
+        }
+        .vinyl-spin {
+            display: inline-block;
+            animation: spin 3s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
     """, unsafe_allow_html=True)
 
 
-# ─── Section 1: Leaderboard ───────────────────────────────────────────────────
+# ─── Section: Track Lookup (Song-Themed) ─────────────────────────────────────
+def render_track_lookup(df_metrics):
+    """Track Lookup — styled like a music streaming track page with aggregated 1997-2023 data."""
+    st.markdown("""
+    <div class="section-divider">
+        <h2>🔍 Track Lookup</h2>
+        <p>Look up any name — we'll pull up its track info like it's a song on your favourite streaming app</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Search input with music-themed container
+    st.markdown("""
+    <div class="track-lookup-box">
+        <p style="font-size: 1.1em; font-weight: 600; color: #2D3748; margin: 0 0 4px 0;">
+            🎵 Every name is a track. What are you listening to?
+        </p>
+        <p style="font-size: 0.85em; color: #636e72; margin: 0;">
+            Search any name to see its streaming stats, chart history, and which nations have it on repeat.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    search_name = st.text_input(
+        "Search a track",
+        placeholder="e.g. Olivia, Liam, Isabella, Nevaeh...",
+        key="name_search_input",
+        label_visibility="collapsed",
+    )
+
+    if search_name:
+        search_name_clean = search_name.strip().capitalize()
+
+        # ─── AGGREGATE across all years (1997–2023) ─────────────────
+        name_all_years = df_metrics[df_metrics["name"].str.upper() == search_name_clean.upper()]
+
+        if name_all_years.empty:
+            st.markdown(f"""
+            <div class="search-result" style="text-align:center; padding: 3rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎵</div>
+                <p style="font-size:1.2rem; color:{TEXT_DARK}; font-weight: 600;">
+                    No track found for "<b>{search_name_clean}</b>"
+                </p>
+                <p style="font-size:0.9rem; color:{TEXT_MUTED};">
+                    This track isn't in our Anglosphere charts (1997–2023). Try another!
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Aggregated stats across all years
+            total_streams = int(name_all_years["total_num_babies_w_name"].sum())
+            avg_countryness = name_all_years["countryness"].mean()
+            min_countryness = name_all_years["countryness"].min()
+            max_countries = int(name_all_years["countries_using_name"].max())
+            peak_country = name_all_years.loc[name_all_years["freq_in_max_country"].idxmax(), "max_country"]
+            years_on_chart = name_all_years["year"].nunique()
+            sex_val = name_all_years["sex"].mode().iloc[0]
+            sex_emoji = "♀️" if sex_val == "F" else "♂️"
+
+            # Peak year (highest total babies)
+            peak_year_row = name_all_years.loc[name_all_years["total_num_babies_w_name"].idxmax()]
+            peak_year = int(peak_year_row["year"])
+            peak_streams = int(peak_year_row["total_num_babies_w_name"])
+
+            # Classification based on average countryness across all years
+            if avg_countryness < 2:
+                badge = '<span class="badge-global">🎧 Global Hit</span>'
+                verdict = "This track topped charts worldwide — a cross-border anthem heard in every corner of the Anglosphere."
+                verdict_emoji = "🔥"
+                genre_tag = "Genre: Global Pop"
+                accent = SAGE
+            elif avg_countryness > 100:
+                badge = '<span class="badge-local">💿 Underground Classic</span>'
+                verdict = "A cult favorite with deep roots in its home country — beloved by locals, unknown abroad."
+                verdict_emoji = "🎸"
+                genre_tag = "Genre: Regional Indie"
+                accent = CORAL
+            elif avg_countryness > 10:
+                badge = '<span class="badge-neutral">📻 Regional Radio Hit</span>'
+                verdict = "This track gets airplay in a few markets but hasn't broken through to the global charts yet."
+                verdict_emoji = "📡"
+                genre_tag = "Genre: Mid-Market"
+                accent = PURPLE
+            else:
+                badge = '<span class="badge-global">🌍 Rising Global Track</span>'
+                verdict = "On the verge of worldwide rotation — gaining listeners across multiple nations."
+                verdict_emoji = "📈"
+                genre_tag = "Genre: Crossover"
+                accent = SAGE
+
+            # All countries where it appeared
+            countries_used = sorted(name_all_years["max_country"].unique().tolist())
+
+            # Chart position (rank by avg countryness across all names)
+            all_names_rank = (
+                df_metrics.groupby("name")["countryness"]
+                .mean()
+                .rank(method="min")
+            )
+            rank_val = int(all_names_rank.get(search_name_clean, all_names_rank.get(search_name_clean.upper(), 0)))
+            total_names = len(all_names_rank)
+
+            # Country pills with peak indicator
+            country_pills_html = ""
+            for c in countries_used[:8]:
+                is_peak = " 👑" if c == peak_country else ""
+                country_pills_html += f'<span class="country-pill">{c}{is_peak}</span>'
+
+            # ─── Render: Album Art Style Result Card ──────────────────────
+            st.markdown(f"""
+            <div class="search-result">
+                <!-- Track title + badge -->
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.5rem; flex-wrap: wrap;">
+                    <h2 style="margin:0; font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;">{search_name_clean} {sex_emoji}</h2>
+                    {badge}
+                </div>
+                <p style="color:{TEXT_MUTED}; margin: 0 0 0.3rem 0; font-size: 0.85rem; font-style: italic;">{genre_tag}</p>
+                <p style="color:{TEXT_DARK}; margin-bottom:1.5rem; font-size: 1.05rem;">
+                    {verdict_emoji} {verdict}
+                </p>
+
+                <!-- Stats grid — "streaming stats" -->
+                <div style="display:grid; grid-template-columns: repeat(2, 1fr) repeat(2, 1fr); gap:1rem; margin:1.5rem 0;
+                            background: linear-gradient(135deg, #f8f9fa, #fff); padding: 1.5rem; border-radius: 16px; border: 1px solid #eee;">
+                    <div style="text-align:center; padding: 0.5rem;">
+                        <div style="font-size:0.7rem; color:{TEXT_MUTED}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🎧 Total Streams</div>
+                        <div style="font-size:1.8rem; font-weight:800; color:{PURPLE};">{total_streams:,}</div>
+                        <div style="font-size:0.7rem; color:{TEXT_MUTED};">babies named (1997–2023)</div>
+                    </div>
+                    <div style="text-align:center; padding: 0.5rem;">
+                        <div style="font-size:0.7rem; color:{TEXT_MUTED}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🌍 Listeners</div>
+                        <div style="font-size:1.8rem; font-weight:800; color:{SAGE};">{max_countries}/8</div>
+                        <div style="font-size:0.7rem; color:{TEXT_MUTED};">countries charting in</div>
+                    </div>
+                    <div style="text-align:center; padding: 0.5rem;">
+                        <div style="font-size:0.7rem; color:{TEXT_MUTED}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">📈 Peak Year</div>
+                        <div style="font-size:1.8rem; font-weight:800; color:{CORAL};">{peak_year}</div>
+                        <div style="font-size:0.7rem; color:{TEXT_MUTED};">{peak_streams:,} streams that year</div>
+                    </div>
+                    <div style="text-align:center; padding: 0.5rem;">
+                        <div style="font-size:0.7rem; color:{TEXT_MUTED}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">📊 Chart Position</div>
+                        <div style="font-size:1.8rem; font-weight:800; color:{TEXT_DARK};">#{rank_val:,}</div>
+                        <div style="font-size:0.7rem; color:{TEXT_MUTED};">of {total_names:,} tracks</div>
+                    </div>
+                </div>
+
+                <!-- Extra stats row -->
+                <div style="display:flex; gap:2rem; margin:1rem 0; padding:0.8rem 1.2rem; background: #fafbfc; border-radius:10px; flex-wrap: wrap;">
+                    <div>
+                        <span style="font-size:0.75rem; color:{TEXT_MUTED};">⏱️ Years on Chart:</span>
+                        <span style="font-weight:700; color:{TEXT_DARK};"> {years_on_chart}</span>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:{TEXT_MUTED};">🎯 Avg Countryness:</span>
+                        <span style="font-weight:700; color:{TEXT_DARK};"> {avg_countryness:.2f}</span>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:{TEXT_MUTED};">🏆 Best Score:</span>
+                        <span style="font-weight:700; color:{TEXT_DARK};"> {min_countryness:.2f}</span>
+                    </div>
+                </div>
+
+                <!-- Countries (listeners) -->
+                <div style="margin-top:1rem;">
+                    <div style="font-size:0.8rem; color:{TEXT_MUTED}; margin-bottom:0.4rem;">
+                        🔊 Streaming in {max_countries} markets <span style="font-size:0.7rem;">(👑 = #1 market)</span>
+                    </div>
+                    <div class="country-pills">{country_pills_html}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # ─── Chart History: Multi-country sparkline ──────────────────
+            st.markdown(f"""
+            <div style="margin-top: 1.5rem; padding: 0.8rem 0;">
+                <p style="font-size: 0.95rem; font-weight: 600; color: {TEXT_DARK}; margin: 0;">
+                    📈 Streaming History — <b>{search_name_clean}</b> across nations (1997–2023)
+                </p>
+                <p style="font-size: 0.78rem; color: {TEXT_MUTED}; margin: 4px 0 0 0;">
+                    Each line = one country's yearly "streams" (births per 1,000)
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            try:
+                df_all = load_all_names()
+                name_data = df_all[df_all["name"].str.upper() == search_name_clean.upper()]
+
+                if not name_data.empty:
+                    # Aggregate by year + country
+                    trend = (
+                        name_data.groupby(["year", "country"])["proportion"]
+                        .sum()
+                        .reset_index()
+                    )
+
+                    # Plotly multi-line chart
+                    fig = go.Figure()
+
+                    countries_in_data = sorted(trend["country"].unique())
+
+                    # Palette
+                    color_palette = [
+                        "#667eea", "#7c9a8e", "#c99e85", "#e63946",
+                        "#457b9d", "#2a9d8f", "#e9c46a", "#264653"
+                    ]
+
+                    for idx, country in enumerate(countries_in_data):
+                        ct = trend[trend["country"] == country]
+                        color = COUNTRY_COLORS.get(country, color_palette[idx % len(color_palette)])
+                        fig.add_trace(go.Scatter(
+                            x=ct["year"],
+                            y=ct["proportion"] * 1000,  # per 1000 births
+                            mode="lines",
+                            name=country,
+                            line=dict(width=2.5, color=color, shape="spline"),
+                            hovertemplate=f"<b>{country}</b><br>Year: %{{x}}<br>Streams: %{{y:.2f}} per 1,000<extra></extra>",
+                        ))
+
+                    fig.update_layout(
+                        plot_bgcolor="white",
+                        paper_bgcolor="white",
+                        font=dict(family="Inter, sans-serif", color=TEXT_DARK, size=12),
+                        xaxis=dict(
+                            title="",
+                            showgrid=False,
+                            dtick=5,
+                            tickfont=dict(size=10),
+                        ),
+                        yaxis=dict(
+                            title="Streams per 1,000",
+                            showgrid=True,
+                            gridcolor="rgba(0,0,0,0.05)",
+                            zeroline=False,
+                            tickfont=dict(size=10),
+                        ),
+                        margin=dict(l=50, r=20, t=20, b=40),
+                        height=340,
+                        hovermode="x unified",
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=-0.35,
+                            xanchor="center",
+                            x=0.5,
+                            font=dict(size=10),
+                        ),
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.caption("📊 Streaming history not available for this track.")
+            except Exception:
+                st.caption("📊 Streaming history requires the full dataset.")
+
+    else:
+        # Empty state — spinning vinyl with suggestions
+        st.markdown(f"""
+        <div style="text-align: center; padding: 2.5rem 1rem; color: {TEXT_MUTED};">
+            <div style="font-size: 3rem; margin-bottom: 1rem;"><span class="vinyl-spin">💿</span></div>
+            <p style="font-size: 1.05rem; margin: 0 0 0.5rem 0; font-weight: 500;">Drop a name in the search bar above</p>
+            <p style="font-size: 0.85rem; margin: 0; color: {TEXT_MUTED};">
+                Try <b>Isabella</b> (global #1 hit), <b>Raewyn</b> (underground NZ classic), or <b>your own name</b>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+# ─── Section: Leaderboard ─────────────────────────────────────────────────────
 def render_leaderboard(df):
     st.markdown("""
     <div class="section-divider">
@@ -305,7 +555,7 @@ def render_leaderboard(df):
     st.markdown(entries_html, unsafe_allow_html=True)
 
 
-# ─── Section 2: Convergence Timeline ──────────────────────────────────────────
+# ─── Section: Convergence Timeline ───────────────────────────────────────────
 def render_convergence_timeline(df):
     st.markdown("""
     <div class="section-divider">
@@ -344,9 +594,13 @@ def render_convergence_timeline(df):
     ))
 
     # Annotation
+    mid_year = 2010
+    mid_val = yearly_avg[yearly_avg["year"] == mid_year]["avg_countryness"].values
+    mid_val = mid_val[0] if len(mid_val) > 0 else yearly_avg["avg_countryness"].median()
+
     fig.add_annotation(
-        x=2010,
-        y=yearly_avg[yearly_avg["year"] == 2010]["avg_countryness"].values[0] if 2010 in yearly_avg["year"].values else yearly_avg["avg_countryness"].median(),
+        x=mid_year,
+        y=mid_val,
         text=f"↓ {pct_drop:.0f}% drop in countryness<br><i>Names are converging globally</i>",
         showarrow=True,
         arrowhead=2,
@@ -410,94 +664,7 @@ def render_convergence_timeline(df):
         """, unsafe_allow_html=True)
 
 
-# ─── Section 3: Interactive Search ─────────────────────────────────────────────
-def render_interactive_search(df):
-    st.markdown("""
-    <div class="section-divider">
-        <h2>🔍 Track Lookup</h2>
-        <p>Search any name to see if it's on the Global Playlist or pressed on Local Vinyl</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    search_name = st.text_input(
-        "🎵 Type a name to look up",
-        placeholder="e.g. Olivia, Liam, Isabella...",
-        key="name_search_input",
-    )
-
-    if search_name:
-        search_name_upper = search_name.strip().capitalize()
-        latest_year = df["year"].max()
-        matches = df[(df["name"].str.upper() == search_name_upper.upper()) & (df["year"] == latest_year)]
-
-        if matches.empty:
-            # Try any year
-            matches = df[df["name"].str.upper() == search_name_upper.upper()]
-
-        if matches.empty:
-            st.markdown(f"""
-            <div class="search-result" style="text-align:center;">
-                <p style="font-size:1.2rem; color:{TEXT_MUTED};">🎵 No track found for "<b>{search_name_upper}</b>"</p>
-                <p style="font-size:0.9rem; color:{TEXT_MUTED};">This name isn't in our Anglosphere charts. Try another!</p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            # Take the row with lowest countryness (best global score)
-            best = matches.loc[matches["countryness"].idxmin()]
-            countryness_val = best["countryness"]
-            countries_count = int(best["countries_using_name"])
-            sex_emoji = "♀️" if best["sex"] == "F" else "♂️"
-            total_babies = int(best["total_num_babies_w_name"]) if pd.notna(best["total_num_babies_w_name"]) else 0
-
-            # Determine badge
-            if countryness_val < 2:
-                badge = '<span class="badge-global">🌍 On the Global Playlist</span>'
-                verdict = "This name is a worldwide hit — equally loved across all nations!"
-            elif countryness_val > 100:
-                badge = '<span class="badge-local">🎵 Local Vinyl Only</span>'
-                verdict = "This name is a regional classic — beloved in its home country but rare elsewhere."
-            else:
-                badge = '<span class="badge-neutral">📀 Mid-Chart Contender</span>'
-                verdict = "This name has some international appeal but hasn't gone fully global yet."
-
-            # Get countries where it's used (from max_country as primary indicator)
-            name_rows = df[df["name"].str.upper() == search_name_upper.upper()]
-            countries_used = name_rows["max_country"].unique().tolist()
-
-            country_pills_html = ""
-            for c in sorted(countries_used)[:8]:
-                country_pills_html += f'<span class="country-pill">{c}</span>'
-
-            st.markdown(f"""
-            <div class="search-result">
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
-                    <h3 style="margin:0;">{search_name_upper} {sex_emoji}</h3>
-                    {badge}
-                </div>
-                <p style="color:{TEXT_MUTED}; margin-bottom:1rem;">{verdict}</p>
-                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; margin:1rem 0;">
-                    <div style="text-align:center;">
-                        <div style="font-size:1.5rem; font-weight:800; color:{PURPLE};">{countryness_val:.2f}</div>
-                        <div style="font-size:0.75rem; color:{TEXT_MUTED};">Countryness Score</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:1.5rem; font-weight:800; color:{SAGE};">{countries_count}</div>
-                        <div style="font-size:0.75rem; color:{TEXT_MUTED};">Countries Using It</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:1.5rem; font-weight:800; color:{CORAL};">{total_babies:,}</div>
-                        <div style="font-size:0.75rem; color:{TEXT_MUTED};">Total Babies</div>
-                    </div>
-                </div>
-                <div style="margin-top:1rem;">
-                    <div style="font-size:0.8rem; color:{TEXT_MUTED}; margin-bottom:0.4rem;">Charting in:</div>
-                    <div class="country-pills">{country_pills_html}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-
-# ─── Section 4: Insights Infographic ──────────────────────────────────────────
+# ─── Section: Insights Infographic ────────────────────────────────────────────
 def render_insights():
     st.markdown("""
     <div class="section-divider">
@@ -572,26 +739,34 @@ def render_insights():
 def render():
     inject_styles()
 
-    # Page header
-    st.markdown("""
-    <div class="playlist-header">
-        <h1>🎧 The Global Playlist</h1>
-        <p>Which baby names are worldwide chart-toppers, and which stay pressed on local vinyl?
-        Exploring convergence across 8 English-speaking nations.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    # ─── Header ───────────────────────────────────────────────────
+    st.markdown(
+        """
+        <div style="background: linear-gradient(135deg, #EEF2FF, #E8F4FD, #F0FFF4); 
+                    border-radius: 16px; padding: 50px 30px; text-align: center; 
+                    margin-bottom: 20px; border: 1px solid #E2E8F0;">
+            <h1 style="font-size: 2.8em; font-weight: 800; color: #2D3748; margin: 0 0 12px 0;">
+                🎧 The Global Playlist
+            </h1>
+            <p style="font-size: 1.5em; color: #4A5568; max-width: 650px; margin: 0 auto; line-height: 1.7;">
+                Featuring the Greatest Hits.<br>
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("---")
 
     # Load data
     df = load_metrics()
 
-    # Render all four sections
+    # Section order: Track Lookup first (interactive), then the rest
+    render_track_lookup(df)
     render_leaderboard(df)
     render_convergence_timeline(df)
-    render_interactive_search(df)
     render_insights()
 
 
 # Allow running standalone
 if __name__ == "__main__":
     render()
-
