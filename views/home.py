@@ -17,6 +17,22 @@ def render():
     year_max = df["year"].max()
     total_records = len(df)
 
+    #  ───Fixed layout — sticky tabs + wider content  ─────────────────────────────────────────────
+    st.markdown("""
+    <style>
+        .stTabs [data-baseweb="tab-list"] {
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            background: #F0F8FF;
+        }
+        .block-container {
+            max-width: 1200px;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     # ─── Hero Section ─────────────────────────────────────────────
     st.markdown(
         """
