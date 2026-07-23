@@ -246,7 +246,8 @@ def render_track_lookup(df_metrics):
 
     # Search input with music-themed container
     st.markdown("""
-    <div class="track-lookup-box">
+    <div style="background: linear-gradient(135deg, #EEF2FF, #F0FFF4);
+                border-radius: 16px; padding: 2rem; border: 1px solid #E2E8F0; margin-bottom: 1rem;">
         <p style="font-size: 1.1em; font-weight: 600; color: #2D3748; margin: 0 0 4px 0;">
             🎵 Every name is a track. What are you listening to?
         </p>
@@ -271,12 +272,13 @@ def render_track_lookup(df_metrics):
 
         if name_all_years.empty:
             st.markdown(f"""
-            <div class="search-result" style="text-align:center; padding: 3rem;">
+            <div style="background: white; border-radius: 16px; padding: 3rem; border: 1px solid #eee;
+                        box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin-top: 1rem; text-align:center;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">🎵</div>
-                <p style="font-size:1.2rem; color:{TEXT_DARK}; font-weight: 600;">
+                <p style="font-size:1.2rem; color:#2d3436; font-weight: 600;">
                     No track found for "<b>{search_name_clean}</b>"
                 </p>
-                <p style="font-size:0.9rem; color:{TEXT_MUTED};">
+                <p style="font-size:0.9rem; color:#636e72;">
                     This track isn't in our Anglosphere charts (1997–2023). Try another!
                 </p>
             </div>
@@ -299,29 +301,29 @@ def render_track_lookup(df_metrics):
 
             # Classification based on average countryness across all years
             if avg_countryness < 2:
-                badge = '<span class="badge-global">🎧 Global Hit</span>'
+                badge_text = "🎧 Global Hit"
+                badge_class = "badge-global"
                 verdict = "This track topped charts worldwide — a cross-border anthem heard in every corner of the Anglosphere."
                 verdict_emoji = "🔥"
                 genre_tag = "Genre: Global Pop"
-                accent = SAGE
             elif avg_countryness > 100:
-                badge = '<span class="badge-local">💿 Underground Classic</span>'
+                badge_text = "💿 Underground Classic"
+                badge_class = "badge-local"
                 verdict = "A cult favorite with deep roots in its home country — beloved by locals, unknown abroad."
                 verdict_emoji = "🎸"
                 genre_tag = "Genre: Regional Indie"
-                accent = CORAL
             elif avg_countryness > 10:
-                badge = '<span class="badge-neutral">📻 Regional Radio Hit</span>'
+                badge_text = "📻 Regional Radio Hit"
+                badge_class = "badge-neutral"
                 verdict = "This track gets airplay in a few markets but hasn't broken through to the global charts yet."
                 verdict_emoji = "📡"
                 genre_tag = "Genre: Mid-Market"
-                accent = PURPLE
             else:
-                badge = '<span class="badge-global">🌍 Rising Global Track</span>'
+                badge_text = "🌍 Rising Global Track"
+                badge_class = "badge-global"
                 verdict = "On the verge of worldwide rotation — gaining listeners across multiple nations."
                 verdict_emoji = "📈"
                 genre_tag = "Genre: Crossover"
-                accent = SAGE
 
             # All countries where it appeared
             countries_used = sorted(name_all_years["max_country"].unique().tolist())
@@ -335,83 +337,90 @@ def render_track_lookup(df_metrics):
             rank_val = int(all_names_rank.get(search_name_clean, all_names_rank.get(search_name_clean.upper(), 0)))
             total_names = len(all_names_rank)
 
-            # Country pills with peak indicator
-            country_pills_html = ""
-            for c in countries_used[:8]:
-                is_peak = " 👑" if c == peak_country else ""
-                country_pills_html += f'<span class="country-pill">{c}{is_peak}</span>'
-
-            # ─── Render: Album Art Style Result Card ──────────────────────
+            # ─── Track title + badge + verdict ─────────────────────────
             st.markdown(f"""
-            <div class="search-result">
-                <!-- Track title + badge -->
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.5rem; flex-wrap: wrap;">
-                    <h2 style="margin:0; font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;">{search_name_clean} {sex_emoji}</h2>
-                    {badge}
+            <div style="background: white; border-radius: 16px; padding: 2rem; border: 1px solid #eee;
+                        box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin-top: 1rem;">
+                <div style="margin-bottom:0.5rem;">
+                    <span style="font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;">{search_name_clean} {sex_emoji}</span>
+                    <span class="{badge_class}" style="margin-left: 0.8rem;">{badge_text}</span>
                 </div>
-                <p style="color:{TEXT_MUTED}; margin: 0 0 0.3rem 0; font-size: 0.85rem; font-style: italic;">{genre_tag}</p>
-                <p style="color:{TEXT_DARK}; margin-bottom:1.5rem; font-size: 1.05rem;">
+                <p style="color:#636e72; margin: 0 0 0.3rem 0; font-size: 0.85rem; font-style: italic;">{genre_tag}</p>
+                <p style="color:#2d3436; margin-bottom:0; font-size: 1.05rem;">
                     {verdict_emoji} {verdict}
                 </p>
+            </div>
+            """, unsafe_allow_html=True)
 
-                <!-- Stats grid — "streaming stats" -->
-                <div style="display:grid; grid-template-columns: repeat(2, 1fr) repeat(2, 1fr); gap:1rem; margin:1.5rem 0;
-                            background: linear-gradient(135deg, #f8f9fa, #fff); padding: 1.5rem; border-radius: 16px; border: 1px solid #eee;">
-                    <div style="text-align:center; padding: 0.5rem;">
-                        <div style="font-size:0.7rem; color:{TEXT_MUTED}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🎧 Total Streams</div>
-                        <div style="font-size:1.8rem; font-weight:800; color:{PURPLE};">{total_streams:,}</div>
-                        <div style="font-size:0.7rem; color:{TEXT_MUTED};">babies named (1997–2023)</div>
-                    </div>
-                    <div style="text-align:center; padding: 0.5rem;">
-                        <div style="font-size:0.7rem; color:{TEXT_MUTED}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🌍 Listeners</div>
-                        <div style="font-size:1.8rem; font-weight:800; color:{SAGE};">{max_countries}/8</div>
-                        <div style="font-size:0.7rem; color:{TEXT_MUTED};">countries charting in</div>
-                    </div>
-                    <div style="text-align:center; padding: 0.5rem;">
-                        <div style="font-size:0.7rem; color:{TEXT_MUTED}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">📈 Peak Year</div>
-                        <div style="font-size:1.8rem; font-weight:800; color:{CORAL};">{peak_year}</div>
-                        <div style="font-size:0.7rem; color:{TEXT_MUTED};">{peak_streams:,} streams that year</div>
-                    </div>
-                    <div style="text-align:center; padding: 0.5rem;">
-                        <div style="font-size:0.7rem; color:{TEXT_MUTED}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">📊 Chart Position</div>
-                        <div style="font-size:1.8rem; font-weight:800; color:{TEXT_DARK};">#{rank_val:,}</div>
-                        <div style="font-size:0.7rem; color:{TEXT_MUTED};">of {total_names:,} tracks</div>
-                    </div>
+            # ─── Stats grid using st.columns (Streamlit-safe) ──────────
+            st.markdown('<div style="height: 1rem;"></div>', unsafe_allow_html=True)
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                st.markdown(f"""
+                <div style="text-align:center; padding:1rem; background:white; border-radius:12px; border:1px solid #eee;">
+                    <div style="font-size:0.65rem; color:#636e72; text-transform:uppercase; letter-spacing:1px;">🎧 Total Streams</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#667eea; margin:0.3rem 0;">{total_streams:,}</div>
+                    <div style="font-size:0.7rem; color:#636e72;">babies (1997–2023)</div>
                 </div>
+                """, unsafe_allow_html=True)
+            with c2:
+                st.markdown(f"""
+                <div style="text-align:center; padding:1rem; background:white; border-radius:12px; border:1px solid #eee;">
+                    <div style="font-size:0.65rem; color:#636e72; text-transform:uppercase; letter-spacing:1px;">🌍 Listeners</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#7c9a8e; margin:0.3rem 0;">{max_countries}/8</div>
+                    <div style="font-size:0.7rem; color:#636e72;">countries charting</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with c3:
+                st.markdown(f"""
+                <div style="text-align:center; padding:1rem; background:white; border-radius:12px; border:1px solid #eee;">
+                    <div style="font-size:0.65rem; color:#636e72; text-transform:uppercase; letter-spacing:1px;">📈 Peak Year</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#c99e85; margin:0.3rem 0;">{peak_year}</div>
+                    <div style="font-size:0.7rem; color:#636e72;">{peak_streams:,} streams</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with c4:
+                st.markdown(f"""
+                <div style="text-align:center; padding:1rem; background:white; border-radius:12px; border:1px solid #eee;">
+                    <div style="font-size:0.65rem; color:#636e72; text-transform:uppercase; letter-spacing:1px;">📊 Chart Rank</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#2d3436; margin:0.3rem 0;">#{rank_val:,}</div>
+                    <div style="font-size:0.7rem; color:#636e72;">of {total_names:,} tracks</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-                <!-- Extra stats row -->
-                <div style="display:flex; gap:2rem; margin:1rem 0; padding:0.8rem 1.2rem; background: #fafbfc; border-radius:10px; flex-wrap: wrap;">
-                    <div>
-                        <span style="font-size:0.75rem; color:{TEXT_MUTED};">⏱️ Years on Chart:</span>
-                        <span style="font-weight:700; color:{TEXT_DARK};"> {years_on_chart}</span>
-                    </div>
-                    <div>
-                        <span style="font-size:0.75rem; color:{TEXT_MUTED};">🎯 Avg Countryness:</span>
-                        <span style="font-weight:700; color:{TEXT_DARK};"> {avg_countryness:.2f}</span>
-                    </div>
-                    <div>
-                        <span style="font-size:0.75rem; color:{TEXT_MUTED};">🏆 Best Score:</span>
-                        <span style="font-weight:700; color:{TEXT_DARK};"> {min_countryness:.2f}</span>
-                    </div>
-                </div>
+            # ─── Extra stats + countries using st.columns ──────────────
+            st.markdown('<div style="height: 0.5rem;"></div>', unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style="background:#fafbfc; border-radius:10px; padding:0.8rem 1.2rem; margin:0.5rem 0;">
+                <span style="font-size:0.78rem; color:#636e72;">⏱️ Years on Chart: </span><span style="font-weight:700;">{years_on_chart}</span>
+                <span style="margin:0 1rem; color:#ddd;">|</span>
+                <span style="font-size:0.78rem; color:#636e72;">🎯 Avg Countryness: </span><span style="font-weight:700;">{avg_countryness:.2f}</span>
+                <span style="margin:0 1rem; color:#ddd;">|</span>
+                <span style="font-size:0.78rem; color:#636e72;">🏆 Best Score: </span><span style="font-weight:700;">{min_countryness:.2f}</span>
+            </div>
+            """, unsafe_allow_html=True)
 
-                <!-- Countries (listeners) -->
-                <div style="margin-top:1rem;">
-                    <div style="font-size:0.8rem; color:{TEXT_MUTED}; margin-bottom:0.4rem;">
-                        🔊 Streaming in {max_countries} markets <span style="font-size:0.7rem;">(👑 = #1 market)</span>
-                    </div>
-                    <div class="country-pills">{country_pills_html}</div>
+            # Countries as simple inline spans (no flex needed)
+            country_pills_html = " ".join(
+                f'<span style="background:#f0f2f5; color:#2d3436; padding:0.25rem 0.7rem; border-radius:12px; font-size:0.78rem; font-weight:500; margin:0.2rem; display:inline-block;">{c}{" 👑" if c == peak_country else ""}</span>'
+                for c in countries_used[:8]
+            )
+            st.markdown(f"""
+            <div style="margin-top:0.8rem;">
+                <div style="font-size:0.8rem; color:#636e72; margin-bottom:0.4rem;">
+                    🔊 Streaming in {max_countries} markets <span style="font-size:0.7rem;">(👑 = #1 market)</span>
                 </div>
+                <div>{country_pills_html}</div>
             </div>
             """, unsafe_allow_html=True)
 
             # ─── Chart History: Multi-country sparkline ──────────────────
             st.markdown(f"""
             <div style="margin-top: 1.5rem; padding: 0.8rem 0;">
-                <p style="font-size: 0.95rem; font-weight: 600; color: {TEXT_DARK}; margin: 0;">
+                <p style="font-size: 0.95rem; font-weight: 600; color: #2d3436; margin: 0;">
                     📈 Streaming History — <b>{search_name_clean}</b> across nations (1997–2023)
                 </p>
-                <p style="font-size: 0.78rem; color: {TEXT_MUTED}; margin: 4px 0 0 0;">
+                <p style="font-size: 0.78rem; color: #636e72; margin: 4px 0 0 0;">
                     Each line = one country's yearly "streams" (births per 1,000)
                 </p>
             </div>
@@ -431,10 +440,7 @@ def render_track_lookup(df_metrics):
 
                     # Plotly multi-line chart
                     fig = go.Figure()
-
                     countries_in_data = sorted(trend["country"].unique())
-
-                    # Palette
                     color_palette = [
                         "#667eea", "#7c9a8e", "#c99e85", "#e63946",
                         "#457b9d", "#2a9d8f", "#e9c46a", "#264653"
@@ -445,7 +451,7 @@ def render_track_lookup(df_metrics):
                         color = COUNTRY_COLORS.get(country, color_palette[idx % len(color_palette)])
                         fig.add_trace(go.Scatter(
                             x=ct["year"],
-                            y=ct["proportion"] * 1000,  # per 1000 births
+                            y=ct["proportion"] * 1000,
                             mode="lines",
                             name=country,
                             line=dict(width=2.5, color=color, shape="spline"),
@@ -455,13 +461,8 @@ def render_track_lookup(df_metrics):
                     fig.update_layout(
                         plot_bgcolor="white",
                         paper_bgcolor="white",
-                        font=dict(family="Inter, sans-serif", color=TEXT_DARK, size=12),
-                        xaxis=dict(
-                            title="",
-                            showgrid=False,
-                            dtick=5,
-                            tickfont=dict(size=10),
-                        ),
+                        font=dict(family="Inter, sans-serif", color="#2d3436", size=12),
+                        xaxis=dict(title="", showgrid=False, dtick=5, tickfont=dict(size=10)),
                         yaxis=dict(
                             title="Streams per 1,000",
                             showgrid=True,
@@ -489,12 +490,12 @@ def render_track_lookup(df_metrics):
                 st.caption("📊 Streaming history requires the full dataset.")
 
     else:
-        # Empty state — spinning vinyl with suggestions
-        st.markdown(f"""
-        <div style="text-align: center; padding: 2.5rem 1rem; color: {TEXT_MUTED};">
-            <div style="font-size: 3rem; margin-bottom: 1rem;"><span class="vinyl-spin">💿</span></div>
+        # Empty state
+        st.markdown("""
+        <div style="text-align: center; padding: 2.5rem 1rem; color: #636e72;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">💿</div>
             <p style="font-size: 1.05rem; margin: 0 0 0.5rem 0; font-weight: 500;">Drop a name in the search bar above</p>
-            <p style="font-size: 0.85rem; margin: 0; color: {TEXT_MUTED};">
+            <p style="font-size: 0.85rem; margin: 0; color: #636e72;">
                 Try <b>Isabella</b> (global #1 hit), <b>Raewyn</b> (underground NZ classic), or <b>your own name</b>
             </p>
         </div>
