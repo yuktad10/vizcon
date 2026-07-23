@@ -25,10 +25,10 @@ def render():
                        background: linear-gradient(135deg, #667eea, #764ba2);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        margin-bottom: 5px;">
-                Passport for a Name <span style="-webkit-text-fill-color: initial;">✈️</span>
+                <span style="-webkit-text-fill-color: initial;">🎶</span> Now Playing: The Name Playlist
             </h1>
             <p style="font-size:1.05em; color:#6b7280; max-width:700px; margin:0 auto;">
-                Some names travel the world. Others never leave home.
+                Where names become hits—or hidden gems.
             </p>
         </div>
         """,
@@ -44,11 +44,11 @@ def render():
             border-radius:10px;
             box-shadow: 0 4px 20px rgba(102,126,234,0.1);">
             <p style="font-size:1.05em; color:#374151; line-height:1.6; margin:0;">
-                Eight nations. One language. The tightest alliance in modern history. They share armies. Intelligence. Borders.
-                &nbsp;&nbsp;But do they share something as simple as... <strong style="color:#667eea;">a baby name?</strong>
+                Eight nations. One language. Centuries of shared history. Close allies. Shared intelligence. Shared defense.
+                &nbsp;&nbsp;But do they share something as simple as… <strong style="color:#667eea;">a baby name?</strong>
             </p>
             <p style="font-size:1.2em; font-weight:700; color:#667eea; margin:12px 0 0; text-align:center;">
-                This is THAT STORY.
+                This is that story.
             </p>
         </div>
         """,
