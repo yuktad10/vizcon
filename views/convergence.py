@@ -438,8 +438,11 @@ def render_leaderboard(df):
     st.markdown("---")
     st.markdown("""
     <h2 style="margin: 0 0 4px 0;">🏆 The Global 6</h2>
-    <p style="font-size: 0.95em; color: #636e72; margin: 0 0 1.5rem 0;">
+    <p style="font-size: 0.95em; color: #636e72; margin: 0 0 0.3rem 0;">
         The six biggest cross-border anthems — names that charted equally in all 8 nations. No single home country. Pure global hits.
+    </p>
+    <p style="font-size: 0.78em; color: #999; font-style: italic; margin: 0 0 1.5rem 0;">
+        ⓘ Ranked purely by countryness score — the lower the score, the more equally a name is distributed across all nations.
     </p>
     """, unsafe_allow_html=True)
 
@@ -455,14 +458,23 @@ def render_leaderboard(df):
 
     from streamlit.components.v1 import html as st_html
 
-    # Concert poster colors — each name gets a unique gradient
+    # Concert poster themes — music-inspired
     poster_themes = [
-        {"bg": "linear-gradient(135deg, #667eea, #764ba2)", "accent": "#ffd700"},  # Purple/gold
-        {"bg": "linear-gradient(135deg, #1a1a2e, #16213e)", "accent": "#00d4ff"},  # Dark navy/cyan
-        {"bg": "linear-gradient(135deg, #2d3436, #636e72)", "accent": "#ff6b6b"},  # Charcoal/coral
-        {"bg": "linear-gradient(135deg, #0f3443, #34e89e)", "accent": "#ffffff"},  # Teal/green
-        {"bg": "linear-gradient(135deg, #4a1942, #c74b50)", "accent": "#ffd700"},  # Plum/rose
-        {"bg": "linear-gradient(135deg, #141e30, #243b55)", "accent": "#e9c46a"},  # Midnight/gold
+        {"bg": "linear-gradient(135deg, #667eea, #764ba2)", "accent": "#ffd700", "genre": "Pop Anthem", "label": "PLATINUM"},
+        {"bg": "linear-gradient(135deg, #1a1a2e, #16213e)", "accent": "#00d4ff", "genre": "Alt-Rock", "label": "WORLD TOUR"},
+        {"bg": "linear-gradient(135deg, #2d3436, #636e72)", "accent": "#ff6b6b", "genre": "Indie", "label": "SOLD OUT"},
+        {"bg": "linear-gradient(135deg, #0f3443, #34e89e)", "accent": "#ffffff", "genre": "Electronic", "label": "RISING"},
+        {"bg": "linear-gradient(135deg, #4a1942, #c74b50)", "accent": "#ffd700", "genre": "Classic Rock", "label": "LEGENDARY"},
+        {"bg": "linear-gradient(135deg, #141e30, #243b55)", "accent": "#e9c46a", "genre": "R&B Soul", "label": "NEW WAVE"},
+    ]
+
+    taglines = [
+        "The #1 hit everywhere, all the time",
+        "Breaking borders at record speed",
+        "Strength in every market",
+        "Quietly conquering the charts",
+        "A timeless classic on repeat",
+        "The smoothest global groove",
     ]
 
     posters_html = ""
@@ -472,38 +484,44 @@ def render_leaderboard(df):
         sex_emoji = "♀️" if row["sex"] == "F" else "♂️"
         total = f"{int(row['total_babies_with_name']):,}"
         score = f"{row['countryness']:.3f}"
-        
-        # Taglines for each
-        taglines = [
-            "The most borderless name on Earth",
-            "Rising fast across all frontiers",
-            "A modern classic going global",
-            "The quiet chart-climber",
-            "A timeless anthem everywhere",
-            "Soft, universal, unstoppable",
-        ]
 
         posters_html += f"""
-        <div style="flex:1; min-width:160px; max-width:200px;">
-            <div style="background:{theme['bg']}; border-radius:14px; padding:1.3rem 1rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.2); position:relative; overflow:hidden;">
-                <!-- Rank badge -->
-                <div style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.15); border-radius:8px; padding:2px 8px;">
-                    <span style="font-size:0.7rem; color:rgba(255,255,255,0.8); font-weight:700;">#{rank}</span>
+        <div style="flex:1; min-width:155px; max-width:190px;">
+            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.25); position:relative; overflow:hidden; height:280px;">
+                <!-- Label ribbon -->
+                <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); border-radius:6px; padding:2px 7px;">
+                    <span style="font-size:0.55rem; color:rgba(255,255,255,0.9); font-weight:700; letter-spacing:1px;">{theme['label']}</span>
                 </div>
-                <!-- Star decoration -->
-                <div style="font-size:0.9rem; color:{theme['accent']}; margin-bottom:0.3rem;">✦ ✦ ✦</div>
+                <!-- Rank -->
+                <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.3); border-radius:6px; padding:2px 7px;">
+                    <span style="font-size:0.7rem; color:white; font-weight:700;">#{rank}</span>
+                </div>
+                
+                <!-- Vinyl icon -->
+                <div style="font-size:2rem; margin:0.8rem 0 0.2rem 0;">💿</div>
+                
                 <!-- Name -->
-                <div style="font-size:1.5rem; font-weight:900; color:white; letter-spacing:-0.5px; margin:0.4rem 0;">{row['name']}</div>
-                <div style="font-size:0.7rem; color:rgba(255,255,255,0.6); font-style:italic; margin-bottom:0.8rem;">"{taglines[i]}"</div>
-                <!-- Stats -->
-                <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:0.5rem; margin-top:0.5rem;">
-                    <div style="font-size:0.65rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:1px;">🌍 8 countries</div>
-                    <div style="font-size:1.1rem; font-weight:800; color:{theme['accent']}; margin:0.2rem 0;">{total}</div>
-                    <div style="font-size:0.6rem; color:rgba(255,255,255,0.5);">streams worldwide</div>
+                <div style="font-size:1.4rem; font-weight:900; color:white; letter-spacing:-0.5px; margin:0.2rem 0;">{row['name']}</div>
+                <div style="font-size:0.65rem; color:{theme['accent']}; font-weight:600; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:0.2rem;">{theme['genre']}</div>
+                
+                <!-- Tagline -->
+                <div style="font-size:0.62rem; color:rgba(255,255,255,0.6); font-style:italic; margin-bottom:0.8rem; padding:0 0.3rem;">"{taglines[i]}"</div>
+                
+                <!-- Stats panel -->
+                <div style="background:rgba(0,0,0,0.25); border-radius:8px; padding:0.5rem 0.4rem; margin:0 0.2rem;">
+                    <div style="font-size:1.2rem; font-weight:800; color:{theme['accent']};">{total}</div>
+                    <div style="font-size:0.55rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.5px;">total plays • 8 countries</div>
                 </div>
-                <!-- Score -->
-                <div style="margin-top:0.6rem; font-size:0.7rem; color:rgba(255,255,255,0.5);">
-                    Score: <span style="color:{theme['accent']}; font-weight:700;">{score}</span>
+                
+                <!-- Equalizer bars decoration -->
+                <div style="margin-top:0.6rem; display:flex; justify-content:center; gap:2px; align-items:flex-end; height:18px;">
+                    <div style="width:3px; height:8px; background:{theme['accent']}; border-radius:1px; opacity:0.6;"></div>
+                    <div style="width:3px; height:14px; background:{theme['accent']}; border-radius:1px; opacity:0.8;"></div>
+                    <div style="width:3px; height:18px; background:{theme['accent']}; border-radius:1px;"></div>
+                    <div style="width:3px; height:12px; background:{theme['accent']}; border-radius:1px; opacity:0.7;"></div>
+                    <div style="width:3px; height:6px; background:{theme['accent']}; border-radius:1px; opacity:0.5;"></div>
+                    <div style="width:3px; height:16px; background:{theme['accent']}; border-radius:1px; opacity:0.9;"></div>
+                    <div style="width:3px; height:10px; background:{theme['accent']}; border-radius:1px; opacity:0.6;"></div>
                 </div>
             </div>
         </div>
@@ -512,14 +530,14 @@ def render_leaderboard(df):
     full_html = f"""
     <html>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center;">
+        <div style="display:flex; gap:0.7rem; flex-wrap:wrap; justify-content:center;">
             {posters_html}
         </div>
     </body>
     </html>
     """
 
-    st_html(full_html, height=340)
+    st_html(full_html, height=330)
 
 
 # ─── Section: Convergence Timeline ───────────────────────────────────────────
