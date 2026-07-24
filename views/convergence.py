@@ -243,8 +243,8 @@ def render_track_lookup(df_metrics):
     
     # Search input with music-themed container
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #EEF2FF, #F0FFF4);
-                border-radius: 16px; padding: 2rem; border: 1px solid #E2E8F0; margin-bottom: 1rem;">
+    <div style="background: linear-gradient(135deg, #f5f0ff, #ede9fe);
+                border-radius: 16px; padding: 1.2rem 1.5rem; border: 1px solid #e2d9f3; margin-bottom: 1rem;">
         <h2 style="margin: 0 0 4px 0;">🔍 Track Lookup</h2>
         <p style="font-size: 1.1em; font-weight: 600; color: #2D3748; margin: 0 0 4px 0;">
             🎵 Every name is a track. What are you listening to?
@@ -640,7 +640,7 @@ def render_media_eras(df):
         arrow = "→" if i < len(era_stats) - 1 else ""
         
         era_cards += f"""
-        <div style="text-align:center; flex:1; min-width: 120px;">
+        <div style="text-align:center; flex:1; min-width: 120px; background:#fffdf5; border-radius:10px; padding:0.8rem 0.3rem; border:1px solid #f5edd8;">
             <div style="font-size:2rem; margin-bottom:0.3rem;">{era['icon']}</div>
             <div style="font-size:0.85rem; font-weight:700; color:#2d3436;">{era['era']}</div>
             <div style="font-size:0.65rem; color:#636e72; margin:0.2rem 0;">{era['years']}</div>
@@ -655,7 +655,7 @@ def render_media_eras(df):
     timeline_html = f"""
     <html>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="background:white; border-radius:16px; padding:2rem; border:1px solid #eee; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #fffbf0, #fff8e8); border-radius:16px; padding:2rem; border:1px solid #f0e6d0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
             <!-- Era cards in a row -->
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.5rem; flex-wrap:wrap;">
                 {era_cards}
