@@ -631,15 +631,16 @@ def render_leaderboard(df):
 
     # Explanation below — plain text, no box
     st.markdown("""
-    <p style="font-size:0.85rem; color:#636e72; margin-top:1.5rem; line-height:1.7;">
+    <p style="font-size:0.85rem; color:#636e72; margin-top:1rem; margin-bottom:0.3rem; line-height:1.7;">
         Ranked by countryness score (lower = more equally spread across nations). A name with fewer total babies can rank higher 
         if it's perfectly balanced — being a small hit <i>everywhere</i> beats being a massive hit in just one place.
     </p>
-    <p style="font-size:0.82rem; color:#999; line-height:1.6; margin-top:0.5rem;">
+    <p style="font-size:0.82rem; color:#999; line-height:1.6; margin-top:0.3rem;">
         Think of it like a song that charts at #20 in every country simultaneously vs one that's #1 in one country but unknown elsewhere — 
         the first one is the true global anthem. A score of 1.0 means perfectly equal usage across all 8 nations.
     </p>
     """, unsafe_allow_html=True)
+    st.markdown("---")
 
 
 # ─── Section: Convergence Timeline ───────────────────────────────────────────
