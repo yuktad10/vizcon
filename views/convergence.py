@@ -1069,8 +1069,6 @@ def render_import_export(df):
         For names that spread to 5+ countries — where do they originate, and who picks them up?
     </p>
     """, unsafe_allow_html=True)
-
-    from streamlit.components.v1 import html as st_html
     
     # Compute flows from data
     df_all = load_all_names()
@@ -1101,205 +1099,77 @@ def render_import_export(df):
     }
     flow_matrix["source"] = flow_matrix["source"].map(name_map)
     flow_matrix["target"] = flow_matrix["target"].map(name_map)
+    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 50]
     
-    # Calculate export/import totals
-    exports = flow_matrix.groupby("source")["n_names"].sum().sort_values(ascending=False)
-    imports = flow_matrix.groupby("target")["n_names"].sum().sort_values(ascending=False)
+    # Node layout matching the reference
+    source_order = ["Canada", "Australia", "Scotland", "Ireland", "NZ", "England", "USA"]
+    target_order = ["England", "Ireland", "Scotland", "Canada", "Australia", "N.Ireland", "NZ"]
     
-    max_export = exports.max()
-    max_import = imports.max()
-    
-    # Country colors and flags
-    country_info = {
-        "USA": {"color": "#3498db"},
-        "England": {"color": "#e74c3c"},
-        "Canada": {"color": "#9b59b6"},
-        "Ireland": {"color": "#f39c12"},
-        "Scotland": {"color": "#2ecc71"},
-        "Australia": {"color": "#1abc9c"},
-        "N.Ireland": {"color": "#00bcd4"},
-        "NZ": {"color": "#e91e63"}
+    node_colors = {
+        "Canada": "#9b59b6",
+        "Australia": "#2ecc71",
+        "Scotland": "#1abc9c",
+        "Ireland": "#f39c12",
+        "NZ": "#e91e63",
+        "England": "#e74c3c",
+        "USA": "#3498db",
+        "N.Ireland": "#00bcd4"
     }
     
-    # Build export bars HTML
-    export_bars = ""
-    for country, count in exports.items():
-        info = country_info.get(country, {"color": "#999", })
-        pct = (count / max_export) * 100
-        export_bars += f"""
-        <div class="bar-row">
-            <div class="bar-label">{country}</div>
-            <div class="bar-track">
-                <div class="bar-fill export" style="width:{pct}%; background:{info['color']};"></div>
-            </div>
-            <div class="bar-value">{count:,}</div>
-        </div>"""
+    all_labels = source_order + target_order
+    n_src = len(source_order)
     
-    # Build import bars HTML
-    import_bars = ""
-    for country, count in imports.items():
-        info = country_info.get(country, {"color": "#999", })
-        pct = (count / max_import) * 100
-        import_bars += f"""
-        <div class="bar-row">
-            <div class="bar-label">{country}</div>
-            <div class="bar-track">
-                <div class="bar-fill import" style="width:{pct}%; background:{info['color']};"></div>
-            </div>
-            <div class="bar-value">{count:,}</div>
-        </div>"""
+    # Even vertical spacing
+    y_sources = [(i + 0.5) / len(source_order) for i in range(len(source_order))]
+    y_targets = [(i + 0.5) / len(target_order) for i in range(len(target_order))]
     
-    chart_html = f"""
-    <html>
-    <head>
-    <style>
-        body {{ margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
-        
-        .container {{
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 16px;
-            padding: 2rem;
-        }}
-        
-        .chart-title {{
-            font-size: 0.7rem;
-            color: #8892b0;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 1.5rem;
-        }}
-        
-        .columns {{
-            display: grid;
-            grid-template-columns: 1fr 40px 1fr;
-            gap: 1rem;
-            align-items: start;
-        }}
-        
-        .column-header {{
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #ccd6f6;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid rgba(255,255,255,0.1);
-        }}
-        
-        .divider {{
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: #4a5568;
-            padding-top: 2.5rem;
-        }}
-        
-        .bar-row {{
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.6rem;
-            gap: 0.5rem;
-        }}
-        
-        .bar-label {{
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #ccd6f6;
-            min-width: 70px;
-            text-align: right;
-        }}
-        
-        .bar-track {{
-            flex: 1;
-            height: 20px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 4px;
-            overflow: hidden;
-        }}
-        
-        .bar-fill {{
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.8s ease;
-        }}
-        
-        .bar-fill.export {{ opacity: 0.85; }}
-        .bar-fill.import {{ opacity: 0.85; }}
-        
-        .bar-value {{
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #8892b0;
-            min-width: 45px;
-        }}
-        
-        .insight-row {{
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.08);
-        }}
-        
-        .insight-chip {{
-            background: rgba(255,255,255,0.06);
-            border-radius: 8px;
-            padding: 0.6rem 1rem;
-            flex: 1;
-            text-align: center;
-        }}
-        
-        .insight-chip .val {{
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #ccd6f6;
-        }}
-        
-        .insight-chip .lbl {{
-            font-size: 0.65rem;
-            color: #8892b0;
-            margin-top: 0.2rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }}
-    </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="chart-title">Name flow between countries (names that spread to 5+ nations)</div>
-            <div class="columns">
-                <div>
-                    <div class="column-header">🎙️ Producers (export names)</div>
-                    {export_bars}
-                </div>
-                <div class="divider">→</div>
-                <div>
-                    <div class="column-header">📻 Players (import names)</div>
-                    {import_bars}
-                </div>
-            </div>
-            <div class="insight-row">
-                <div class="insight-chip">
-                    <div class="val">71%</div>
-                    <div class="lbl">of global names start in USA</div>
-                </div>
-                <div class="insight-chip">
-                    <div class="val">95%</div>
-                    <div class="lbl">come from just 2 countries</div>
-                </div>
-                <div class="insight-chip">
-                    <div class="val">Canada</div>
-                    <div class="lbl">absorbs the most names</div>
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+    # Build links
+    sources = []
+    targets = []
+    values = []
+    link_colors = []
     
-    st_html(chart_html, height=480)
+    for _, row in flow_matrix.iterrows():
+        src = row["source"]
+        tgt = row["target"]
+        if src in source_order and tgt in target_order:
+            sources.append(source_order.index(src))
+            targets.append(n_src + target_order.index(tgt))
+            values.append(row["n_names"])
+            c = node_colors[src]
+            r, g, b = int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16)
+            link_colors.append(f"rgba({r},{g},{b},0.45)")
+    
+    colors = [node_colors[n] for n in source_order] + [node_colors[n] for n in target_order]
+    
+    fig = go.Figure(data=[go.Sankey(
+        arrangement="fixed",
+        node=dict(
+            pad=25,
+            thickness=12,
+            line=dict(color="rgba(0,0,0,0)", width=0),
+            label=all_labels,
+            color=colors,
+            x=[0.01] * n_src + [0.99] * len(target_order),
+            y=y_sources + y_targets
+        ),
+        link=dict(
+            source=sources,
+            target=targets,
+            value=values,
+            color=link_colors
+        )
+    )])
+    
+    fig.update_layout(
+        font=dict(size=12, color="white", family="Arial"),
+        paper_bgcolor="#0d1117",
+        plot_bgcolor="#0d1117",
+        height=400,
+        margin=dict(l=5, r=5, t=10, b=10)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
     
     st.markdown("""
     <p style="font-size:0.82rem; color:#2d3436; margin-top:1rem; line-height:1.6;">
