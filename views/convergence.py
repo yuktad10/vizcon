@@ -243,8 +243,8 @@ def render_track_lookup(df_metrics):
     
     # Search input with music-themed container
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #EEF2FF, #F0FFF4);
-                border-radius: 16px; padding: 1.2rem 1.5rem; border: 1px solid #E2E8F0; margin-bottom: 1rem;">
+    <div style="background: linear-gradient(135deg, #f5f0ff, #ede9fe);
+                border-radius: 16px; padding: 1.2rem 1.5rem; border: 1px solid #e2d9f3; margin-bottom: 1rem;">
         <h2 style="margin: 0 0 4px 0;">🔍 Track Lookup</h2>
         <p style="font-size: 1.1em; font-weight: 600; color: #2D3748; margin: 0 0 4px 0;">
             🎵 Every name is a track. What are you listening to?
