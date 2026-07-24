@@ -1072,111 +1072,36 @@ def render_import_export(df):
     
     from streamlit.components.v1 import html as st_html
     
-    # Compute flows using proportion-based max_country from summary
-    df_summary = load_summary()
-    df_all = load_all_names()
-    
-    # Names in 5+ countries
-    name_countries = df_all.groupby("name")["country"].nunique().reset_index()
-    name_countries.columns = ["name", "n_countries"]
-    global_names_list = name_countries[name_countries["n_countries"] >= 5]["name"].tolist()
-    
-    # Get max_country (proportion-based origin)
-    df_global_summary = df_summary[df_summary["name"].isin(global_names_list)][["name", "max_country"]].copy()
-    
-    # Get countries each name appears in
-    df_global_long = df_all[df_all["name"].isin(global_names_list)]
-    name_country_set = df_global_long.groupby("name")["country"].apply(set).reset_index()
-    name_country_set.columns = ["name", "countries"]
-    
-    df_merged = df_global_summary.merge(name_country_set, on="name")
-    
-    name_map = {
-        "USA": "USA", "England and Wales": "England", "Canada": "Canada",
-        "Australia": "Australia", "Scotland": "Scotland", "Ireland": "Ireland",
-        "Northern Ireland": "N.Ireland", "New Zealand": "NZ"
-    }
-    
-    flow_rows = []
-    for _, row in df_merged.iterrows():
-        src = name_map.get(row["max_country"], row["max_country"])
-        for country in row["countries"]:
-            tgt = name_map.get(country, country)
-            if tgt != src:
-                flow_rows.append({"source": src, "target": tgt})
-    
-    import pandas as pd
-    flow_df = pd.DataFrame(flow_rows)
-    flow_counts = flow_df.groupby(["source", "target"]).size().reset_index(name="n_names")
-    flow_counts = flow_counts[flow_counts["n_names"] >= 400].sort_values("n_names", ascending=False)
-    
-    # Export/import totals
-    all_flows = pd.DataFrame(flow_rows)
-    all_flow_counts = all_flows.groupby(["source", "target"]).size().reset_index(name="n_names")
-    export_totals = all_flow_counts.groupby("source")["n_names"].sum().sort_values(ascending=False)
-    import_totals = all_flow_counts.groupby("target")["n_names"].sum().sort_values(ascending=False)
-    
-    # Build JS data
-    js_flows = ", ".join([f"[\'{row.source}\', \'{row.target}\', {row.n_names}]" for _, row in flow_counts.iterrows()])
-    
-    # Sources for left side (top 5 exporters)
-    top_sources = export_totals.head(5)
-    js_sources = ", ".join([
-        f"{{ name: \'{c}\', exports: {v} }}"
-        for c, v in top_sources.items()
-    ])
-    
-    # All targets for right side
-    js_targets = ", ".join([
-        f"{{ name: \'{c}\', imports: {v} }}"
-        for c, v in import_totals.items()
-    ])
-    
-    max_flow = int(flow_counts["n_names"].max())
-    
-    # Stats
-    total_exp = int(export_totals.sum())
-    usa_pct = int(round(export_totals.get("USA", 0) / total_exp * 100))
-    can_pct = int(round(export_totals.get("Canada", 0) / total_exp * 100))
-    eng_pct = int(round(export_totals.get("England", 0) / total_exp * 100))
-    top_importer = import_totals.idxmax()
-    
-    flow_html = f"""
+    flow_html = """
     <html>
     <head>
     <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ background: transparent; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
-        .container {{ position: relative; background: linear-gradient(135deg, #f8f9fa, #eef2ff); border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; }}
-        canvas {{ display: block; }}
-        
-        .header-row {{
-            display: flex;
-            justify-content: space-between;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .container { position: relative; background: linear-gradient(135deg, #f8f9fa, #eef2ff); border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; }
+        canvas { display: block; }
+        .header-row {
+            display: flex; justify-content: space-between;
             padding: 14px 20px 0;
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            z-index: 2;
-        }}
-        .header-label {{
+            position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+        }
+        .header-label {
             font-size: 10px; font-weight: 700;
             text-transform: uppercase; letter-spacing: 1.5px;
             padding: 4px 10px; border-radius: 6px;
-        }}
-        .header-export {{ color: #9b59b6; background: rgba(155,89,182,0.1); }}
-        .header-import {{ color: #1abc9c; background: rgba(26,188,156,0.1); }}
-        
-        .stats-panel {{
-            position: absolute;
-            bottom: 12px; left: 50%; transform: translateX(-50%);
+        }
+        .header-export { color: #9b59b6; background: rgba(155,89,182,0.1); }
+        .header-import { color: #1abc9c; background: rgba(26,188,156,0.1); }
+        .stats-panel {
+            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 18px;
             background: rgba(255,255,255,0.92);
             border-radius: 10px; padding: 8px 18px;
             border: 1px solid #e2e8f0; z-index: 2;
-        }}
-        .stat-item {{ text-align: center; }}
-        .stat-value {{ font-size: 13px; font-weight: 800; }}
-        .stat-label {{ font-size: 9px; color: #636e72; text-transform: uppercase; letter-spacing: 0.5px; }}
+        }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 13px; font-weight: 800; }
+        .stat-label { font-size: 9px; color: #636e72; text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
     </head>
     <body>
@@ -1188,78 +1113,90 @@ def render_import_export(df):
             </div>
             <canvas id="canvas"></canvas>
             <div class="stats-panel">
-                <div class="stat-item">
-                    <div class="stat-value" style="color:#3498db;">{usa_pct}%</div>
-                    <div class="stat-label">from USA</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" style="color:#9b59b6;">{can_pct}%</div>
-                    <div class="stat-label">from Canada</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" style="color:#e74c3c;">{eng_pct}%</div>
-                    <div class="stat-label">from England</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" style="color:#1abc9c;">{top_importer}</div>
-                    <div class="stat-label">#1 importer</div>
-                </div>
+                <div class="stat-item"><div class="stat-value" style="color:#3498db;">35%</div><div class="stat-label">from USA</div></div>
+                <div class="stat-item"><div class="stat-value" style="color:#9b59b6;">17%</div><div class="stat-label">from Canada</div></div>
+                <div class="stat-item"><div class="stat-value" style="color:#e74c3c;">16%</div><div class="stat-label">from England</div></div>
+                <div class="stat-item"><div class="stat-value" style="color:#1abc9c;">Scotland</div><div class="stat-label">#1 importer</div></div>
             </div>
         </div>
         <script>
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
             const W = canvas.width = canvas.parentElement.clientWidth;
             const H = canvas.height = 480;
             
-            const nodeColors = {{
-                'USA': '#3498db', 'Canada': '#9b59b6', 'England': '#e74c3c',
-                'NZ': '#e91e63', 'Scotland': '#1abc9c', 'Ireland': '#f39c12',
-                'Australia': '#2ecc71', 'N.Ireland': '#00bcd4'
-            }};
+            const nodeColors = {
+                USA: "#3498db", Canada: "#9b59b6", England: "#e74c3c",
+                NZ: "#e91e63", Scotland: "#1abc9c", Ireland: "#f39c12",
+                Australia: "#2ecc71", "N.Ireland": "#00bcd4"
+            };
             
-            // Left side: producers (positioned by export volume)
-            const sourceData = [{js_sources}];
-            const maxExport = sourceData[0].exports;
-            const sources = {{}};
-            sourceData.forEach((s, i) => {{
-                sources[s.name] = {{
+            // Sources (left) — proportion-based export volumes
+            const sourceData = [
+                { name: "USA", exports: 8423 },
+                { name: "Canada", exports: 4225 },
+                { name: "England", exports: 3877 },
+                { name: "NZ", exports: 2717 },
+                { name: "Scotland", exports: 2222 }
+            ];
+            
+            const sources = {};
+            sourceData.forEach(function(s, i) {
+                sources[s.name] = {
                     x: W * 0.08,
-                    y: H * 0.18 + (H * 0.7) * (i / (sourceData.length - 1 || 1)),
+                    y: H * 0.18 + (H * 0.65) * (i / 4),
                     color: nodeColors[s.name],
                     exports: s.exports
-                }};
-            }});
+                };
+            });
             
-            // Right side: players (positioned by import volume)
-            const targetData = [{js_targets}];
-            const maxImport = targetData[0].imports;
-            const targets = {{}};
-            targetData.forEach((t, i) => {{
-                targets[t.name] = {{
+            // Targets (right) — import volumes
+            const targetData = [
+                { name: "Scotland", imports: 3649 },
+                { name: "England", imports: 3577 },
+                { name: "Ireland", imports: 3440 },
+                { name: "Canada", imports: 3432 },
+                { name: "USA", imports: 2843 },
+                { name: "Australia", imports: 2762 },
+                { name: "N.Ireland", imports: 2679 },
+                { name: "NZ", imports: 1877 }
+            ];
+            
+            const targets = {};
+            targetData.forEach(function(t, i) {
+                targets[t.name] = {
                     x: W * 0.92,
-                    y: H * 0.14 + (H * 0.76) * (i / (targetData.length - 1 || 1)),
+                    y: H * 0.12 + (H * 0.76) * (i / 7),
                     color: nodeColors[t.name],
                     imports: t.imports
-                }};
-            }});
+                };
+            });
             
-            const flows = [{js_flows}];
-            const maxFlow = {max_flow};
+            // Flows (proportion-based, >= 400)
+            const flows = [
+                ["USA", "England", 1448], ["USA", "Canada", 1441], ["USA", "Scotland", 1338],
+                ["USA", "Ireland", 1275], ["USA", "Australia", 1066], ["USA", "N.Ireland", 969],
+                ["USA", "NZ", 886], ["Canada", "England", 819], ["Canada", "USA", 816],
+                ["England", "USA", 742], ["England", "Canada", 735], ["England", "Scotland", 729],
+                ["Canada", "Scotland", 722], ["Canada", "Ireland", 666], ["England", "Ireland", 660],
+                ["Canada", "Australia", 523], ["NZ", "England", 428], ["NZ", "USA", 426],
+                ["NZ", "Canada", 425]
+            ];
             
-            let particles = [];
+            const maxFlow = 1448;
+            var particles = [];
             
-            function createParticle(srcNode, tgtNode, color) {{
-                const mx = (srcNode.x + tgtNode.x) / 2;
-                const my = (srcNode.y + tgtNode.y) / 2;
-                const dx = tgtNode.x - srcNode.x;
-                const dy = tgtNode.y - srcNode.y;
-                const len = Math.sqrt(dx*dx + dy*dy) || 1;
-                const offset = (Math.random() - 0.5) * 50;
-                const nx = -dy / len * offset;
-                const ny = dx / len * offset;
+            function createParticle(srcNode, tgtNode, color) {
+                var mx = (srcNode.x + tgtNode.x) / 2;
+                var my = (srcNode.y + tgtNode.y) / 2;
+                var dx = tgtNode.x - srcNode.x;
+                var dy = tgtNode.y - srcNode.y;
+                var len = Math.sqrt(dx*dx + dy*dy) || 1;
+                var offset = (Math.random() - 0.5) * 50;
+                var nx = -dy / len * offset;
+                var ny = dx / len * offset;
                 
-                return {{
+                return {
                     sx: srcNode.x, sy: srcNode.y,
                     tx: tgtNode.x, ty: tgtNode.y,
                     cx: mx + nx, cy: my + ny,
@@ -1268,36 +1205,38 @@ def render_import_export(df):
                     color: color,
                     size: 1.5 + Math.random() * 2,
                     alpha: 0.5 + Math.random() * 0.5
-                }};
-            }}
+                };
+            }
             
-            function initParticles() {{
+            function initParticles() {
                 particles = [];
-                flows.forEach(([src, tgt, vol]) => {{
-                    const srcNode = sources[src];
-                    const tgtNode = targets[tgt];
+                flows.forEach(function(f) {
+                    var src = f[0], tgt = f[1], vol = f[2];
+                    var srcNode = sources[src];
+                    var tgtNode = targets[tgt];
                     if (!srcNode || !tgtNode) return;
-                    const count = Math.max(1, Math.round((vol / maxFlow) * 10));
-                    for (let i = 0; i < count; i++) {{
+                    var count = Math.max(1, Math.round((vol / maxFlow) * 10));
+                    for (var i = 0; i < count; i++) {
                         particles.push(createParticle(srcNode, tgtNode, srcNode.color));
-                    }}
-                }});
-            }}
+                    }
+                });
+            }
             
-            function bezier(t, sx, sy, cx, cy, tx, ty) {{
-                return {{
+            function bezier(t, sx, sy, cx, cy, tx, ty) {
+                return {
                     x: (1-t)*(1-t)*sx + 2*(1-t)*t*cx + t*t*tx,
                     y: (1-t)*(1-t)*sy + 2*(1-t)*t*cy + t*t*ty
-                }};
-            }}
+                };
+            }
             
-            function drawNode(node, name, isSource, maxVal) {{
-                const val = isSource ? node.exports : node.imports;
-                const size = 6 + 16 * (val / maxVal);
+            function drawNode(node, name, isSource) {
+                var maxVal = isSource ? 8423 : 3649;
+                var val = isSource ? node.exports : node.imports;
+                var size = 6 + 16 * (val / maxVal);
                 
-                const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, size + 5);
-                grad.addColorStop(0, node.color + '30');
-                grad.addColorStop(1, 'transparent');
+                var grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, size + 5);
+                grad.addColorStop(0, node.color + "30");
+                grad.addColorStop(1, "transparent");
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, size + 5, 0, Math.PI * 2);
                 ctx.fillStyle = grad;
@@ -1307,40 +1246,41 @@ def render_import_export(df):
                 ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
                 ctx.fillStyle = node.color;
                 ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+                ctx.strokeStyle = "rgba(255,255,255,0.8)";
                 ctx.lineWidth = 1.5;
                 ctx.stroke();
                 
-                ctx.fillStyle = '#2d3436';
-                ctx.font = 'bold 10px Arial';
-                ctx.textAlign = isSource ? 'left' : 'right';
-                const lx = isSource ? node.x + size + 8 : node.x - size - 8;
+                ctx.fillStyle = "#2d3436";
+                ctx.font = "bold 10px Arial";
+                ctx.textAlign = isSource ? "left" : "right";
+                var lx = isSource ? node.x + size + 8 : node.x - size - 8;
                 ctx.fillText(name, lx, node.y);
                 
-                ctx.fillStyle = '#636e72';
-                ctx.font = '9px Arial';
-                const valText = isSource ? (val/1000).toFixed(1) + 'k out' : (val/1000).toFixed(1) + 'k in';
+                ctx.fillStyle = "#636e72";
+                ctx.font = "9px Arial";
+                var valText = isSource ? (val/1000).toFixed(1) + "k out" : (val/1000).toFixed(1) + "k in";
                 ctx.fillText(valText, lx, node.y + 12);
-            }}
+            }
             
-            function draw() {{
+            function draw() {
                 ctx.clearRect(0, 0, W, H);
                 
                 // Faint paths
-                flows.forEach(([src, tgt, vol]) => {{
-                    const s = sources[src]; const t = targets[tgt];
+                flows.forEach(function(f) {
+                    var s = sources[f[0]], t = targets[f[1]];
                     if (!s || !t) return;
                     ctx.beginPath();
                     ctx.moveTo(s.x, s.y);
                     ctx.quadraticCurveTo((s.x+t.x)/2, (s.y+t.y)/2, t.x, t.y);
-                    ctx.strokeStyle = 'rgba(0,0,0,0.03)';
-                    ctx.lineWidth = 1 + 2*(vol/maxFlow);
+                    ctx.strokeStyle = "rgba(0,0,0,0.03)";
+                    ctx.lineWidth = 1 + 2*(f[2]/maxFlow);
                     ctx.stroke();
-                }});
+                });
                 
                 // Particles
-                particles.forEach(p => {{
-                    const pos = bezier(p.t, p.sx, p.sy, p.cx, p.cy, p.tx, p.ty);
+                for (var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    var pos = bezier(p.t, p.sx, p.sy, p.cx, p.cy, p.tx, p.ty);
                     ctx.beginPath();
                     ctx.arc(pos.x, pos.y, p.size, 0, Math.PI * 2);
                     ctx.globalAlpha = p.alpha;
@@ -1349,15 +1289,15 @@ def render_import_export(df):
                     ctx.globalAlpha = 1;
                     
                     p.t += p.speed;
-                    if (p.t > 1) {{ p.t = 0; p.speed = 0.002 + Math.random() * 0.003; }}
-                }});
+                    if (p.t > 1) { p.t = 0; p.speed = 0.002 + Math.random() * 0.003; }
+                }
                 
                 // Nodes
-                Object.entries(sources).forEach(([name, node]) => drawNode(node, name, true, maxExport));
-                Object.entries(targets).forEach(([name, node]) => drawNode(node, name, false, maxImport));
+                Object.keys(sources).forEach(function(name) { drawNode(sources[name], name, true); });
+                Object.keys(targets).forEach(function(name) { drawNode(targets[name], name, false); });
                 
                 requestAnimationFrame(draw);
-            }}
+            }
             
             initParticles();
             draw();
