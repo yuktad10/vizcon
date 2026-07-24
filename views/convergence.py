@@ -1058,7 +1058,7 @@ def render_convergence_timeline(df):
 
 # ─── Section: Import/Export Economy ─────────────────────────────────────────────
 def render_import_export(df):
-    """The Record Label Map — who produces names, who plays them."""
+    """The Record Label Map — world map with arc flows."""
     
     st.markdown("""
     <h2 style="margin: 0 0 4px 0;">💿 The Record Label Map</h2>
@@ -1097,18 +1097,19 @@ def render_import_export(df):
     }
     flow_matrix["source"] = flow_matrix["source"].map(name_map)
     flow_matrix["target"] = flow_matrix["target"].map(name_map)
-    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 30]
+    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 200]
     
-    # Layout matching reference: small exporters top, big bottom
-    source_names = ["Canada", "Australia", "Scotland", "Ireland", "NZ", "England", "USA"]
-    target_names = ["England", "Ireland", "Scotland", "Canada", "Australia", "N.Ireland", "NZ"]
-    
-    n_src = len(source_names)
-    n_tgt = len(target_names)
-    
-    # Zero-width space makes right-side labels unique (Plotly needs unique labels)
-    zws = "\u200b"
-    all_labels = source_names + [t + zws for t in target_names]
+    # Country coordinates
+    coords = {
+        "USA": (39.8, -98.5),
+        "England": (52.5, -1.5),
+        "Canada": (58, -100),
+        "Australia": (-28, 135),
+        "Scotland": (57, -5),
+        "Ireland": (53.4, -10),
+        "N.Ireland": (55, -7),
+        "NZ": (-42, 175)
+    }
     
     node_colors = {
         "Canada": "#9b59b6", "Australia": "#2ecc71", "Scotland": "#1abc9c",
@@ -1116,63 +1117,93 @@ def render_import_export(df):
         "USA": "#3498db", "N.Ireland": "#00bcd4"
     }
     
-    colors = [node_colors[n] for n in source_names] + [node_colors[n] for n in target_names]
+    fig = go.Figure()
     
-    # Evenly spaced y positions
-    x_left = [0.001] * n_src
-    x_right = [0.999] * n_tgt
-    y_left = [(i + 0.5) / n_src for i in range(n_src)]
-    y_right = [(i + 0.5) / n_tgt for i in range(n_tgt)]
-    
-    # Build links with sqrt scaling
-    link_src = []
-    link_tgt = []
-    link_val = []
-    link_col = []
+    # Draw arc lines (great circle paths)
+    max_flow = flow_matrix["n_names"].max()
     
     for _, row in flow_matrix.iterrows():
-        s, t, v = row["source"], row["target"], row["n_names"]
-        if s in source_names and t in target_names:
-            link_src.append(source_names.index(s))
-            link_tgt.append(n_src + target_names.index(t))
-            link_val.append(math.sqrt(v))
-            c = node_colors[s]
+        src, tgt, val = row["source"], row["target"], row["n_names"]
+        if src in coords and tgt in coords:
+            src_lat, src_lon = coords[src]
+            tgt_lat, tgt_lon = coords[tgt]
+            
+            # Line width proportional to flow (1 to 5)
+            width = 1 + 4 * (val / max_flow)
+            
+            # Color from source
+            c = node_colors.get(src, "#999")
             r, g, b = int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16)
-            link_col.append(f"rgba({r},{g},{b},0.4)")
+            opacity = 0.4 + 0.4 * (val / max_flow)
+            
+            fig.add_trace(go.Scattergeo(
+                lon=[src_lon, tgt_lon],
+                lat=[src_lat, tgt_lat],
+                mode="lines",
+                line=dict(width=width, color=f"rgba({r},{g},{b},{opacity:.2f})"),
+                hoverinfo="text",
+                text=f"{src} → {tgt}: {val:,} names",
+                showlegend=False
+            ))
     
-    fig = go.Figure(data=[go.Sankey(
-        arrangement="fixed",
-        node=dict(
-            pad=20,
-            thickness=14,
-            line=dict(color="rgba(255,255,255,0.15)", width=0.5),
-            label=all_labels,
-            color=colors,
-            x=x_left + x_right,
-            y=y_left + y_right
-        ),
-        link=dict(
-            source=link_src,
-            target=link_tgt,
-            value=link_val,
-            color=link_col
-        )
-    )])
+    # Draw country nodes
+    for country, (lat, lon) in coords.items():
+        # Size proportional to total export volume
+        total_export = flow_matrix[flow_matrix["source"] == country]["n_names"].sum()
+        total_import = flow_matrix[flow_matrix["target"] == country]["n_names"].sum()
+        total = total_export + total_import
+        size = 8 + 20 * (total / (max_flow * 7))
+        
+        fig.add_trace(go.Scattergeo(
+            lon=[lon],
+            lat=[lat],
+            mode="markers+text",
+            marker=dict(
+                size=max(size, 10),
+                color=node_colors.get(country, "#999"),
+                line=dict(color="white", width=1.5),
+                opacity=0.9
+            ),
+            text=country,
+            textposition="top center",
+            textfont=dict(color="white", size=10, family="Arial"),
+            hoverinfo="text",
+            hovertext=f"{country}<br>Exports: {total_export:,}<br>Imports: {total_import:,}",
+            showlegend=False
+        ))
+    
+    fig.update_geos(
+        projection_type="natural earth",
+        showcoastlines=True,
+        coastlinecolor="rgba(255,255,255,0.15)",
+        showland=True,
+        landcolor="#1a1a2e",
+        showocean=True,
+        oceancolor="#0d1117",
+        showlakes=False,
+        showrivers=False,
+        showcountries=True,
+        countrycolor="rgba(255,255,255,0.08)",
+        bgcolor="#0d1117",
+        lonaxis=dict(range=[-140, 190]),
+        lataxis=dict(range=[-55, 72])
+    )
     
     fig.update_layout(
-        font=dict(size=11, color="rgba(255,255,255,0.85)", family="Arial"),
         paper_bgcolor="#0d1117",
         plot_bgcolor="#0d1117",
-        height=500,
-        margin=dict(l=0, r=0, t=5, b=5)
+        height=450,
+        margin=dict(l=0, r=0, t=0, b=0),
+        font=dict(color="white")
     )
     
     st.plotly_chart(fig, use_container_width=True)
     
+    # Summary below
     st.markdown("""
     <p style="font-size:0.82rem; color:#2d3436; margin-top:1rem; line-height:1.6;">
-        The naming world has just two major record labels: <b>USA</b> and <b>England</b> — together they originate 95% of names that go global.
-        But the import side is far more democratic — every country absorbs roughly equally. Canada leads as the biggest listener, likely because of its cultural proximity to the US.
+        The naming world has just two major record labels: <b style="color:#3498db;">USA</b> and <b style="color:#e74c3c;">England</b> — together they originate 95% of names that go global.
+        The thicker the arc, the more names flow between those countries. Notice how the US broadcasts to <i>everyone</i>, while England primarily feeds its neighbours.
     </p>
     """, unsafe_allow_html=True)
     st.markdown("---")
