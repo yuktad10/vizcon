@@ -527,21 +527,56 @@ def render_leaderboard(df):
 
     st_html(full_html, height=320)
 
-    # Explanation below the posters
+    # Now Playing bar — Spotify-style bottom player for #1
+    top1 = top6.iloc[0]
+    top1_total = f"{int(top1['total_babies_with_name']):,}"
+    
+    now_playing_html = f"""
+    <html>
+    <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <div style="background:linear-gradient(90deg, #1a1a2e, #2d2d44); border-radius:12px; padding:0.8rem 1.2rem; margin-top:1.2rem; display:flex; align-items:center; gap:1rem; box-shadow:0 4px 16px rgba(0,0,0,0.2);">
+            <!-- Album art -->
+            <div style="width:44px; height:44px; border-radius:8px; background:linear-gradient(135deg, #667eea, #764ba2); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="color:white; font-size:1.2rem; font-weight:800;">{top1['name'][0]}</span>
+            </div>
+            <!-- Track info -->
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:0.85rem; font-weight:700; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    {top1['name']} <span style="color:rgba(255,255,255,0.5); font-weight:400;">• {top1['max_country']}</span>
+                </div>
+                <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">{top1_total} plays • 8 countries</div>
+                <!-- Progress bar -->
+                <div style="margin-top:0.4rem; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
+                    <div style="height:100%; width:72%; background:linear-gradient(90deg, #667eea, #7c9a8e); border-radius:2px;"></div>
+                </div>
+            </div>
+            <!-- Play controls -->
+            <div style="display:flex; align-items:center; gap:0.8rem; flex-shrink:0;">
+                <span style="color:rgba(255,255,255,0.4); font-size:0.9rem; cursor:pointer;">⏮</span>
+                <span style="color:white; font-size:1.4rem; cursor:pointer;">▶</span>
+                <span style="color:rgba(255,255,255,0.4); font-size:0.9rem; cursor:pointer;">⏭</span>
+            </div>
+            <!-- Now Playing label -->
+            <div style="flex-shrink:0; text-align:right;">
+                <div style="font-size:0.55rem; color:#667eea; text-transform:uppercase; letter-spacing:1.5px; font-weight:600;">Now Playing</div>
+                <div style="font-size:0.6rem; color:rgba(255,255,255,0.4);">Global #1</div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    st_html(now_playing_html, height=85)
+
+    # Explanation below the posters — plain text, no box
     st.markdown("""
-    <div style="margin-top:1.5rem; padding:1.2rem 1.5rem; background:#f8f9fa; border-radius:12px; border-left:4px solid #667eea;">
-        <p style="font-size:0.88rem; color:#2d3436; margin:0 0 0.5rem 0; font-weight:600;">
-            📐 How is this ranked?
-        </p>
-        <p style="font-size:0.82rem; color:#4a5568; margin:0; line-height:1.6;">
-            These names are ranked by <b>countryness score</b> — a measure of how equally a name is spread across all 8 nations.
-            A score of 1.0 means perfectly equal usage everywhere. The closer to 1, the more "global" the name.<br><br>
-            This means a name with fewer total babies can rank higher than a more popular one. Why? Because being 
-            a <b>small hit everywhere equally</b> is more "global" than being a massive hit in just one or two countries.
-            Think of it like a song that charts at #20 in every country simultaneously vs one that's #1 in one country but unknown elsewhere — 
-            the first one is the true global anthem.
-        </p>
-    </div>
+    <p style="font-size:0.85rem; color:#636e72; margin-top:1.5rem; line-height:1.7;">
+        Ranked by countryness score (lower = more equally spread across nations). A name with fewer total babies can rank higher 
+        if it's perfectly balanced — being a small hit <i>everywhere</i> beats being a massive hit in just one place.
+    </p>
+    <p style="font-size:0.82rem; color:#999; line-height:1.6; margin-top:0.5rem;">
+        Think of it like a song that charts at #20 in every country simultaneously vs one that's #1 in one country but unknown elsewhere — 
+        the first one is the true global anthem. A score of 1.0 means perfectly equal usage across all 8 nations.
+    </p>
     """, unsafe_allow_html=True)
 
 
