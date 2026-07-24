@@ -433,13 +433,13 @@ def render_track_lookup(df_metrics):
         """, unsafe_allow_html=True)
 
 
-# ─── Section: Global Top 6 + Names That Ruled ────────────────────────────────
+# ─── Section: Global Top 6 ────────────────────────────────────────────────────
 def render_leaderboard(df):
     st.markdown("---")
     st.markdown("""
     <h2 style="margin: 0 0 4px 0;">🏆 The Global 6</h2>
     <p style="font-size: 0.95em; color: #636e72; margin: 0 0 1.5rem 0;">
-        The six most borderless names on Earth — equally loved across all 8 nations. These are the chart-toppers that belong to no single country.
+        The six biggest cross-border anthems — names that charted equally in all 8 nations. No single home country. Pure global hits.
     </p>
     """, unsafe_allow_html=True)
 
@@ -453,84 +453,61 @@ def render_leaderboard(df):
         .reset_index(drop=True)
     )
 
-    # Render as 6 cards in 2 rows of 3
+    # Render as a playlist-style tracklist using components.html
     from streamlit.components.v1 import html as st_html
 
-    cards_html = ""
-    medals = ["🥇", "🥈", "🥉", "4", "5", "6"]
-    
+    tracks_html = ""
     for i, row in top6.iterrows():
+        rank = i + 1
         sex_emoji = "♀️" if row["sex"] == "F" else "♂️"
-        medal = medals[i]
         total = f"{int(row['total_babies_with_name']):,}"
+        score = f"{row['countryness']:.3f}"
         
-        # Medal styling for top 3 vs rest
-        if i < 3:
-            medal_style = f'font-size:1.5rem;'
+        # Top 3 get gold/silver/bronze accent, rest get purple
+        if rank == 1:
+            rank_bg = "background:linear-gradient(135deg,#FFD700,#FFA500);"
+            rank_shadow = "box-shadow:0 2px 8px rgba(255,215,0,0.3);"
+        elif rank == 2:
+            rank_bg = "background:linear-gradient(135deg,#C0C0C0,#A8A8A8);"
+            rank_shadow = "box-shadow:0 2px 8px rgba(192,192,192,0.3);"
+        elif rank == 3:
+            rank_bg = "background:linear-gradient(135deg,#CD7F32,#A0522D);"
+            rank_shadow = "box-shadow:0 2px 8px rgba(205,127,50,0.3);"
         else:
-            medal_style = f'font-size:1rem; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border-radius:50%; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; font-weight:800;'
+            rank_bg = "background:linear-gradient(135deg,#667eea,#764ba2);"
+            rank_shadow = "box-shadow:0 2px 8px rgba(102,126,234,0.2);"
 
-        cards_html += f"""
-        <div style="background:white; border-radius:14px; padding:1.2rem; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center; flex:1; min-width:160px;">
-            <div style="{medal_style}">{medal}</div>
-            <div style="font-size:1.4rem; font-weight:800; color:#2d3436; margin:0.4rem 0 0.2rem 0;">{row['name']} {sex_emoji}</div>
-            <div style="font-size:0.75rem; color:#636e72; margin-bottom:0.4rem;">{total} streams worldwide</div>
-            <div style="background:linear-gradient(135deg,#7c9a8e,#5a7d6f); color:white; padding:0.2rem 0.6rem; border-radius:10px; font-size:0.7rem; font-weight:600; display:inline-block;">
-                Score: {row['countryness']:.3f}
+        tracks_html += f"""
+        <div style="display:flex; align-items:center; padding:0.9rem 1.2rem; margin:0.5rem 0; border-radius:14px; background:white; border:1px solid #f0f0f0; transition:all 0.2s; cursor:default;"
+             onmouseover="this.style.transform='translateX(4px)'; this.style.boxShadow='0 4px 16px rgba(102,126,234,0.12)';"
+             onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+            <!-- Rank badge -->
+            <div style="{rank_bg} {rank_shadow} color:white; font-weight:800; font-size:1rem; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                {rank}
+            </div>
+            <!-- Track info -->
+            <div style="flex:1; margin-left:1rem;">
+                <div style="font-size:1.15rem; font-weight:700; color:#2d3436;">{row['name']} <span style="font-size:0.9rem;">{sex_emoji}</span></div>
+                <div style="font-size:0.78rem; color:#636e72; margin-top:2px;">🌍 8 countries • {total} total streams • Peak: {row['max_country']}</div>
+            </div>
+            <!-- Score -->
+            <div style="text-align:right; flex-shrink:0; margin-left:1rem;">
+                <div style="background:linear-gradient(135deg,#7c9a8e,#5a7d6f); color:white; padding:0.3rem 0.8rem; border-radius:12px; font-size:0.78rem; font-weight:700;">{score}</div>
+                <div style="font-size:0.6rem; color:#999; margin-top:3px; text-transform:uppercase; letter-spacing:0.5px;">countryness</div>
             </div>
         </div>
         """
 
-    global_6_html = f"""
+    playlist_html = f"""
     <html>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
-            {cards_html}
+        <div style="background:linear-gradient(180deg, #f8f9fa 0%, white 100%); border-radius:16px; padding:1rem;">
+            {tracks_html}
         </div>
     </body>
     </html>
     """
-    st_html(global_6_html, height=220)
-
-    # ─── Names That Ruled: best single-year performances ─────────
-    st.markdown('<div style="height:2rem;"></div>', unsafe_allow_html=True)
-    st.markdown("""
-    <h3 style="margin: 0 0 4px 0;">👑 Names That Ruled</h3>
-    <p style="font-size: 0.88em; color: #636e72; margin: 0 0 1rem 0;">
-        The best single-year chart performances — names that were perfectly global in one shining moment.
-    </p>
-    """, unsafe_allow_html=True)
-
-    # Best single-year countryness (all 8 countries)
-    best_years = (
-        df[df["countries_using_name"] == 8]
-        .nsmallest(10, "countryness")
-        .reset_index(drop=True)
-    )
-
-    # Build as a styled list
-    entries_html = ""
-    for i, row in best_years.iterrows():
-        rank = i + 1
-        sex_emoji = "♀️" if row["sex"] == "F" else "♂️"
-        rank_class = "chart-rank top3" if rank <= 3 else "chart-rank"
-        total_formatted = f"{int(row['total_num_babies_w_name']):,}"
-
-        entries_html += f"""
-        <div class="chart-entry">
-            <div class="{rank_class}">{rank}</div>
-            <div class="chart-info">
-                <div class="chart-name">{row['name']} {sex_emoji}</div>
-                <div class="chart-meta">🌍 8 countries • {total_formatted} babies • {int(row['year'])}</div>
-            </div>
-            <div class="chart-score">
-                <div class="value">{row['countryness']:.3f}</div>
-                <div class="label">countryness</div>
-            </div>
-        </div>
-        """
-
-    st.markdown(entries_html, unsafe_allow_html=True)
+    st_html(playlist_html, height=420)
 
 
 # ─── Section: Convergence Timeline ───────────────────────────────────────────
