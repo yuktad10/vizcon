@@ -409,78 +409,7 @@ def render_track_lookup(df_metrics):
             </div>
             """, unsafe_allow_html=True)
 
-            # ─── Chart History: Multi-country sparkline ────────────
-            st.markdown(f"""
-            <div style="margin-top: 1.5rem; padding: 0.8rem 0;">
-                <p style="font-size: 0.95rem; font-weight: 600; color: #2d3436; margin: 0;">
-                    📈 Streaming History — <b>{search_name_clean}</b> across nations (1997-2023)
-                </p>
-                <p style="font-size: 0.78rem; color: #636e72; margin: 4px 0 0 0;">
-                    Each line = one country's yearly "streams" (births per 1,000)
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
 
-            try:
-                df_all = load_all_names()
-                name_data = df_all[df_all["name"].str.upper() == search_name_clean.upper()]
-
-                if not name_data.empty:
-                    trend = (
-                        name_data.groupby(["year", "country"])["proportion"]
-                        .sum()
-                        .reset_index()
-                    )
-
-                    fig = go.Figure()
-                    countries_in_data = sorted(trend["country"].unique())
-                    color_palette = [
-                        "#667eea", "#7c9a8e", "#c99e85", "#e63946",
-                        "#457b9d", "#2a9d8f", "#e9c46a", "#264653"
-                    ]
-
-                    for idx, country in enumerate(countries_in_data):
-                        ct = trend[trend["country"] == country]
-                        color = COUNTRY_COLORS.get(country, color_palette[idx % len(color_palette)])
-                        fig.add_trace(go.Scatter(
-                            x=ct["year"],
-                            y=ct["proportion"] * 1000,
-                            mode="lines",
-                            name=country,
-                            line=dict(width=2.5, color=color, shape="spline"),
-                            hovertemplate=f"<b>{country}</b><br>Year: %{{x}}<br>Streams: %{{y:.2f}} per 1,000<extra></extra>",
-                        ))
-
-                    fig.update_layout(
-                        plot_bgcolor="white",
-                        paper_bgcolor="white",
-                        font=dict(family="Inter, sans-serif", color="#2d3436", size=12),
-                        xaxis=dict(title="", showgrid=False, dtick=5, tickfont=dict(size=10)),
-                        yaxis=dict(
-                            title="Streams per 1,000",
-                            showgrid=True,
-                            gridcolor="rgba(0,0,0,0.05)",
-                            zeroline=False,
-                            tickfont=dict(size=10),
-                        ),
-                        margin=dict(l=50, r=20, t=20, b=40),
-                        height=340,
-                        hovermode="x unified",
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=-0.35,
-                            xanchor="center",
-                            x=0.5,
-                            font=dict(size=10),
-                        ),
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.caption("📊 Streaming history not available for this track.")
-            except Exception:
-                st.caption("📊 Streaming history requires the full dataset.")
 
     else:
         # Empty state
@@ -658,6 +587,66 @@ def render_convergence_timeline(df):
         """, unsafe_allow_html=True)
 
 
+
+
+# ─── Section: Media Eras ──────────────────────────────────────────────────────
+def render_media_eras(df):
+    st.markdown("""
+    <div class="section-divider">
+        <h2>🔊 Turning Up The Volume</h2>
+        <p>From silent films to TikTok, each media revolution amplified names across borders. The louder the shared signal, the more our playlists sync up.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Define media eras
+    eras = [
+        {"era": "Radio Era", "years": "1997–2000", "start": 1997, "end": 2000, "icon": "📻"},
+        {"era": "Early TV", "years": "2001–2005", "start": 2001, "end": 2005, "icon": "📺"},
+        {"era": "Cable & DVD", "years": "2006–2009", "start": 2006, "end": 2009, "icon": "📀"},
+        {"era": "Internet", "years": "2010–2014", "start": 2010, "end": 2014, "icon": "💻"},
+        {"era": "Social Media", "years": "2015–2019", "start": 2015, "end": 2019, "icon": "📱"},
+        {"era": "Streaming", "years": "2020–2023", "start": 2020, "end": 2023, "icon": "🎧"},
+    ]
+
+    # Calculate avg countryness per era
+    era_stats = []
+    for era in eras:
+        era_data = df[(df["year"] >= era["start"]) & (df["year"] <= era["end"])]
+        avg_c = era_data["countryness"].mean() if not era_data.empty else 0
+        era_stats.append({**era, "avg_countryness": avg_c})
+
+    # Render as a horizontal bar/progression
+    cols = st.columns(len(era_stats))
+    for i, (col, era) in enumerate(zip(cols, era_stats)):
+        with col:
+            # Color intensity based on value (higher = more coral, lower = more sage)
+            max_val = max(e["avg_countryness"] for e in era_stats)
+            min_val = min(e["avg_countryness"] for e in era_stats)
+            ratio = (era["avg_countryness"] - min_val) / (max_val - min_val) if max_val != min_val else 0
+            # Blend from sage (global) to coral (local)
+            color = SAGE if ratio < 0.5 else CORAL if ratio > 0.8 else PURPLE
+
+            st.markdown(f"""
+            <div style="text-align:center; padding:1rem 0.5rem; background:white; border-radius:12px; border:1px solid #eee; height: 100%;">
+                <div style="font-size:1.5rem;">{era['icon']}</div>
+                <div style="font-size:0.7rem; color:#636e72; margin:0.3rem 0;">{era['era']}</div>
+                <div style="font-size:1.4rem; font-weight:800; color:{color};">{era['avg_countryness']:.1f}</div>
+                <div style="font-size:0.6rem; color:#636e72;">{era['years']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Summary line
+    first_val = era_stats[0]["avg_countryness"]
+    last_val = era_stats[-1]["avg_countryness"]
+    drop_pct = ((first_val - last_val) / first_val) * 100
+    st.markdown(f"""
+    <div style="text-align:center; margin-top:1.5rem; padding:1rem; background:#fafbfc; border-radius:10px;">
+        <p style="font-size:0.9rem; color:#2d3436; margin:0;">
+            📉 From <b>{first_val:.1f}</b> in the Radio Era to <b>{last_val:.1f}</b> in the Streaming Age — a <span style="color:#667eea; font-weight:800;">{drop_pct:.0f}%</span> drop in cultural distinctness.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
 # ─── Section: Insights Infographic ────────────────────────────────────────────
 def render_insights():
     st.markdown("""
@@ -758,6 +747,7 @@ def render():
     render_track_lookup(df)
     render_leaderboard(df)
     render_convergence_timeline(df)
+    render_media_eras(df)
     render_insights()
 
 
