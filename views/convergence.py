@@ -433,6 +433,84 @@ def render_track_lookup(df_metrics):
         """, unsafe_allow_html=True)
 
 
+# ─── Section: Media Eras ──────────────────────────────────────────────────────
+def render_media_eras(df):
+    st.markdown("---")
+    st.markdown("""
+    <h2 style="margin: 0 0 4px 0;">🔊 Turning Up The Volume</h2>
+    <p style="font-size: 0.95em; color: #636e72; margin: 0 0 1.5rem 0;">
+        From silent films to TikTok, each media revolution amplified names across borders. The louder the shared signal, the more our playlists sync up.
+    </p>
+    """, unsafe_allow_html=True)
+
+    # Define media eras
+    eras = [
+        {"era": "Radio", "years": "1997–2000", "start": 1997, "end": 2000, "icon": "📻", "note": "Local DJs ruled"},
+        {"era": "Early TV", "years": "2001–2005", "start": 2001, "end": 2005, "icon": "📺", "note": "Friends & soaps"},
+        {"era": "Cable & DVD", "years": "2006–2009", "start": 2006, "end": 2009, "icon": "📀", "note": "Global franchises"},
+        {"era": "Internet", "years": "2010–2014", "start": 2010, "end": 2014, "icon": "💻", "note": "YouTube era"},
+        {"era": "Social Media", "years": "2015–2019", "start": 2015, "end": 2019, "icon": "📱", "note": "Viral culture"},
+        {"era": "Streaming", "years": "2020–2023", "start": 2020, "end": 2023, "icon": "🎧", "note": "Same playlist"},
+    ]
+
+    # Calculate avg countryness per era
+    era_stats = []
+    for era in eras:
+        era_data = df[(df["year"] >= era["start"]) & (df["year"] <= era["end"])]
+        avg_c = era_data["countryness"].mean() if not era_data.empty else 0
+        era_stats.append({**era, "avg_countryness": avg_c})
+
+    first_val = era_stats[0]["avg_countryness"]
+    last_val = era_stats[-1]["avg_countryness"]
+    drop_pct = ((first_val - last_val) / first_val) * 100
+
+    # Build clean timeline using components.html
+    from streamlit.components.v1 import html as st_html
+
+    era_cards = ""
+    for i, era in enumerate(era_stats):
+        # Color: coral for high (distinct) → sage for low (synced)
+        if era["avg_countryness"] > 20:
+            color = "#c99e85"
+        elif era["avg_countryness"] > 16:
+            color = "#667eea"
+        else:
+            color = "#7c9a8e"
+
+        era_cards += f"""
+        <div style="text-align:center; flex:1; min-width:100px; background:#fefefe; border-radius:12px; padding:1.2rem 0.5rem; border:1px solid #f0ebe3;">
+            <div style="font-size:1.8rem; margin-bottom:0.4rem;">{era['icon']}</div>
+            <div style="font-size:0.82rem; font-weight:700; color:#2d3436;">{era['era']}</div>
+            <div style="font-size:0.7rem; color:#999; margin:0.2rem 0 0.6rem 0;">{era['years']}</div>
+            <div style="font-size:1.5rem; font-weight:800; color:{color};">{era['avg_countryness']:.1f}</div>
+            <div style="font-size:0.65rem; color:#999; font-style:italic; margin-top:0.2rem;">{era['note']}</div>
+        </div>
+        """
+
+    timeline_html = f"""
+    <html>
+    <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <div style="background: linear-gradient(135deg, #fffbf0, #fff8e8); border-radius:16px; padding:1.5rem; border:1px solid #f0e6d0;">
+            <!-- Era cards -->
+            <div style="display:flex; align-items:stretch; justify-content:space-between; gap:0.6rem;">
+                {era_cards}
+            </div>
+
+            <!-- Summary line -->
+            <div style="text-align:center; margin-top:1.2rem; padding:0.8rem 1rem; background:#fefefe; border-radius:10px; border:1px solid #f0ebe3;">
+                <p style="font-size:0.88rem; color:#2d3436; margin:0;">
+                    📉 Cultural distinctness dropped from <b>{first_val:.1f}</b> to <b>{last_val:.1f}</b> — 
+                    a <span style="color:#667eea; font-weight:800;">{drop_pct:.0f}%</span> sync-up across the Anglosphere.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    st_html(timeline_html, height=330)
+
+
 # ─── Section: Global Top 6 ────────────────────────────────────────────────────
 def render_leaderboard(df):
     st.markdown("---")
