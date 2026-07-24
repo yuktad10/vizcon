@@ -1058,7 +1058,7 @@ def render_convergence_timeline(df):
 
 # ─── Section: Import/Export Economy ─────────────────────────────────────────────
 def render_import_export(df):
-    """The Record Label Map — world map with arc flows."""
+    """The Record Label Map — network graph showing name flows."""
     
     st.markdown("""
     <h2 style="margin: 0 0 4px 0;">💿 The Record Label Map</h2>
@@ -1097,18 +1097,18 @@ def render_import_export(df):
     }
     flow_matrix["source"] = flow_matrix["source"].map(name_map)
     flow_matrix["target"] = flow_matrix["target"].map(name_map)
-    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 200]
+    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 50]
     
-    # Country coordinates
-    coords = {
-        "USA": (39.8, -98.5),
-        "England": (52.5, -1.5),
-        "Canada": (58, -100),
-        "Australia": (-28, 135),
-        "Scotland": (57, -5),
-        "Ireland": (53.4, -10),
-        "N.Ireland": (55, -7),
-        "NZ": (-42, 175)
+    # Node positions (custom layout for visual clarity)
+    positions = {
+        "USA":        (0.12, 0.5),
+        "England":    (0.88, 0.5),
+        "Canada":     (0.28, 0.88),
+        "Australia":  (0.72, 0.12),
+        "Scotland":   (0.72, 0.88),
+        "Ireland":    (0.5, 0.92),
+        "N.Ireland":  (0.88, 0.78),
+        "NZ":         (0.5, 0.08)
     }
     
     node_colors = {
@@ -1117,93 +1117,101 @@ def render_import_export(df):
         "USA": "#3498db", "N.Ireland": "#00bcd4"
     }
     
-    fig = go.Figure()
+    # Export volumes for node sizing
+    export_totals = flow_matrix.groupby("source")["n_names"].sum()
+    import_totals = flow_matrix.groupby("target")["n_names"].sum()
     
-    # Draw arc lines (great circle paths)
     max_flow = flow_matrix["n_names"].max()
     
+    fig = go.Figure()
+    
+    # Draw edges as bezier curves
     for _, row in flow_matrix.iterrows():
         src, tgt, val = row["source"], row["target"], row["n_names"]
-        if src in coords and tgt in coords:
-            src_lat, src_lon = coords[src]
-            tgt_lat, tgt_lon = coords[tgt]
+        if src in positions and tgt in positions:
+            x0, y0 = positions[src]
+            x1, y1 = positions[tgt]
             
-            # Line width proportional to flow (1 to 5)
+            # Bezier control point (offset perpendicular to the line)
+            mx, my = (x0 + x1) / 2, (y0 + y1) / 2
+            dx, dy = x1 - x0, y1 - y0
+            length = math.sqrt(dx*dx + dy*dy)
+            if length > 0:
+                # Perpendicular offset (curve the line)
+                offset = 0.08
+                nx, ny = -dy / length * offset, dx / length * offset
+                cx, cy = mx + nx, my + ny
+            else:
+                cx, cy = mx, my
+            
+            # Generate points along quadratic bezier
+            n_points = 30
+            xs, ys = [], []
+            for t in [i / n_points for i in range(n_points + 1)]:
+                bx = (1-t)**2 * x0 + 2*(1-t)*t * cx + t**2 * x1
+                by = (1-t)**2 * y0 + 2*(1-t)*t * cy + t**2 * y1
+                xs.append(bx)
+                ys.append(by)
+            
+            # Width and opacity based on flow
             width = 1 + 4 * (val / max_flow)
+            opacity = 0.3 + 0.5 * (val / max_flow)
             
-            # Color from source
             c = node_colors.get(src, "#999")
             r, g, b = int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16)
-            opacity = 0.4 + 0.4 * (val / max_flow)
             
-            fig.add_trace(go.Scattergeo(
-                lon=[src_lon, tgt_lon],
-                lat=[src_lat, tgt_lat],
+            fig.add_trace(go.Scatter(
+                x=xs, y=ys,
                 mode="lines",
-                line=dict(width=width, color=f"rgba({r},{g},{b},{opacity:.2f})"),
+                line=dict(width=width, color=f"rgba({r},{g},{b},{opacity:.2f})", shape="spline"),
                 hoverinfo="text",
-                text=f"{src} → {tgt}: {val:,} names",
+                hovertext=f"{src} → {tgt}: {val:,} names",
                 showlegend=False
             ))
     
-    # Draw country nodes
-    for country, (lat, lon) in coords.items():
-        # Size proportional to total export volume
-        total_export = flow_matrix[flow_matrix["source"] == country]["n_names"].sum()
-        total_import = flow_matrix[flow_matrix["target"] == country]["n_names"].sum()
-        total = total_export + total_import
-        size = 8 + 20 * (total / (max_flow * 7))
+    # Draw nodes
+    for country, (x, y) in positions.items():
+        exp = export_totals.get(country, 0)
+        imp = import_totals.get(country, 0)
+        total = exp + imp
         
-        fig.add_trace(go.Scattergeo(
-            lon=[lon],
-            lat=[lat],
+        # Node size: min 20, max 55
+        size = 20 + 35 * (total / (export_totals.max() + import_totals.max()))
+        size = max(size, 20)
+        
+        fig.add_trace(go.Scatter(
+            x=[x], y=[y],
             mode="markers+text",
             marker=dict(
-                size=max(size, 10),
+                size=size,
                 color=node_colors.get(country, "#999"),
-                line=dict(color="white", width=1.5),
+                line=dict(color="rgba(255,255,255,0.8)", width=2),
                 opacity=0.9
             ),
             text=country,
             textposition="top center",
-            textfont=dict(color="white", size=10, family="Arial"),
+            textfont=dict(color="rgba(255,255,255,0.9)", size=11, family="Arial"),
             hoverinfo="text",
-            hovertext=f"{country}<br>Exports: {total_export:,}<br>Imports: {total_import:,}",
+            hovertext=f"<b>{country}</b><br>Exports: {exp:,} names<br>Imports: {imp:,} names",
             showlegend=False
         ))
     
-    fig.update_geos(
-        projection_type="natural earth",
-        showcoastlines=True,
-        coastlinecolor="rgba(255,255,255,0.15)",
-        showland=True,
-        landcolor="#1a1a2e",
-        showocean=True,
-        oceancolor="#0d1117",
-        showlakes=False,
-        showrivers=False,
-        showcountries=True,
-        countrycolor="rgba(255,255,255,0.08)",
-        bgcolor="#0d1117",
-        lonaxis=dict(range=[-140, 190]),
-        lataxis=dict(range=[-55, 72])
-    )
-    
     fig.update_layout(
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.05, 1.05]),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.05, 1.05]),
         paper_bgcolor="#0d1117",
         plot_bgcolor="#0d1117",
-        height=450,
-        margin=dict(l=0, r=0, t=0, b=0),
-        font=dict(color="white")
+        height=500,
+        margin=dict(l=10, r=10, t=10, b=10)
     )
     
     st.plotly_chart(fig, use_container_width=True)
     
-    # Summary below
+    # Summary
     st.markdown("""
     <p style="font-size:0.82rem; color:#2d3436; margin-top:1rem; line-height:1.6;">
         The naming world has just two major record labels: <b style="color:#3498db;">USA</b> and <b style="color:#e74c3c;">England</b> — together they originate 95% of names that go global.
-        The thicker the arc, the more names flow between those countries. Notice how the US broadcasts to <i>everyone</i>, while England primarily feeds its neighbours.
+        The thicker the line, the more names flow. Notice how the US connects to <i>everyone</i>, while England primarily feeds its neighbours.
     </p>
     """, unsafe_allow_html=True)
     st.markdown("---")
