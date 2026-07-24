@@ -629,60 +629,41 @@ def render_media_eras(df):
     last_val = era_stats[-1]["avg_countryness"]
     drop_pct = ((first_val - last_val) / first_val) * 100
 
-    # Build a visual timeline using streamlit.components.v1.html for better styling
+    # Build clean timeline using components.html
     from streamlit.components.v1 import html as st_html
 
-    # Generate era cards HTML
     era_cards = ""
     for i, era in enumerate(era_stats):
-        # Progress bar width (inverted — lower countryness = more filled = more global)
-        max_val = max(e["avg_countryness"] for e in era_stats)
-        bar_pct = 100 - ((era["avg_countryness"] / max_val) * 100)
-        
-        # Color based on how global (lower = more sage/green)
-        if era["avg_countryness"] < 20:
-            bar_color = "#7c9a8e"
-        elif era["avg_countryness"] < 30:
-            bar_color = "#667eea"
+        # Color: coral for high (distinct) → sage for low (synced)
+        if era["avg_countryness"] > 20:
+            color = "#c99e85"
+        elif era["avg_countryness"] > 16:
+            color = "#667eea"
         else:
-            bar_color = "#c99e85"
-        
-        arrow = "→" if i < len(era_stats) - 1 else ""
-        
+            color = "#7c9a8e"
+
         era_cards += f"""
-        <div style="text-align:center; flex:1; min-width: 120px; background:#fffdf5; border-radius:10px; padding:0.8rem 0.3rem; border:1px solid #f5edd8;">
-            <div style="font-size:2rem; margin-bottom:0.3rem;">{era['icon']}</div>
-            <div style="font-size:0.85rem; font-weight:700; color:#2d3436;">{era['era']}</div>
-            <div style="font-size:0.65rem; color:#636e72; margin:0.2rem 0;">{era['years']}</div>
-            <div style="margin:0.5rem auto; width:80%; height:6px; background:#eee; border-radius:3px; overflow:hidden;">
-                <div style="width:{bar_pct}%; height:100%; background:{bar_color}; border-radius:3px;"></div>
-            </div>
-            <div style="font-size:1.3rem; font-weight:800; color:{bar_color};">{era['avg_countryness']:.1f}</div>
-            <div style="font-size:0.6rem; color:#999; font-style:italic;">{era['note']}</div>
+        <div style="text-align:center; flex:1; min-width:100px; background:#fffdf5; border-radius:12px; padding:1.2rem 0.5rem; border:1px solid #f5edd8;">
+            <div style="font-size:1.8rem; margin-bottom:0.4rem;">{era['icon']}</div>
+            <div style="font-size:0.82rem; font-weight:700; color:#2d3436;">{era['era']}</div>
+            <div style="font-size:0.7rem; color:#999; margin:0.2rem 0 0.6rem 0;">{era['years']}</div>
+            <div style="font-size:1.5rem; font-weight:800; color:{color};">{era['avg_countryness']:.1f}</div>
+            <div style="font-size:0.65rem; color:#999; font-style:italic; margin-top:0.2rem;">{era['note']}</div>
         </div>
         """
 
     timeline_html = f"""
     <html>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="background: linear-gradient(135deg, #fffbf0, #fff8e8); border-radius:16px; padding:2rem; border:1px solid #f0e6d0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-            <!-- Era cards in a row -->
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.5rem; flex-wrap:wrap;">
+        <div style="background: linear-gradient(135deg, #fffbf0, #fff8e8); border-radius:16px; padding:1.5rem; border:1px solid #f0e6d0;">
+            <!-- Era cards -->
+            <div style="display:flex; align-items:stretch; justify-content:space-between; gap:0.6rem;">
                 {era_cards}
             </div>
-            
-            <!-- Gradient progress bar below -->
-            <div style="margin-top:1.5rem; padding:0 1rem;">
-                <div style="height:8px; border-radius:4px; background: linear-gradient(90deg, #c99e85 0%, #667eea 50%, #7c9a8e 100%);"></div>
-                <div style="display:flex; justify-content:space-between; margin-top:0.4rem;">
-                    <span style="font-size:0.7rem; color:#c99e85; font-weight:600;">More Distinct</span>
-                    <span style="font-size:0.7rem; color:#7c9a8e; font-weight:600;">More Synced</span>
-                </div>
-            </div>
 
-            <!-- Summary -->
-            <div style="text-align:center; margin-top:1.5rem; padding:1rem; background:#fffbf0; border-radius:10px; border:1px solid #f0e6d0;">
-                <p style="font-size:0.9rem; color:#2d3436; margin:0;">
+            <!-- Summary line -->
+            <div style="text-align:center; margin-top:1.2rem; padding:0.8rem 1rem; background:#fffdf5; border-radius:10px; border:1px solid #f5edd8;">
+                <p style="font-size:0.88rem; color:#2d3436; margin:0;">
                     📉 Cultural distinctness dropped from <b>{first_val:.1f}</b> to <b>{last_val:.1f}</b> — 
                     a <span style="color:#667eea; font-weight:800;">{drop_pct:.0f}%</span> sync-up across the Anglosphere.
                 </p>
@@ -692,7 +673,7 @@ def render_media_eras(df):
     </html>
     """
 
-    st_html(timeline_html, height=320)
+    st_html(timeline_html, height=280)
 
 
 # ─── Section: Insights Infographic ────────────────────────────────────────────
