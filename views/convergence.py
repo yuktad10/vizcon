@@ -721,6 +721,146 @@ def render_leaderboard(df):
     st.markdown("---")
 
 
+# ─── Section: Import/Export Economy ─────────────────────────────────────────────
+def render_import_export(df):
+    """The Import/Export Economy of Names — Sankey flow diagram."""
+    
+    st.markdown("""
+    <h2 style="margin: 0 0 4px 0;">💿 The Record Label Map</h2>
+    <p style="font-size: 0.95em; color: #2d3436; margin: 0 0 1.5rem 0;">
+        Every hit has a label behind it. We mapped which countries <b>produce</b> the names and which ones <b>play</b> them:
+    </p>
+    """, unsafe_allow_html=True)
+    
+    # Compute flows from data
+    df_all = load_all_names()
+    
+    # Names in 5+ countries
+    name_countries = df_all.groupby("name")["country"].nunique().reset_index()
+    name_countries.columns = ["name", "n_countries"]
+    global_names = name_countries[name_countries["n_countries"] >= 5]["name"].tolist()
+    
+    df_global = df_all[df_all["name"].isin(global_names)]
+    name_country_totals = df_global.groupby(["name", "country"])["frequency"].sum().reset_index()
+    
+    # Home = country with highest frequency
+    home_countries = name_country_totals.loc[name_country_totals.groupby("name")["frequency"].idxmax()]
+    home_countries = home_countries[["name", "country"]].rename(columns={"country": "home_country"})
+    
+    df_flows = name_country_totals.merge(home_countries, on="name")
+    df_flows = df_flows[df_flows["country"] != df_flows["home_country"]]
+    
+    flow_matrix = df_flows.groupby(["home_country", "country"]).size().reset_index(name="n_names")
+    flow_matrix.columns = ["source", "target", "n_names"]
+    
+    # Short names
+    name_map = {
+        "USA": "USA", "England and Wales": "England", "Canada": "Canada",
+        "Australia": "Australia", "Scotland": "Scotland", "Ireland": "Ireland",
+        "Northern Ireland": "N.Ireland", "New Zealand": "NZ"
+    }
+    flow_matrix["source"] = flow_matrix["source"].map(name_map)
+    flow_matrix["target"] = flow_matrix["target"].map(name_map)
+    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 50]
+    
+    # Build Sankey
+    source_nodes = ["Canada", "Australia", "Scotland", "Ireland", "NZ", "England", "USA"]
+    target_nodes = ["England", "Ireland", "Scotland", "Canada", "Australia", "N.Ireland", "NZ"]
+    
+    # Node labels: sources on left, targets on right
+    all_nodes = [f"{n}" for n in source_nodes] + [f"{n}" for n in target_nodes]
+    
+    node_colors = {
+        "Canada": "#9b59b6", "Australia": "#1abc9c", "Scotland": "#2ecc71",
+        "Ireland": "#f39c12", "NZ": "#e91e63", "England": "#e74c3c",
+        "USA": "#3498db", "N.Ireland": "#00bcd4"
+    }
+    
+    colors = [node_colors.get(n, "#999") for n in source_nodes] + [node_colors.get(n, "#999") for n in target_nodes]
+    
+    # Build links
+    source_indices = []
+    target_indices = []
+    values = []
+    link_colors = []
+    
+    for _, row in flow_matrix.iterrows():
+        src = row["source"]
+        tgt = row["target"]
+        if src in source_nodes and tgt in target_nodes:
+            source_indices.append(source_nodes.index(src))
+            target_indices.append(len(source_nodes) + target_nodes.index(tgt))
+            values.append(row["n_names"])
+            # Link color = source color with transparency
+            c = node_colors.get(src, "#999")
+            # Convert hex to rgba
+            r, g, b = int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16)
+            link_colors.append(f"rgba({r},{g},{b},0.4)")
+    
+    fig = go.Figure(data=[go.Sankey(
+        arrangement="snap",
+        node=dict(
+            pad=20,
+            thickness=18,
+            line=dict(color="rgba(0,0,0,0)", width=0),
+            label=all_nodes,
+            color=colors,
+            x=[0.01]*len(source_nodes) + [0.99]*len(target_nodes),
+            y=[i/(len(source_nodes)-1) for i in range(len(source_nodes))] + [i/(len(target_nodes)-1) for i in range(len(target_nodes))]
+        ),
+        link=dict(
+            source=source_indices,
+            target=target_indices,
+            value=values,
+            color=link_colors
+        )
+    )])
+    
+    fig.update_layout(
+        title=dict(
+            text="NAME FLOW BETWEEN COUNTRIES (NAMES THAT SPREAD TO 5+ NATIONS)",
+            font=dict(size=11, color="#636e72"),
+            x=0.02
+        ),
+        font=dict(size=11, color="white"),
+        paper_bgcolor="#1a1a2e",
+        plot_bgcolor="#1a1a2e",
+        height=450,
+        margin=dict(l=10, r=10, t=40, b=20)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Summary stats below
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("""
+        <div style="background:white; border-radius:12px; padding:1.2rem; border:1px solid #eee; text-align:center;">
+            <div style="font-size:1.8rem; font-weight:800; color:#3498db;">🇺🇸 USA</div>
+            <div style="font-size:0.8rem; color:#636e72; margin-top:0.3rem;">Biggest Exporter</div>
+            <div style="font-size:0.75rem; color:#2d3436; margin-top:0.2rem;">13,976 name-flows out</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("""
+        <div style="background:white; border-radius:12px; padding:1.2rem; border:1px solid #eee; text-align:center;">
+            <div style="font-size:1.8rem; font-weight:800; color:#9b59b6;">🇨🇦 Canada</div>
+            <div style="font-size:0.8rem; color:#636e72; margin-top:0.3rem;">Biggest Importer</div>
+            <div style="font-size:0.75rem; color:#2d3436; margin-top:0.2rem;">3,388 name-flows in</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown("""
+        <div style="background:white; border-radius:12px; padding:1.2rem; border:1px solid #eee; text-align:center;">
+            <div style="font-size:1.8rem; font-weight:800; color:#e74c3c;">🏴 England</div>
+            <div style="font-size:0.8rem; color:#636e72; margin-top:0.3rem;">#2 Exporter</div>
+            <div style="font-size:0.75rem; color:#2d3436; margin-top:0.2rem;">4,657 name-flows out</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+
+
 # ─── Section: One-Hit Wonders ──────────────────────────────────────────────────
 def render_convergence_timeline(df):
     st.markdown("""
@@ -1176,6 +1316,7 @@ def render():
     render_media_eras(df)
     render_leaderboard(df)
     render_convergence_timeline(df)
+    render_import_export(df)
     render_insights()
 
 
