@@ -453,7 +453,7 @@ def render_leaderboard(df):
         .reset_index(drop=True)
     )
 
-    # Render as a playlist-style tracklist using components.html
+    # Render as a vertical countdown strip using components.html
     from streamlit.components.v1 import html as st_html
 
     tracks_html = ""
@@ -463,51 +463,65 @@ def render_leaderboard(df):
         total = f"{int(row['total_babies_with_name']):,}"
         score = f"{row['countryness']:.3f}"
         
-        # Top 3 get gold/silver/bronze accent, rest get purple
+        # Alternating subtle backgrounds
+        bg = "#fafbfc" if rank % 2 == 0 else "white"
+        
+        # Rank colors
         if rank == 1:
-            rank_bg = "background:linear-gradient(135deg,#FFD700,#FFA500);"
-            rank_shadow = "box-shadow:0 2px 8px rgba(255,215,0,0.3);"
+            rank_color = "#FFD700"
+            rank_icon = "🥇"
         elif rank == 2:
-            rank_bg = "background:linear-gradient(135deg,#C0C0C0,#A8A8A8);"
-            rank_shadow = "box-shadow:0 2px 8px rgba(192,192,192,0.3);"
+            rank_color = "#C0C0C0"
+            rank_icon = "🥈"
         elif rank == 3:
-            rank_bg = "background:linear-gradient(135deg,#CD7F32,#A0522D);"
-            rank_shadow = "box-shadow:0 2px 8px rgba(205,127,50,0.3);"
+            rank_color = "#CD7F32"
+            rank_icon = "🥉"
         else:
-            rank_bg = "background:linear-gradient(135deg,#667eea,#764ba2);"
-            rank_shadow = "box-shadow:0 2px 8px rgba(102,126,234,0.2);"
+            rank_color = "#667eea"
+            rank_icon = f"#{rank}"
+
+        # Album art square — using first letter as a stylized "cover"
+        letter = row['name'][0]
+        art_colors = ["#667eea", "#7c9a8e", "#c99e85", "#457b9d", "#2a9d8f", "#e9c46a"]
+        art_bg = art_colors[i % len(art_colors)]
 
         tracks_html += f"""
-        <div style="display:flex; align-items:center; padding:0.9rem 1.2rem; margin:0.5rem 0; border-radius:14px; background:white; border:1px solid #f0f0f0; transition:all 0.2s; cursor:default;"
-             onmouseover="this.style.transform='translateX(4px)'; this.style.boxShadow='0 4px 16px rgba(102,126,234,0.12)';"
-             onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
-            <!-- Rank badge -->
-            <div style="{rank_bg} {rank_shadow} color:white; font-weight:800; font-size:1rem; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                {rank}
+        <div style="display:flex; align-items:center; padding:1rem 1.2rem; background:{bg}; border-bottom:1px solid #f0f0f0;">
+            <!-- Album art square -->
+            <div style="width:52px; height:52px; border-radius:8px; background:linear-gradient(135deg, {art_bg}, {art_bg}dd); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 8px {art_bg}44;">
+                <span style="color:white; font-size:1.6rem; font-weight:800;">{letter}</span>
             </div>
             <!-- Track info -->
             <div style="flex:1; margin-left:1rem;">
-                <div style="font-size:1.15rem; font-weight:700; color:#2d3436;">{row['name']} <span style="font-size:0.9rem;">{sex_emoji}</span></div>
-                <div style="font-size:0.78rem; color:#636e72; margin-top:2px;">🌍 8 countries • {total} total streams • Peak: {row['max_country']}</div>
+                <div style="font-size:1.1rem; font-weight:700; color:#2d3436;">{rank_icon} {row['name']} <span style="font-weight:400; font-size:0.85rem;">{sex_emoji}</span></div>
+                <div style="font-size:0.75rem; color:#636e72; margin-top:3px;">
+                    {total} streams • 8 countries • Peak: {row['max_country']}
+                </div>
             </div>
-            <!-- Score -->
-            <div style="text-align:right; flex-shrink:0; margin-left:1rem;">
-                <div style="background:linear-gradient(135deg,#7c9a8e,#5a7d6f); color:white; padding:0.3rem 0.8rem; border-radius:12px; font-size:0.78rem; font-weight:700;">{score}</div>
-                <div style="font-size:0.6rem; color:#999; margin-top:3px; text-transform:uppercase; letter-spacing:0.5px;">countryness</div>
+            <!-- Countryness score -->
+            <div style="text-align:right; flex-shrink:0;">
+                <div style="font-size:1.2rem; font-weight:800; color:#7c9a8e;">{score}</div>
+                <div style="font-size:0.6rem; color:#999; text-transform:uppercase; letter-spacing:0.5px;">score</div>
             </div>
         </div>
         """
 
-    playlist_html = f"""
+    countdown_html = f"""
     <html>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="background:linear-gradient(180deg, #f8f9fa 0%, white 100%); border-radius:16px; padding:1rem;">
+        <div style="border-radius:16px; overflow:hidden; border:1px solid #eee; box-shadow:0 4px 16px rgba(0,0,0,0.06);">
+            <!-- Header bar -->
+            <div style="background:linear-gradient(135deg, #667eea, #764ba2); padding:0.8rem 1.2rem; display:flex; align-items:center; justify-content:space-between;">
+                <span style="color:white; font-weight:700; font-size:0.9rem;">🎧 TOP 6 COUNTDOWN</span>
+                <span style="color:rgba(255,255,255,0.7); font-size:0.75rem;">All-Time Global Chart</span>
+            </div>
+            <!-- Tracks -->
             {tracks_html}
         </div>
     </body>
     </html>
     """
-    st_html(playlist_html, height=420)
+    st_html(countdown_html, height=460)
 
 
 # ─── Section: Convergence Timeline ───────────────────────────────────────────
