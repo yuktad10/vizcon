@@ -1053,14 +1053,13 @@ def render_convergence_timeline(df):
                 }
             }
             
-            // Show first one by default
-            showInfo(0);
+            // Don't show anything until user clicks
         </script>
     </body>
     </html>
     """
 
-    st_html(timeline_quiz_html, height=750)
+    st_html(timeline_quiz_html, height=900)
 
     # Insight text below
     st.markdown("""
