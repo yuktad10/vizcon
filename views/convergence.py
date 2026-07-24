@@ -937,34 +937,34 @@ def render_convergence_timeline(df):
         <script>
             const data = [
                 {
-                    name: "Britney", emoji: "\ud83c\udfa4",
-                    trigger: "Britney Spears drops \u2018...Baby One More Time\u2019 \u2014 every girl wants to be Britney",
+                    name: "Britney", emoji: "🎤",
+                    trigger: "Britney Spears drops '...Baby One More Time' — every girl wants to be Britney",
                     peak: "3,083", peakYear: "2000", now: "217", fall: "93",
-                    status: "\u274c Basically gone", statusColor: "#e63946", statusBg: "#ffebee"
+                    status: "❌ Basically gone", statusColor: "#e63946", statusBg: "#ffebee"
                 },
                 {
-                    name: "Nevaeh", emoji: "\ud83d\udca5",
-                    trigger: "\u2018Heaven\u2019 spelled backwards goes viral after an MTV interview",
+                    name: "Nevaeh", emoji: "💥",
+                    trigger: "'Heaven' spelled backwards goes viral after an MTV interview",
                     peak: "7,455", peakYear: "2007", now: "3,053", fall: "59",
-                    status: "\ud83d\udcc9 Fading slowly", statusColor: "#c99e85", statusBg: "#fff3e0"
+                    status: "📉 Fading slowly", statusColor: "#c99e85", statusBg: "#fff3e0"
                 },
                 {
-                    name: "Khaleesi", emoji: "\ud83d\udc09",
-                    trigger: "Game of Thrones S1 \u2014 parents name babies after a fictional dragon queen",
+                    name: "Khaleesi", emoji: "🐉",
+                    trigger: "Game of Thrones S1 — parents name babies after a fictional dragon queen",
                     peak: "606", peakYear: "2018", now: "422", fall: "30",
-                    status: "\u26a0\ufe0f Fading with the show", statusColor: "#e9c46a", statusBg: "#fffde7"
+                    status: "⚠️ Fading with the show", statusColor: "#e9c46a", statusBg: "#fffde7"
                 },
                 {
-                    name: "Arya", emoji: "\u2694\ufe0f",
-                    trigger: "GoT\u2019s fierce warrior + real Sanskrit/Persian roots (meaning noble)",
+                    name: "Arya", emoji: "⚔️",
+                    trigger: "GoT's fierce warrior + real Sanskrit/Persian roots (meaning noble)",
                     peak: "3,913", peakYear: "2019", now: "2,691", fall: "31",
-                    status: "\u2705 Still charting", statusColor: "#7c9a8e", statusBg: "#e8f5e9"
+                    status: "✅ Still charting", statusColor: "#7c9a8e", statusBg: "#e8f5e9"
                 },
                 {
-                    name: "Elsa", emoji: "\u2744\ufe0f",
-                    trigger: "Frozen is released \u2014 \u2018Let It Go\u2019 is inescapable",
+                    name: "Elsa", emoji: "❄️",
+                    trigger: "Frozen is released — 'Let It Go' is inescapable",
                     peak: "1,999", peakYear: "2014", now: "373", fall: "81",
-                    status: "\u274c Frozen out", statusColor: "#e63946", statusBg: "#ffebee"
+                    status: "❌ Frozen out", statusColor: "#e63946", statusBg: "#ffebee"
                 }
             ];
             
@@ -981,9 +981,9 @@ def render_convergence_timeline(df):
                     '<div class="info-trigger">"' + d.trigger + '"</div>' +
                     '<div class="info-stats">' +
                         '<div class="info-stat"><div class="info-stat-value" style="color:#667eea;">' + d.peak + '</div><div class="info-stat-label">Peak (' + d.peakYear + ')</div></div>' +
-                        '<div style="display:flex; align-items:center; font-size:1.2rem; color:#ccc;">\u2192</div>' +
+                        '<div style="display:flex; align-items:center; font-size:1.2rem; color:#ccc;">→</div>' +
                         '<div class="info-stat"><div class="info-stat-value" style="color:#2d3436;">' + d.now + '</div><div class="info-stat-label">Now (2023)</div></div>' +
-                        '<div class="info-stat"><div class="info-stat-value" style="color:' + d.statusColor + ';">\u2193' + d.fall + '%</div><div class="info-stat-label">Drop</div></div>' +
+                        '<div class="info-stat"><div class="info-stat-value" style="color:' + d.statusColor + ';">↓' + d.fall + '%</div><div class="info-stat-label">Drop</div></div>' +
                     '</div>' +
                     '<div class="status-badge" style="background:' + d.statusBg + '; color:' + d.statusColor + ';">' + d.status + '</div>';
             }
@@ -998,13 +998,13 @@ def render_convergence_timeline(df):
                     if (answer === 'b') {
                         btnB.className = 'quiz-btn correct';
                         btnA.className = 'quiz-btn wrong';
-                        resultDiv.innerHTML = '<b>\u2705 Arya</b> is still going strong (\u219331%)! Unlike "Khaleesi" which is purely a TV reference, "Arya" has real linguistic roots in Sanskrit (meaning noble) and Persian \u2014 it sounds like a natural name, so it outlived its source material.';
+                        resultDiv.innerHTML = '<b>✅ Arya</b> is still going strong (↓31%)! Unlike "Khaleesi" which is purely a TV reference, "Arya" has real linguistic roots in Sanskrit (meaning noble) and Persian — it sounds like a natural name, so it outlived its source material.';
                         resultDiv.style.background = '#e8f5e9';
                         resultDiv.style.color = '#2e7d32';
                     } else {
                         btnA.className = 'quiz-btn wrong';
                         btnB.className = 'quiz-btn correct';
-                        resultDiv.innerHTML = '\u274c Actually, <b>Arya</b> survived better! Khaleesi is fading because it only references GoT. Arya has real Sanskrit/Persian roots \u2014 names that <i>sound</i> natural outlast names that only <i>reference</i> something.';
+                        resultDiv.innerHTML = '❌ Actually, <b>Arya</b> survived better! Khaleesi is fading because it only references GoT. Arya has real Sanskrit/Persian roots — names that <i>sound</i> natural outlast names that only <i>reference</i> something.';
                         resultDiv.style.background = '#ffebee';
                         resultDiv.style.color = '#c62828';
                     }
@@ -1022,12 +1022,12 @@ def render_convergence_timeline(df):
                     
                     if (answer === 'c') {
                         btnC.className = 'quiz-btn correct';
-                        resultDiv.innerHTML = '\u2705 Correct! <b>James</b> only dropped ~15% in 27 years \u2014 from 35,413 to 15,918. That is an evergreen classic. Compare that to Britney (\u219393%) or Elsa (\u219381%). Classic names do not ride trends \u2014 they ARE the trend.';
+                        resultDiv.innerHTML = '✅ Correct! <b>James</b> only dropped ~15% in 27 years — from 35,413 to 15,918. That is an evergreen classic. Compare that to Britney (↓93%) or Elsa (↓81%). Classic names do not ride trends — they ARE the trend.';
                         resultDiv.style.background = '#e8f5e9';
                         resultDiv.style.color = '#2e7d32';
                     } else {
                         btnC.className = 'quiz-btn correct';
-                        resultDiv.innerHTML = '\u274c Nope! James barely budged \u2014 only \u219315% over 27 years (35,413 \u2192 15,918). Evergreen classics do not ride cultural waves. They ARE the baseline. Britney fell 93% but James just keeps going.';
+                        resultDiv.innerHTML = '❌ Nope! James barely budged — only ↓15% over 27 years (35,413 → 15,918). Evergreen classics do not ride cultural waves. They ARE the baseline. Britney fell 93% but James just keeps going.';
                         resultDiv.style.background = '#ffebee';
                         resultDiv.style.color = '#c62828';
                     }
@@ -1111,20 +1111,20 @@ def render_import_export(df):
     
     # Country colors and flags
     country_info = {
-        "USA": {"color": "#3498db", "flag": "\ud83c\uddfa\ud83c\uddf8"},
-        "England": {"color": "#e74c3c", "flag": "\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f"},
-        "Canada": {"color": "#9b59b6", "flag": "\ud83c\udde8\ud83c\udde6"},
-        "Ireland": {"color": "#f39c12", "flag": "\ud83c\uddee\ud83c\uddea"},
-        "Scotland": {"color": "#2ecc71", "flag": "\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc73\udb40\udc63\udb40\udc74\udb40\udc7f"},
-        "Australia": {"color": "#1abc9c", "flag": "\ud83c\udde6\ud83c\uddfa"},
-        "N.Ireland": {"color": "#00bcd4", "flag": "\ud83c\udff4"},
-        "NZ": {"color": "#e91e63", "flag": "\ud83c\uddf3\ud83c\uddff"}
+        "USA": {"color": "#3498db"},
+        "England": {"color": "#e74c3c"},
+        "Canada": {"color": "#9b59b6"},
+        "Ireland": {"color": "#f39c12"},
+        "Scotland": {"color": "#2ecc71"},
+        "Australia": {"color": "#1abc9c"},
+        "N.Ireland": {"color": "#00bcd4"},
+        "NZ": {"color": "#e91e63"}
     }
     
     # Build export bars HTML
     export_bars = ""
     for country, count in exports.items():
-        info = country_info.get(country, {"color": "#999", "flag": ""})
+        info = country_info.get(country, {"color": "#999", })
         pct = (count / max_export) * 100
         export_bars += f"""
         <div class="bar-row">
@@ -1138,7 +1138,7 @@ def render_import_export(df):
     # Build import bars HTML
     import_bars = ""
     for country, count in imports.items():
-        info = country_info.get(country, {"color": "#999", "flag": ""})
+        info = country_info.get(country, {"color": "#999", })
         pct = (count / max_import) * 100
         import_bars += f"""
         <div class="bar-row">
