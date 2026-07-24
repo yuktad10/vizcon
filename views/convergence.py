@@ -438,11 +438,8 @@ def render_leaderboard(df):
     st.markdown("---")
     st.markdown("""
     <h2 style="margin: 0 0 4px 0;">🏆 The Global 6</h2>
-    <p style="font-size: 0.95em; color: #636e72; margin: 0 0 0.3rem 0;">
+    <p style="font-size: 0.95em; color: #636e72; margin: 0 0 1.5rem 0;">
         The six biggest cross-border anthems — names that charted equally in all 8 nations. No single home country. Pure global hits.
-    </p>
-    <p style="font-size: 0.78em; color: #999; font-style: italic; margin: 0 0 1.5rem 0;">
-        ⓘ Ranked by countryness score (lower = more equally spread across nations). A name with fewer total babies can rank higher if it's perfectly balanced — being a small hit <i>everywhere</i> beats being a massive hit in just one place.
     </p>
     """, unsafe_allow_html=True)
 
@@ -458,14 +455,14 @@ def render_leaderboard(df):
 
     from streamlit.components.v1 import html as st_html
 
-    # Warm/vibrant music poster themes — no vinyl, use music hit icons instead
+    # Subtle/muted versions of the vibrant colors
     poster_themes = [
-        {"bg": "linear-gradient(135deg, #ff6b6b, #ee5a24)", "accent": "#fff", "icon": "🎤", "label": "#1 HIT"},
-        {"bg": "linear-gradient(135deg, #6c5ce7, #a55eea)", "accent": "#ffd700", "icon": "🎸", "label": "CHART BREAKER"},
-        {"bg": "linear-gradient(135deg, #00b894, #00cec9)", "accent": "#fff", "icon": "🎹", "label": "GLOBAL SOUND"},
-        {"bg": "linear-gradient(135deg, #fd79a8, #e84393)", "accent": "#fff", "icon": "🎧", "label": "ON REPEAT"},
-        {"bg": "linear-gradient(135deg, #f39c12, #e67e22)", "accent": "#fff", "icon": "🎷", "label": "CLASSIC"},
-        {"bg": "linear-gradient(135deg, #0984e3, #74b9ff)", "accent": "#fff", "icon": "🎵", "label": "RISING STAR"},
+        {"bg": "linear-gradient(135deg, #d4574e, #c0392b)", "accent": "#fff", "icon": "🎤", "label": "#1 HIT"},
+        {"bg": "linear-gradient(135deg, #5b4db8, #7c5cbf)", "accent": "#ffd700", "icon": "🎸", "label": "CHART BREAKER"},
+        {"bg": "linear-gradient(135deg, #1e8a7a, #2ca5a0)", "accent": "#fff", "icon": "🎹", "label": "GLOBAL SOUND"},
+        {"bg": "linear-gradient(135deg, #c06088, #a8527a)", "accent": "#fff", "icon": "🎧", "label": "ON REPEAT"},
+        {"bg": "linear-gradient(135deg, #c8851a, #b87a1a)", "accent": "#fff", "icon": "🎷", "label": "CLASSIC"},
+        {"bg": "linear-gradient(135deg, #2d7abf, #5a9bd4)", "accent": "#fff", "icon": "🎵", "label": "RISING STAR"},
     ]
 
     taglines = [
@@ -487,13 +484,13 @@ def render_leaderboard(df):
 
         posters_html += f"""
         <div style="flex:1; min-width:155px; max-width:190px;">
-            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 6px 24px rgba(0,0,0,0.2); position:relative; overflow:hidden; height:270px;">
+            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.15); position:relative; overflow:hidden; height:270px;">
                 <!-- Label ribbon -->
                 <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.2); backdrop-filter:blur(4px); border-radius:6px; padding:2px 7px;">
                     <span style="font-size:0.55rem; color:rgba(255,255,255,0.95); font-weight:700; letter-spacing:1px;">{theme['label']}</span>
                 </div>
                 <!-- Rank -->
-                <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.25); border-radius:6px; padding:2px 7px;">
+                <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.2); border-radius:6px; padding:2px 7px;">
                     <span style="font-size:0.7rem; color:white; font-weight:700;">#{rank}</span>
                 </div>
                 
@@ -529,6 +526,23 @@ def render_leaderboard(df):
     """
 
     st_html(full_html, height=320)
+
+    # Explanation below the posters
+    st.markdown("""
+    <div style="margin-top:1.5rem; padding:1.2rem 1.5rem; background:#f8f9fa; border-radius:12px; border-left:4px solid #667eea;">
+        <p style="font-size:0.88rem; color:#2d3436; margin:0 0 0.5rem 0; font-weight:600;">
+            📐 How is this ranked?
+        </p>
+        <p style="font-size:0.82rem; color:#4a5568; margin:0; line-height:1.6;">
+            These names are ranked by <b>countryness score</b> — a measure of how equally a name is spread across all 8 nations.
+            A score of 1.0 means perfectly equal usage everywhere. The closer to 1, the more "global" the name.<br><br>
+            This means a name with fewer total babies can rank higher than a more popular one. Why? Because being 
+            a <b>small hit everywhere equally</b> is more "global" than being a massive hit in just one or two countries.
+            Think of it like a song that charts at #20 in every country simultaneously vs one that's #1 in one country but unknown elsewhere — 
+            the first one is the true global anthem.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ─── Section: Convergence Timeline ───────────────────────────────────────────
