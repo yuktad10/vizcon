@@ -724,7 +724,7 @@ def render_leaderboard(df):
 # ─── Section: One-Hit Wonders ──────────────────────────────────────────────────
 def render_convergence_timeline(df):
     st.markdown("""
-    <h2 style="margin: 0 0 4px 0;">🎤 One-Hit Wonders</h2>
+    <h2 style="margin: 0 0 4px 0;">💥 One-Hit Wonders</h2>
     <p style="font-size: 0.95em; color: #2d3436; margin: 0 0 0.3rem 0;">
         The fastest rise, the shortest life. Pop culture creates instant global sync — but these names burn bright and fade fast.
     </p>
@@ -934,7 +934,7 @@ def render_convergence_timeline(df):
                 <div class="quiz-subtitle">James has been a top name since 1997. In 27 years, how much did it drop from its peak?</div>
                 <div class="quiz-options">
                     <div class="quiz-btn" id="q2-a" onclick="checkQuiz('q2', 'a')">↓55% (lost half)</div>
-                    <div class="quiz-btn" id="q2-b" onclick="checkQuiz('q2', 'b')">↓55% (lost half)</div>
+                    <div class="quiz-btn" id="q2-b" onclick="checkQuiz('q2', 'b')">↓35% (steady decline)</div>
                     <div class="quiz-btn" id="q2-c" onclick="checkQuiz('q2', 'c')">↓15% (barely moved)</div>
                 </div>
                 <div id="q2-result" class="quiz-result"></div>
@@ -1040,12 +1040,12 @@ def render_convergence_timeline(df):
                     
                     if (answer === 'c') {
                         btnC.className = 'quiz-btn correct';
-                        resultDiv.innerHTML = '✅ Correct! <b>James</b> only dropped ~15% in 27 years — from 35,413 to 15,918. That\'s an evergreen classic. Compare that to Britney (↓93%) or Elsa (↓81%). Classic names don\'t ride trends — they ARE the trend.';
+                        resultDiv.innerHTML = '✅ Correct! <b>James</b> only dropped ~15% in 27 years — from 35,413 to 15,918. That is an evergreen classic. Compare that to Britney (↓93%) or Elsa (↓81%). Classic names do not ride trends — they ARE the trend.';
                         resultDiv.style.background = '#e8f5e9';
                         resultDiv.style.color = '#2e7d32';
                     } else {
                         btnC.className = 'quiz-btn correct';
-                        resultDiv.innerHTML = '❌ Nope! James barely budged — only ↓15% over 27 years (35,413 → 15,918). Evergreen classics don\'t ride cultural waves. They ARE the baseline. That\'s why Britney fell 93% but James just keeps going.';
+                        resultDiv.innerHTML = '❌ Nope! James barely budged — only ↓15% over 27 years (35,413 → 15,918). Evergreen classics do not ride cultural waves. They ARE the baseline. Britney fell 93% but James just keeps going.';
                         resultDiv.style.background = '#ffebee';
                         resultDiv.style.color = '#c62828';
                     }
