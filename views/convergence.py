@@ -433,52 +433,98 @@ def render_track_lookup(df_metrics):
         """, unsafe_allow_html=True)
 
 
-# ─── Section: Leaderboard ─────────────────────────────────────────────────────
+# ─── Section: Global Top 6 + Names That Ruled ────────────────────────────────
 def render_leaderboard(df):
+    st.markdown("---")
     st.markdown("""
-    <div class="section-divider">
-        <h2>🏆 The Global Top 20</h2>
-        <p>Chart-toppers that hit #1 in all 8 nations — the most borderless names on Earth</p>
-    </div>
+    <h2 style="margin: 0 0 4px 0;">🏆 The Global 6</h2>
+    <p style="font-size: 0.95em; color: #636e72; margin: 0 0 1.5rem 0;">
+        The six most borderless names on Earth — equally loved across all 8 nations. These are the chart-toppers that belong to no single country.
+    </p>
     """, unsafe_allow_html=True)
 
-    # Filter: used in all 8 countries, take most recent year per name
-    latest_year = df["year"].max()
-    recent = df[df["year"] == latest_year].copy()
-
-    # Names used in all 8 countries
-    global_names = recent[recent["countries_using_name"] == 8].copy()
-
-    # Get lowest countryness (most global)
-    top20 = (
-        global_names.groupby(["name", "sex"])
-        .agg(
-            countryness=("countryness", "min"),
-            total_babies=("total_num_babies_w_name", "max"),
-        )
-        .reset_index()
-        .sort_values("countryness")
-        .head(20)
+    # Load summary for aggregated data
+    df_summary = load_summary()
+    
+    # Top 6 from summary (used in all 8 countries, lowest countryness)
+    top6 = (
+        df_summary[df_summary["countries_using_name"] == 8]
+        .nsmallest(6, "countryness")
         .reset_index(drop=True)
     )
 
-    # Build HTML chart entries
+    # Render as 6 cards in 2 rows of 3
+    from streamlit.components.v1 import html as st_html
+
+    cards_html = ""
+    medals = ["🥇", "🥈", "🥉", "4", "5", "6"]
+    
+    for i, row in top6.iterrows():
+        sex_emoji = "♀️" if row["sex"] == "F" else "♂️"
+        medal = medals[i]
+        total = f"{int(row['total_babies_with_name']):,}"
+        
+        # Medal styling for top 3 vs rest
+        if i < 3:
+            medal_style = f'font-size:1.5rem;'
+        else:
+            medal_style = f'font-size:1rem; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border-radius:50%; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; font-weight:800;'
+
+        cards_html += f"""
+        <div style="background:white; border-radius:14px; padding:1.2rem; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center; flex:1; min-width:160px;">
+            <div style="{medal_style}">{medal}</div>
+            <div style="font-size:1.4rem; font-weight:800; color:#2d3436; margin:0.4rem 0 0.2rem 0;">{row['name']} {sex_emoji}</div>
+            <div style="font-size:0.75rem; color:#636e72; margin-bottom:0.4rem;">{total} streams worldwide</div>
+            <div style="background:linear-gradient(135deg,#7c9a8e,#5a7d6f); color:white; padding:0.2rem 0.6rem; border-radius:10px; font-size:0.7rem; font-weight:600; display:inline-block;">
+                Score: {row['countryness']:.3f}
+            </div>
+        </div>
+        """
+
+    global_6_html = f"""
+    <html>
+    <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
+            {cards_html}
+        </div>
+    </body>
+    </html>
+    """
+    st_html(global_6_html, height=220)
+
+    # ─── Names That Ruled: best single-year performances ─────────
+    st.markdown('<div style="height:2rem;"></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <h3 style="margin: 0 0 4px 0;">👑 Names That Ruled</h3>
+    <p style="font-size: 0.88em; color: #636e72; margin: 0 0 1rem 0;">
+        The best single-year chart performances — names that were perfectly global in one shining moment.
+    </p>
+    """, unsafe_allow_html=True)
+
+    # Best single-year countryness (all 8 countries)
+    best_years = (
+        df[df["countries_using_name"] == 8]
+        .nsmallest(10, "countryness")
+        .reset_index(drop=True)
+    )
+
+    # Build as a styled list
     entries_html = ""
-    for i, row in top20.iterrows():
+    for i, row in best_years.iterrows():
         rank = i + 1
         sex_emoji = "♀️" if row["sex"] == "F" else "♂️"
         rank_class = "chart-rank top3" if rank <= 3 else "chart-rank"
-        total_formatted = f"{int(row['total_babies']):,}"
+        total_formatted = f"{int(row['total_num_babies_w_name']):,}"
 
         entries_html += f"""
         <div class="chart-entry">
             <div class="{rank_class}">{rank}</div>
             <div class="chart-info">
                 <div class="chart-name">{row['name']} {sex_emoji}</div>
-                <div class="chart-meta">🌍 8 countries • {total_formatted} babies worldwide</div>
+                <div class="chart-meta">🌍 8 countries • {total_formatted} babies • {int(row['year'])}</div>
             </div>
             <div class="chart-score">
-                <div class="value">{row['countryness']:.2f}</div>
+                <div class="value">{row['countryness']:.3f}</div>
                 <div class="label">countryness</div>
             </div>
         </div>
