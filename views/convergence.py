@@ -721,6 +721,341 @@ def render_leaderboard(df):
     st.markdown("---")
 
 
+# ─── Section: One-Hit Wonders ──────────────────────────────────────────────────
+def render_convergence_timeline(df):
+    st.markdown("""
+    <h2 style="margin: 0 0 4px 0;">💥 One-Hit Wonders</h2>
+    <p style="font-size: 0.95em; color: #2d3436; margin: 0 0 0.3rem 0;">
+        The fastest rise, the shortest life. Pop culture creates instant global sync — but these names burn bright and fade fast.
+    </p>
+    <p style="font-size: 0.85em; color: #636e72; margin: 0 0 1.5rem 0;">
+        👇 Click on any emoji to reveal the story behind each name
+    </p>
+    """, unsafe_allow_html=True)
+
+    from streamlit.components.v1 import html as st_html
+
+    # Interactive horizontal timeline + quiz
+    timeline_quiz_html = """
+    <html>
+    <head>
+    <style>
+        body { margin:0; padding:1rem 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        
+        .timeline-container {
+            position: relative;
+            padding: 2rem 1rem;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            top: 35px;
+            left: 5%;
+            right: 5%;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #c99e85);
+            border-radius: 2px;
+        }
+        
+        .timeline-markers {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 3%;
+            position: relative;
+        }
+        
+        .marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 2;
+        }
+        
+        .marker:hover { transform: scale(1.2); }
+        .marker.active { transform: scale(1.3); }
+        
+        .marker-emoji {
+            font-size: 2rem;
+            background: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            border: 3px solid #eee;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .marker.active .marker-emoji {
+            border-color: #667eea;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        }
+        
+        .marker-year {
+            font-size: 0.7rem;
+            color: #999;
+            margin-top: 0.4rem;
+            font-weight: 600;
+        }
+        
+        .marker-name {
+            font-size: 0.75rem;
+            color: #2d3436;
+            font-weight: 700;
+            margin-top: 0.2rem;
+        }
+        
+        .info-box {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f9f5ff, #f3eeff);
+            border-radius: 14px;
+            border: 1px solid #e8ddf5;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .info-box.visible { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .info-title { font-size: 1.1rem; font-weight: 800; color: #2d3436; margin-bottom: 0.3rem; }
+        .info-trigger { font-size: 0.85rem; color: #4a5568; font-style: italic; margin-bottom: 0.8rem; }
+        .info-stats { display: flex; gap: 2rem; flex-wrap: wrap; }
+        .info-stat { text-align: center; }
+        .info-stat-value { font-size: 1.3rem; font-weight: 800; }
+        .info-stat-label { font-size: 0.65rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 8px; font-size: 0.72rem; font-weight: 600; margin-top: 0.8rem; }
+        
+        .quiz-section {
+            margin-top: 2.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f0f4f8, #e8ecf0);
+            border-radius: 14px;
+            border: 1px solid #d8dee4;
+        }
+        
+        .quiz-title { font-size: 1rem; font-weight: 700; color: #2d3436; margin-bottom: 0.5rem; }
+        .quiz-subtitle { font-size: 0.82rem; color: #636e72; margin-bottom: 1rem; }
+        
+        .quiz-options {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        
+        .quiz-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .quiz-btn:hover { border-color: #667eea; background: #f5f0ff; }
+        .quiz-btn.correct { border-color: #7c9a8e; background: #e8f5e9; color: #2e7d32; }
+        .quiz-btn.wrong { border-color: #e63946; background: #ffebee; color: #c62828; }
+        
+        .quiz-result {
+            display: none;
+            padding: 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .quiz-result.visible { display: block; }
+    </style>
+    </head>
+    <body>
+        <div class="timeline-container">
+            <div class="timeline-line"></div>
+            <div class="timeline-markers">
+                <div class="marker" onclick="showInfo(0)">
+                    <div class="marker-emoji">🎤</div>
+                    <div class="marker-year">1999</div>
+                    <div class="marker-name">Britney</div>
+                </div>
+                <div class="marker" onclick="showInfo(1)">
+                    <div class="marker-emoji">💥</div>
+                    <div class="marker-year">2001</div>
+                    <div class="marker-name">Nevaeh</div>
+                </div>
+                <div class="marker" onclick="showInfo(2)">
+                    <div class="marker-emoji">🐉</div>
+                    <div class="marker-year">2011</div>
+                    <div class="marker-name">Khaleesi</div>
+                </div>
+                <div class="marker" onclick="showInfo(3)">
+                    <div class="marker-emoji">⚔️</div>
+                    <div class="marker-year">2011</div>
+                    <div class="marker-name">Arya</div>
+                </div>
+                <div class="marker" onclick="showInfo(4)">
+                    <div class="marker-emoji">❄️</div>
+                    <div class="marker-year">2013</div>
+                    <div class="marker-name">Elsa</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="info-box" class="info-box">
+            <div id="info-content"></div>
+        </div>
+        
+        <div class="quiz-section">
+            <div class="quiz-title">🎯 Can You Guess Who Survived?</div>
+            <div class="quiz-subtitle">Two names were triggered by the same show (Game of Thrones). One dropped 81% from peak. The other only 31%. Which one is still charting strong?</div>
+            <div class="quiz-options">
+                <div class="quiz-btn" id="q1-a" onclick="checkQuiz('q1', 'a')">Khaleesi</div>
+                <div class="quiz-btn" id="q1-b" onclick="checkQuiz('q1', 'b')">Arya</div>
+            </div>
+            <div id="q1-result" class="quiz-result"></div>
+            
+            <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid #d8dee4;">
+                <div class="quiz-title">🎵 Evergreen or One-Hit?</div>
+                <div class="quiz-subtitle">James has been a top name since 1997. In 27 years, how much did it drop from its peak?</div>
+                <div class="quiz-options">
+                    <div class="quiz-btn" id="q2-a" onclick="checkQuiz('q2', 'a')">↓55% (lost half)</div>
+                    <div class="quiz-btn" id="q2-b" onclick="checkQuiz('q2', 'b')">↓35% (steady decline)</div>
+                    <div class="quiz-btn" id="q2-c" onclick="checkQuiz('q2', 'c')">↓15% (barely moved)</div>
+                </div>
+                <div id="q2-result" class="quiz-result"></div>
+            </div>
+        </div>
+        
+        <script>
+            const data = [
+                {
+                    name: "Britney", emoji: "\ud83c\udfa4",
+                    trigger: "Britney Spears drops \u2018...Baby One More Time\u2019 \u2014 every girl wants to be Britney",
+                    peak: "3,083", peakYear: "2000", now: "217", fall: "93",
+                    status: "\u274c Basically gone", statusColor: "#e63946", statusBg: "#ffebee"
+                },
+                {
+                    name: "Nevaeh", emoji: "\ud83d\udca5",
+                    trigger: "\u2018Heaven\u2019 spelled backwards goes viral after an MTV interview",
+                    peak: "7,455", peakYear: "2007", now: "3,053", fall: "59",
+                    status: "\ud83d\udcc9 Fading slowly", statusColor: "#c99e85", statusBg: "#fff3e0"
+                },
+                {
+                    name: "Khaleesi", emoji: "\ud83d\udc09",
+                    trigger: "Game of Thrones S1 \u2014 parents name babies after a fictional dragon queen",
+                    peak: "606", peakYear: "2018", now: "422", fall: "30",
+                    status: "\u26a0\ufe0f Fading with the show", statusColor: "#e9c46a", statusBg: "#fffde7"
+                },
+                {
+                    name: "Arya", emoji: "\u2694\ufe0f",
+                    trigger: "GoT\u2019s fierce warrior + real Sanskrit/Persian roots (meaning noble)",
+                    peak: "3,913", peakYear: "2019", now: "2,691", fall: "31",
+                    status: "\u2705 Still charting", statusColor: "#7c9a8e", statusBg: "#e8f5e9"
+                },
+                {
+                    name: "Elsa", emoji: "\u2744\ufe0f",
+                    trigger: "Frozen is released \u2014 \u2018Let It Go\u2019 is inescapable",
+                    peak: "1,999", peakYear: "2014", now: "373", fall: "81",
+                    status: "\u274c Frozen out", statusColor: "#e63946", statusBg: "#ffebee"
+                }
+            ];
+            
+            function showInfo(idx) {
+                document.querySelectorAll('.marker').forEach(m => m.classList.remove('active'));
+                document.querySelectorAll('.marker')[idx].classList.add('active');
+                
+                const d = data[idx];
+                const box = document.getElementById('info-box');
+                box.className = 'info-box visible';
+                
+                document.getElementById('info-content').innerHTML =
+                    '<div class="info-title">' + d.emoji + ' ' + d.name + '</div>' +
+                    '<div class="info-trigger">"' + d.trigger + '"</div>' +
+                    '<div class="info-stats">' +
+                        '<div class="info-stat"><div class="info-stat-value" style="color:#667eea;">' + d.peak + '</div><div class="info-stat-label">Peak (' + d.peakYear + ')</div></div>' +
+                        '<div style="display:flex; align-items:center; font-size:1.2rem; color:#ccc;">\u2192</div>' +
+                        '<div class="info-stat"><div class="info-stat-value" style="color:#2d3436;">' + d.now + '</div><div class="info-stat-label">Now (2023)</div></div>' +
+                        '<div class="info-stat"><div class="info-stat-value" style="color:' + d.statusColor + ';">\u2193' + d.fall + '%</div><div class="info-stat-label">Drop</div></div>' +
+                    '</div>' +
+                    '<div class="status-badge" style="background:' + d.statusBg + '; color:' + d.statusColor + ';">' + d.status + '</div>';
+            }
+            
+            function checkQuiz(quiz, answer) {
+                const resultDiv = document.getElementById(quiz + '-result');
+                
+                if (quiz === 'q1') {
+                    const btnA = document.getElementById('q1-a');
+                    const btnB = document.getElementById('q1-b');
+                    
+                    if (answer === 'b') {
+                        btnB.className = 'quiz-btn correct';
+                        btnA.className = 'quiz-btn wrong';
+                        resultDiv.innerHTML = '<b>\u2705 Arya</b> is still going strong (\u219331%)! Unlike "Khaleesi" which is purely a TV reference, "Arya" has real linguistic roots in Sanskrit (meaning noble) and Persian \u2014 it sounds like a natural name, so it outlived its source material.';
+                        resultDiv.style.background = '#e8f5e9';
+                        resultDiv.style.color = '#2e7d32';
+                    } else {
+                        btnA.className = 'quiz-btn wrong';
+                        btnB.className = 'quiz-btn correct';
+                        resultDiv.innerHTML = '\u274c Actually, <b>Arya</b> survived better! Khaleesi is fading because it only references GoT. Arya has real Sanskrit/Persian roots \u2014 names that <i>sound</i> natural outlast names that only <i>reference</i> something.';
+                        resultDiv.style.background = '#ffebee';
+                        resultDiv.style.color = '#c62828';
+                    }
+                    resultDiv.className = 'quiz-result visible';
+                }
+                
+                if (quiz === 'q2') {
+                    const btnA = document.getElementById('q2-a');
+                    const btnB = document.getElementById('q2-b');
+                    const btnC = document.getElementById('q2-c');
+                    
+                    btnA.className = 'quiz-btn wrong';
+                    btnB.className = 'quiz-btn wrong';
+                    btnC.className = 'quiz-btn wrong';
+                    
+                    if (answer === 'c') {
+                        btnC.className = 'quiz-btn correct';
+                        resultDiv.innerHTML = '\u2705 Correct! <b>James</b> only dropped ~15% in 27 years \u2014 from 35,413 to 15,918. That is an evergreen classic. Compare that to Britney (\u219393%) or Elsa (\u219381%). Classic names do not ride trends \u2014 they ARE the trend.';
+                        resultDiv.style.background = '#e8f5e9';
+                        resultDiv.style.color = '#2e7d32';
+                    } else {
+                        btnC.className = 'quiz-btn correct';
+                        resultDiv.innerHTML = '\u274c Nope! James barely budged \u2014 only \u219315% over 27 years (35,413 \u2192 15,918). Evergreen classics do not ride cultural waves. They ARE the baseline. Britney fell 93% but James just keeps going.';
+                        resultDiv.style.background = '#ffebee';
+                        resultDiv.style.color = '#c62828';
+                    }
+                    resultDiv.className = 'quiz-result visible';
+                }
+            }
+            
+            // Don't show anything until user clicks
+        </script>
+    </body>
+    </html>
+    """
+
+    st_html(timeline_quiz_html, height=900)
+
+    st.markdown("""
+    <p style="font-size:0.85rem; color:#2d3436; margin-top:1rem; line-height:1.7;">
+        Pop culture is the fastest way to make a name sync across countries — a single movie, show, or song can put a name on every nation's playlist overnight. 
+        But the same force that creates instant global recognition also creates disposable names. The louder the debut, the faster the fade.
+    </p>
+    <p style="font-size:0.82rem; color:#2d3436; line-height:1.6; margin-top:0.3rem;">
+        The exception? Names like Arya that tap into deeper phonetic appeal and outlast their source material.
+        A name that <i>sounds</i> right survives. A name that only <i>references</i> something fades with it.
+    </p>
+    """, unsafe_allow_html=True)
+    st.markdown("---")
+
+
 # ─── Section: Import/Export Economy ─────────────────────────────────────────────
 def render_import_export(df):
     """The Record Label Map — who produces names, who plays them."""
