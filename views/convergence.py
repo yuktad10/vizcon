@@ -1058,7 +1058,7 @@ def render_convergence_timeline(df):
 
 # ─── Section: Import/Export Economy ─────────────────────────────────────────────
 def render_import_export(df):
-    """The Record Label Map — animated particle flow showing imports and exports."""
+    """The Record Label Map — animated particle flow (proportion-based)."""
     
     st.markdown("""
     <h2 style="margin: 0 0 4px 0;">💿 The Record Label Map</h2>
@@ -1066,151 +1066,200 @@ def render_import_export(df):
         Every hit has a label behind it. We mapped which countries <b>produce</b> the names and which ones <b>play</b> them.
     </p>
     <p style="font-size: 0.82em; color: #636e72; margin: 0 0 1.5rem 0;">
-        Watch names flow from their origin — more particles = more names exported. Node size shows total influence.
+        Origin = where a name is most concentrated (proportion-adjusted). More particles = more names exported.
     </p>
     """, unsafe_allow_html=True)
     
     from streamlit.components.v1 import html as st_html
     
-    flow_html = """
+    # Compute flows using proportion-based max_country from summary
+    df_summary = load_summary()
+    df_all = load_all_names()
+    
+    # Names in 5+ countries
+    name_countries = df_all.groupby("name")["country"].nunique().reset_index()
+    name_countries.columns = ["name", "n_countries"]
+    global_names_list = name_countries[name_countries["n_countries"] >= 5]["name"].tolist()
+    
+    # Get max_country (proportion-based origin)
+    df_global_summary = df_summary[df_summary["name"].isin(global_names_list)][["name", "max_country"]].copy()
+    
+    # Get countries each name appears in
+    df_global_long = df_all[df_all["name"].isin(global_names_list)]
+    name_country_set = df_global_long.groupby("name")["country"].apply(set).reset_index()
+    name_country_set.columns = ["name", "countries"]
+    
+    df_merged = df_global_summary.merge(name_country_set, on="name")
+    
+    name_map = {
+        "USA": "USA", "England and Wales": "England", "Canada": "Canada",
+        "Australia": "Australia", "Scotland": "Scotland", "Ireland": "Ireland",
+        "Northern Ireland": "N.Ireland", "New Zealand": "NZ"
+    }
+    
+    flow_rows = []
+    for _, row in df_merged.iterrows():
+        src = name_map.get(row["max_country"], row["max_country"])
+        for country in row["countries"]:
+            tgt = name_map.get(country, country)
+            if tgt != src:
+                flow_rows.append({"source": src, "target": tgt})
+    
+    import pandas as pd
+    flow_df = pd.DataFrame(flow_rows)
+    flow_counts = flow_df.groupby(["source", "target"]).size().reset_index(name="n_names")
+    flow_counts = flow_counts[flow_counts["n_names"] >= 400].sort_values("n_names", ascending=False)
+    
+    # Export/import totals
+    all_flows = pd.DataFrame(flow_rows)
+    all_flow_counts = all_flows.groupby(["source", "target"]).size().reset_index(name="n_names")
+    export_totals = all_flow_counts.groupby("source")["n_names"].sum().sort_values(ascending=False)
+    import_totals = all_flow_counts.groupby("target")["n_names"].sum().sort_values(ascending=False)
+    
+    # Build JS data
+    js_flows = ", ".join([f"[\'{row.source}\', \'{row.target}\', {row.n_names}]" for _, row in flow_counts.iterrows()])
+    
+    # Sources for left side (top 5 exporters)
+    top_sources = export_totals.head(5)
+    js_sources = ", ".join([
+        f"{{ name: \'{c}\', exports: {v} }}"
+        for c, v in top_sources.items()
+    ])
+    
+    # All targets for right side
+    js_targets = ", ".join([
+        f"{{ name: \'{c}\', imports: {v} }}"
+        for c, v in import_totals.items()
+    ])
+    
+    max_flow = int(flow_counts["n_names"].max())
+    
+    # Stats
+    total_exp = int(export_totals.sum())
+    usa_pct = int(round(export_totals.get("USA", 0) / total_exp * 100))
+    can_pct = int(round(export_totals.get("Canada", 0) / total_exp * 100))
+    eng_pct = int(round(export_totals.get("England", 0) / total_exp * 100))
+    top_importer = import_totals.idxmax()
+    
+    flow_html = f"""
     <html>
     <head>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-        .container { position: relative; background: linear-gradient(135deg, #f8f9fa, #eef2ff); border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; }
-        canvas { display: block; }
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ background: transparent; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }}
+        .container {{ position: relative; background: linear-gradient(135deg, #f8f9fa, #eef2ff); border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; }}
+        canvas {{ display: block; }}
         
-        .header-row {
+        .header-row {{
             display: flex;
             justify-content: space-between;
             padding: 14px 20px 0;
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             z-index: 2;
-        }
-        .header-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            padding: 4px 10px;
-            border-radius: 6px;
-        }
-        .header-export { color: #3498db; background: rgba(52,152,219,0.1); }
-        .header-import { color: #e74c3c; background: rgba(231,76,60,0.1); }
+        }}
+        .header-label {{
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.5px;
+            padding: 4px 10px; border-radius: 6px;
+        }}
+        .header-export {{ color: #9b59b6; background: rgba(155,89,182,0.1); }}
+        .header-import {{ color: #1abc9c; background: rgba(26,188,156,0.1); }}
         
-        .stats-panel {
+        .stats-panel {{
             position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 20px;
+            bottom: 12px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 18px;
             background: rgba(255,255,255,0.92);
-            border-radius: 10px;
-            padding: 8px 18px;
-            border: 1px solid #e2e8f0;
-            z-index: 2;
-        }
-        .stat-item {
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 14px;
-            font-weight: 800;
-        }
-        .stat-label {
-            font-size: 9px;
-            color: #636e72;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+            border-radius: 10px; padding: 8px 18px;
+            border: 1px solid #e2e8f0; z-index: 2;
+        }}
+        .stat-item {{ text-align: center; }}
+        .stat-value {{ font-size: 13px; font-weight: 800; }}
+        .stat-label {{ font-size: 9px; color: #636e72; text-transform: uppercase; letter-spacing: 0.5px; }}
     </style>
     </head>
     <body>
         <div class="container">
             <div class="header-row">
-                <div class="header-label header-export">🎙️ Producers (Export)</div>
-                <div style="font-size:10px; color:#636e72; padding-top:4px;">each dot = names flowing to 5+ countries</div>
-                <div class="header-label header-import">📻 Players (Import)</div>
+                <div class="header-label header-export">🎙️ Producers (Origin)</div>
+                <div style="font-size:10px; color:#636e72; padding-top:4px;">proportion-based: where names are most concentrated</div>
+                <div class="header-label header-import">📻 Players (Absorb)</div>
             </div>
             <canvas id="canvas"></canvas>
             <div class="stats-panel">
                 <div class="stat-item">
-                    <div class="stat-value" style="color:#3498db;">71%</div>
+                    <div class="stat-value" style="color:#3498db;">{usa_pct}%</div>
                     <div class="stat-label">from USA</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value" style="color:#e74c3c;">24%</div>
+                    <div class="stat-value" style="color:#9b59b6;">{can_pct}%</div>
+                    <div class="stat-label">from Canada</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color:#e74c3c;">{eng_pct}%</div>
                     <div class="stat-label">from England</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value" style="color:#9b59b6;">🇨🇦</div>
+                    <div class="stat-value" style="color:#1abc9c;">{top_importer}</div>
                     <div class="stat-label">#1 importer</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" style="color:#2d3436;">95%</div>
-                    <div class="stat-label">from 2 countries</div>
                 </div>
             </div>
         </div>
         <script>
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
-            
             const W = canvas.width = canvas.parentElement.clientWidth;
             const H = canvas.height = 480;
             
-            // Layout: sources on left, targets on right
-            // Countries with BOTH roles appear on both sides
-            const sources = [
-                { name: 'USA', x: W * 0.08, y: H * 0.40, color: '#3498db', exports: 13976 },
-                { name: 'England', x: W * 0.08, y: H * 0.68, color: '#e74c3c', exports: 4657 },
-                { name: 'Canada', x: W * 0.08, y: H * 0.88, color: '#9b59b6', exports: 444 },
-                { name: 'Ireland', x: W * 0.08, y: H * 0.96, color: '#f39c12', exports: 271 }
-            ];
+            const nodeColors = {{
+                'USA': '#3498db', 'Canada': '#9b59b6', 'England': '#e74c3c',
+                'NZ': '#e91e63', 'Scotland': '#1abc9c', 'Ireland': '#f39c12',
+                'Australia': '#2ecc71', 'N.Ireland': '#00bcd4'
+            }};
             
-            const targets = [
-                { name: 'Canada', x: W * 0.92, y: H * 0.22, color: '#9b59b6', imports: 3388 },
-                { name: 'Scotland', x: W * 0.92, y: H * 0.34, color: '#1abc9c', imports: 3274 },
-                { name: 'Ireland', x: W * 0.92, y: H * 0.46, color: '#f39c12', imports: 3075 },
-                { name: 'England', x: W * 0.92, y: H * 0.58, color: '#e74c3c', imports: 2651 },
-                { name: 'Australia', x: W * 0.92, y: H * 0.70, color: '#2ecc71', imports: 2193 },
-                { name: 'N.Ireland', x: W * 0.92, y: H * 0.82, color: '#00bcd4', imports: 2194 },
-                { name: 'NZ', x: W * 0.92, y: H * 0.94, color: '#e91e63', imports: 1703 }
-            ];
+            // Left side: producers (positioned by export volume)
+            const sourceData = [{js_sources}];
+            const maxExport = sourceData[0].exports;
+            const sources = {{}};
+            sourceData.forEach((s, i) => {{
+                sources[s.name] = {{
+                    x: W * 0.08,
+                    y: H * 0.18 + (H * 0.7) * (i / (sourceData.length - 1 || 1)),
+                    color: nodeColors[s.name],
+                    exports: s.exports
+                }};
+            }});
             
-            // Flows
-            const flows = [
-                ['USA', 'England', 2461], ['USA', 'Canada', 2459], ['USA', 'Scotland', 2256],
-                ['USA', 'Ireland', 2147], ['USA', 'Australia', 1724], ['USA', 'N.Ireland', 1552],
-                ['USA', 'NZ', 1377], ['England', 'Scotland', 873], ['England', 'Canada', 853],
-                ['England', 'Ireland', 820], ['England', 'N.Ireland', 534],
-                ['England', 'Australia', 411], ['England', 'NZ', 283],
-                ['Canada', 'England', 98], ['Canada', 'Ireland', 77],
-                ['Ireland', 'England', 54], ['Ireland', 'Scotland', 51]
-            ];
+            // Right side: players (positioned by import volume)
+            const targetData = [{js_targets}];
+            const maxImport = targetData[0].imports;
+            const targets = {{}};
+            targetData.forEach((t, i) => {{
+                targets[t.name] = {{
+                    x: W * 0.92,
+                    y: H * 0.14 + (H * 0.76) * (i / (targetData.length - 1 || 1)),
+                    color: nodeColors[t.name],
+                    imports: t.imports
+                }};
+            }});
             
-            const maxFlow = 2461;
+            const flows = [{js_flows}];
+            const maxFlow = {max_flow};
+            
             let particles = [];
             
-            function getSource(name) { return sources.find(s => s.name === name); }
-            function getTarget(name) { return targets.find(t => t.name === name); }
-            
-            function createParticle(srcNode, tgtNode, color) {
+            function createParticle(srcNode, tgtNode, color) {{
                 const mx = (srcNode.x + tgtNode.x) / 2;
                 const my = (srcNode.y + tgtNode.y) / 2;
                 const dx = tgtNode.x - srcNode.x;
                 const dy = tgtNode.y - srcNode.y;
                 const len = Math.sqrt(dx*dx + dy*dy) || 1;
-                const offset = (Math.random() - 0.5) * 60;
+                const offset = (Math.random() - 0.5) * 50;
                 const nx = -dy / len * offset;
                 const ny = dx / len * offset;
                 
-                return {
+                return {{
                     sx: srcNode.x, sy: srcNode.y,
                     tx: tgtNode.x, ty: tgtNode.y,
                     cx: mx + nx, cy: my + ny,
@@ -1219,44 +1268,41 @@ def render_import_export(df):
                     color: color,
                     size: 1.5 + Math.random() * 2,
                     alpha: 0.5 + Math.random() * 0.5
-                };
-            }
+                }};
+            }}
             
-            function initParticles() {
+            function initParticles() {{
                 particles = [];
-                flows.forEach(([src, tgt, vol]) => {
-                    const srcNode = getSource(src);
-                    const tgtNode = getTarget(tgt);
+                flows.forEach(([src, tgt, vol]) => {{
+                    const srcNode = sources[src];
+                    const tgtNode = targets[tgt];
                     if (!srcNode || !tgtNode) return;
-                    const count = Math.max(1, Math.round((vol / maxFlow) * 12));
-                    for (let i = 0; i < count; i++) {
+                    const count = Math.max(1, Math.round((vol / maxFlow) * 10));
+                    for (let i = 0; i < count; i++) {{
                         particles.push(createParticle(srcNode, tgtNode, srcNode.color));
-                    }
-                });
-            }
+                    }}
+                }});
+            }}
             
-            function bezier(t, sx, sy, cx, cy, tx, ty) {
-                return {
+            function bezier(t, sx, sy, cx, cy, tx, ty) {{
+                return {{
                     x: (1-t)*(1-t)*sx + 2*(1-t)*t*cx + t*t*tx,
                     y: (1-t)*(1-t)*sy + 2*(1-t)*t*cy + t*t*ty
-                };
-            }
+                }};
+            }}
             
-            function drawNode(node, isSource) {
-                const maxVal = isSource ? 13976 : 3388;
+            function drawNode(node, name, isSource, maxVal) {{
                 const val = isSource ? node.exports : node.imports;
-                const size = 6 + 18 * (val / maxVal);
+                const size = 6 + 16 * (val / maxVal);
                 
-                // Glow
-                const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, size + 6);
+                const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, size + 5);
                 grad.addColorStop(0, node.color + '30');
                 grad.addColorStop(1, 'transparent');
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, size + 6, 0, Math.PI * 2);
+                ctx.arc(node.x, node.y, size + 5, 0, Math.PI * 2);
                 ctx.fillStyle = grad;
                 ctx.fill();
                 
-                // Circle
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
                 ctx.fillStyle = node.color;
@@ -1265,52 +1311,36 @@ def render_import_export(df):
                 ctx.lineWidth = 1.5;
                 ctx.stroke();
                 
-                // Label
                 ctx.fillStyle = '#2d3436';
                 ctx.font = 'bold 10px Arial';
                 ctx.textAlign = isSource ? 'left' : 'right';
-                const labelX = isSource ? node.x + size + 8 : node.x - size - 8;
-                ctx.fillText(node.name, labelX, node.y + 1);
+                const lx = isSource ? node.x + size + 8 : node.x - size - 8;
+                ctx.fillText(name, lx, node.y);
                 
-                // Value
                 ctx.fillStyle = '#636e72';
                 ctx.font = '9px Arial';
-                const valText = isSource ? `${(val/1000).toFixed(1)}k out` : `${(val/1000).toFixed(1)}k in`;
-                ctx.fillText(valText, labelX, node.y + 13);
-            }
+                const valText = isSource ? (val/1000).toFixed(1) + 'k out' : (val/1000).toFixed(1) + 'k in';
+                ctx.fillText(valText, lx, node.y + 12);
+            }}
             
-            function draw() {
+            function draw() {{
                 ctx.clearRect(0, 0, W, H);
                 
-                // Faint flow paths
-                flows.forEach(([src, tgt, vol]) => {
-                    const srcNode = getSource(src);
-                    const tgtNode = getTarget(tgt);
-                    if (!srcNode || !tgtNode) return;
-                    
-                    const mx = (srcNode.x + tgtNode.x) / 2;
-                    const my = (srcNode.y + tgtNode.y) / 2;
-                    
+                // Faint paths
+                flows.forEach(([src, tgt, vol]) => {{
+                    const s = sources[src]; const t = targets[tgt];
+                    if (!s || !t) return;
                     ctx.beginPath();
-                    ctx.moveTo(srcNode.x, srcNode.y);
-                    ctx.quadraticCurveTo(mx, my, tgtNode.x, tgtNode.y);
+                    ctx.moveTo(s.x, s.y);
+                    ctx.quadraticCurveTo((s.x+t.x)/2, (s.y+t.y)/2, t.x, t.y);
                     ctx.strokeStyle = 'rgba(0,0,0,0.03)';
-                    ctx.lineWidth = 1 + 3 * (vol / maxFlow);
+                    ctx.lineWidth = 1 + 2*(vol/maxFlow);
                     ctx.stroke();
-                });
+                }});
                 
                 // Particles
-                particles.forEach(p => {
+                particles.forEach(p => {{
                     const pos = bezier(p.t, p.sx, p.sy, p.cx, p.cy, p.tx, p.ty);
-                    
-                    // Trail (fading dot behind)
-                    const posBehind = bezier(Math.max(0, p.t - 0.03), p.sx, p.sy, p.cx, p.cy, p.tx, p.ty);
-                    ctx.beginPath();
-                    ctx.arc(posBehind.x, posBehind.y, p.size * 0.6, 0, Math.PI * 2);
-                    ctx.fillStyle = p.color + '20';
-                    ctx.fill();
-                    
-                    // Main dot
                     ctx.beginPath();
                     ctx.arc(pos.x, pos.y, p.size, 0, Math.PI * 2);
                     ctx.globalAlpha = p.alpha;
@@ -1319,20 +1349,15 @@ def render_import_export(df):
                     ctx.globalAlpha = 1;
                     
                     p.t += p.speed;
-                    if (p.t > 1) {
-                        p.t = 0;
-                        p.speed = 0.002 + Math.random() * 0.003;
-                    }
-                });
+                    if (p.t > 1) {{ p.t = 0; p.speed = 0.002 + Math.random() * 0.003; }}
+                }});
                 
-                // Draw source nodes (left)
-                sources.forEach(n => drawNode(n, true));
-                
-                // Draw target nodes (right)
-                targets.forEach(n => drawNode(n, false));
+                // Nodes
+                Object.entries(sources).forEach(([name, node]) => drawNode(node, name, true, maxExport));
+                Object.entries(targets).forEach(([name, node]) => drawNode(node, name, false, maxImport));
                 
                 requestAnimationFrame(draw);
-            }
+            }}
             
             initParticles();
             draw();
@@ -1345,8 +1370,8 @@ def render_import_export(df):
     
     st.markdown("""
     <p style="font-size:0.82rem; color:#2d3436; margin-top:1rem; line-height:1.6;">
-        The naming world has just two major record labels: <b style="color:#3498db;">USA</b> and <b style="color:#e74c3c;">England</b> — together they originate 95% of names that go global.
-        But the import side is far more democratic — every country absorbs roughly equally. Canada leads as the biggest listener.
+        Using proportion-adjusted origin: <b style="color:#3498db;">USA</b> still leads, but <b style="color:#9b59b6;">Canada</b> is the #2 producer — 
+        the cultural gateway where global names concentrate most. The import side is highly democratic — every country absorbs roughly equally.
     </p>
     """, unsafe_allow_html=True)
     st.markdown("---")
