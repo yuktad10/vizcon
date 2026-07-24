@@ -455,14 +455,14 @@ def render_leaderboard(df):
 
     from streamlit.components.v1 import html as st_html
 
-    # Subtle/muted versions of the vibrant colors
+    # Subtle/muted poster themes — softer versions
     poster_themes = [
-        {"bg": "linear-gradient(135deg, #d4574e, #c0392b)", "accent": "#fff", "icon": "🎤", "label": "#1 HIT"},
-        {"bg": "linear-gradient(135deg, #5b4db8, #7c5cbf)", "accent": "#ffd700", "icon": "🎸", "label": "CHART BREAKER"},
-        {"bg": "linear-gradient(135deg, #1e8a7a, #2ca5a0)", "accent": "#fff", "icon": "🎹", "label": "GLOBAL SOUND"},
-        {"bg": "linear-gradient(135deg, #c06088, #a8527a)", "accent": "#fff", "icon": "🎧", "label": "ON REPEAT"},
-        {"bg": "linear-gradient(135deg, #c8851a, #b87a1a)", "accent": "#fff", "icon": "🎷", "label": "CLASSIC"},
-        {"bg": "linear-gradient(135deg, #2d7abf, #5a9bd4)", "accent": "#fff", "icon": "🎵", "label": "RISING STAR"},
+        {"bg": "linear-gradient(135deg, #b84a43, #9e3a34)", "accent": "#ffecd2", "icon": "🎤", "label": "#1 HIT"},
+        {"bg": "linear-gradient(135deg, #4a3f9e, #6350a8)", "accent": "#ffd700", "icon": "🎸", "label": "CHART BREAKER"},
+        {"bg": "linear-gradient(135deg, #1a7568, #238f86)", "accent": "#e0fff8", "icon": "🎹", "label": "GLOBAL SOUND"},
+        {"bg": "linear-gradient(135deg, #9e4e70, #864465)", "accent": "#ffe4f0", "icon": "🎧", "label": "ON REPEAT"},
+        {"bg": "linear-gradient(135deg, #a06b15, #8b5e12)", "accent": "#fff8e8", "icon": "🎷", "label": "CLASSIC"},
+        {"bg": "linear-gradient(135deg, #2563a0, #4080b8)", "accent": "#e0f2ff", "icon": "🎵", "label": "RISING STAR"},
     ]
 
     taglines = [
@@ -474,100 +474,162 @@ def render_leaderboard(df):
         "The smoothest global groove",
     ]
 
-    posters_html = ""
+    # Build poster data as JSON for the interactive component
+    poster_data = []
     for i, row in top6.iterrows():
-        theme = poster_themes[i]
-        rank = i + 1
-        sex_emoji = "♀️" if row["sex"] == "F" else "♂️"
-        total = f"{int(row['total_babies_with_name']):,}"
-        score = f"{row['countryness']:.3f}"
+        poster_data.append({
+            "name": row["name"],
+            "sex": row["sex"],
+            "total": int(row["total_babies_with_name"]),
+            "score": f"{row['countryness']:.3f}",
+            "country": row["max_country"],
+            "theme": poster_themes[i],
+            "tagline": taglines[i],
+            "rank": i + 1,
+        })
+
+    # Build the full interactive HTML — posters + now playing bar
+    posters_html = ""
+    for p in poster_data:
+        theme = p["theme"]
+        sex_emoji = "♀️" if p["sex"] == "F" else "♂️"
+        total_fmt = f"{p['total']:,}"
 
         posters_html += f"""
-        <div style="flex:1; min-width:155px; max-width:190px;">
-            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.15); position:relative; overflow:hidden; height:270px;">
-                <!-- Label ribbon -->
-                <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.2); backdrop-filter:blur(4px); border-radius:6px; padding:2px 7px;">
-                    <span style="font-size:0.55rem; color:rgba(255,255,255,0.95); font-weight:700; letter-spacing:1px;">{theme['label']}</span>
+        <div class="poster" onclick="playTrack('{p['name']}', '{total_fmt}', '{p['country']}', '{p['score']}', '{theme['bg']}', '{theme['accent']}')" 
+             style="flex:1; min-width:150px; max-width:185px; cursor:pointer; transition:transform 0.2s;"
+             onmouseover="this.style.transform='translateY(-4px)'"
+             onmouseout="this.style.transform='none'">
+            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.12); position:relative; overflow:hidden; height:260px;">
+                <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 7px;">
+                    <span style="font-size:0.55rem; color:rgba(255,255,255,0.9); font-weight:700; letter-spacing:1px;">{theme['label']}</span>
                 </div>
-                <!-- Rank -->
                 <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.2); border-radius:6px; padding:2px 7px;">
-                    <span style="font-size:0.7rem; color:white; font-weight:700;">#{rank}</span>
+                    <span style="font-size:0.7rem; color:white; font-weight:700;">#{p['rank']}</span>
                 </div>
-                
-                <!-- Music icon -->
-                <div style="font-size:2.2rem; margin:0.8rem 0 0.3rem 0;">{theme['icon']}</div>
-                
-                <!-- Name -->
-                <div style="font-size:1.5rem; font-weight:900; color:white; letter-spacing:-0.5px; margin:0.2rem 0;">{row['name']}</div>
-                <div style="font-size:0.6rem; color:rgba(255,255,255,0.7); font-style:italic; margin-bottom:0.7rem; padding:0 0.3rem;">"{taglines[i]}"</div>
-                
-                <!-- Stats panel -->
+                <div style="font-size:2rem; margin:0.8rem 0 0.3rem 0;">{theme['icon']}</div>
+                <div style="font-size:1.4rem; font-weight:900; color:white; letter-spacing:-0.5px; margin:0.2rem 0;">{p['name']}</div>
+                <div style="font-size:0.6rem; color:rgba(255,255,255,0.65); font-style:italic; margin-bottom:0.7rem;">"{p['tagline']}"</div>
                 <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:0.5rem 0.4rem; margin:0 0.2rem;">
-                    <div style="font-size:1.1rem; font-weight:800; color:{theme['accent']};">{total}</div>
-                    <div style="font-size:0.55rem; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:0.5px;">total plays • 8 countries</div>
+                    <div style="font-size:1.05rem; font-weight:800; color:{theme['accent']};">{total_fmt}</div>
+                    <div style="font-size:0.55rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.5px;">total plays • 8 countries</div>
                 </div>
-                
-                <!-- Score badge -->
-                <div style="margin-top:0.6rem;">
-                    <span style="background:rgba(255,255,255,0.2); padding:0.2rem 0.6rem; border-radius:10px; font-size:0.7rem; color:white; font-weight:600;">Score: {score}</span>
+                <div style="margin-top:0.5rem;">
+                    <span style="background:rgba(255,255,255,0.15); padding:0.2rem 0.6rem; border-radius:10px; font-size:0.68rem; color:white; font-weight:600;">Score: {p['score']}</span>
                 </div>
             </div>
         </div>
         """
 
+    # First track data for initial state
+    first = poster_data[0]
+    first_total = f"{first['total']:,}"
+
     full_html = f"""
     <html>
+    <head>
+        <style>
+            .poster {{ user-select: none; }}
+            .poster:active {{ transform: scale(0.97) !important; }}
+        </style>
+    </head>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <!-- Posters -->
         <div style="display:flex; gap:0.7rem; flex-wrap:wrap; justify-content:center;">
             {posters_html}
         </div>
-    </body>
-    </html>
-    """
 
-    st_html(full_html, height=320)
-
-    # Now Playing bar — Spotify-style bottom player for #1
-    top1 = top6.iloc[0]
-    top1_total = f"{int(top1['total_babies_with_name']):,}"
-    
-    now_playing_html = f"""
-    <html>
-    <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="background:linear-gradient(90deg, #1a1a2e, #2d2d44); border-radius:12px; padding:0.8rem 1.2rem; margin-top:1.2rem; display:flex; align-items:center; gap:1rem; box-shadow:0 4px 16px rgba(0,0,0,0.2);">
+        <!-- Now Playing Bar -->
+        <div id="now-playing" style="background:linear-gradient(90deg, #1a1a2e, #2d2d44); border-radius:12px; padding:0.8rem 1.2rem; margin-top:1.2rem; display:flex; align-items:center; gap:1rem; box-shadow:0 4px 16px rgba(0,0,0,0.2);">
             <!-- Album art -->
-            <div style="width:44px; height:44px; border-radius:8px; background:linear-gradient(135deg, #667eea, #764ba2); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <span style="color:white; font-size:1.2rem; font-weight:800;">{top1['name'][0]}</span>
+            <div id="np-art" style="width:44px; height:44px; border-radius:8px; background:linear-gradient(135deg, #b84a43, #9e3a34); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background 0.4s;">
+                <span id="np-letter" style="color:white; font-size:1.2rem; font-weight:800;">{first['name'][0]}</span>
             </div>
             <!-- Track info -->
             <div style="flex:1; min-width:0;">
-                <div style="font-size:0.85rem; font-weight:700; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                    {top1['name']} <span style="color:rgba(255,255,255,0.5); font-weight:400;">• {top1['max_country']}</span>
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                    <span id="np-name" style="font-size:0.85rem; font-weight:700; color:white;">{first['name']}</span>
+                    <span id="np-country" style="color:rgba(255,255,255,0.5); font-weight:400; font-size:0.75rem;">• {first['country']}</span>
                 </div>
-                <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">{top1_total} plays • 8 countries</div>
+                <div id="np-stats" style="font-size:0.68rem; color:rgba(255,255,255,0.5);">{first_total} plays • 8 countries</div>
                 <!-- Progress bar -->
                 <div style="margin-top:0.4rem; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
-                    <div style="height:100%; width:72%; background:linear-gradient(90deg, #667eea, #7c9a8e); border-radius:2px;"></div>
+                    <div id="np-progress" style="height:100%; width:0%; background:linear-gradient(90deg, #667eea, #7c9a8e); border-radius:2px; transition:width 3s linear;"></div>
                 </div>
             </div>
             <!-- Play controls -->
             <div style="display:flex; align-items:center; gap:0.8rem; flex-shrink:0;">
-                <span style="color:rgba(255,255,255,0.4); font-size:0.9rem; cursor:pointer;">⏮</span>
-                <span style="color:white; font-size:1.4rem; cursor:pointer;">▶</span>
-                <span style="color:rgba(255,255,255,0.4); font-size:0.9rem; cursor:pointer;">⏭</span>
+                <span style="color:rgba(255,255,255,0.4); font-size:0.9rem;">⏮</span>
+                <span id="np-play-btn" style="color:white; font-size:1.4rem; cursor:pointer;" onclick="togglePlay()">▶</span>
+                <span style="color:rgba(255,255,255,0.4); font-size:0.9rem;">⏭</span>
             </div>
             <!-- Now Playing label -->
             <div style="flex-shrink:0; text-align:right;">
                 <div style="font-size:0.55rem; color:#667eea; text-transform:uppercase; letter-spacing:1.5px; font-weight:600;">Now Playing</div>
-                <div style="font-size:0.6rem; color:rgba(255,255,255,0.4);">Global #1</div>
+                <div id="np-rank" style="font-size:0.6rem; color:rgba(255,255,255,0.4);">Global #1</div>
             </div>
         </div>
+
+        <!-- Hidden audio element -->
+        <audio id="np-audio" loop>
+            <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGdOaQ==" type="audio/wav">
+        </audio>
+
+        <script>
+            let isPlaying = false;
+            
+            function playTrack(name, total, country, score, bg, accent) {{
+                // Update Now Playing bar
+                document.getElementById('np-name').textContent = name;
+                document.getElementById('np-letter').textContent = name[0];
+                document.getElementById('np-country').textContent = '• ' + country;
+                document.getElementById('np-stats').textContent = total + ' plays • 8 countries';
+                document.getElementById('np-rank').textContent = 'Score: ' + score;
+                
+                // Reset and animate progress bar
+                const progress = document.getElementById('np-progress');
+                progress.style.transition = 'none';
+                progress.style.width = '0%';
+                setTimeout(() => {{
+                    progress.style.transition = 'width 8s linear';
+                    progress.style.width = '100%';
+                }}, 50);
+                
+                // Update play button
+                document.getElementById('np-play-btn').textContent = '⏸';
+                isPlaying = true;
+            }}
+            
+            function togglePlay() {{
+                const btn = document.getElementById('np-play-btn');
+                const progress = document.getElementById('np-progress');
+                if (isPlaying) {{
+                    btn.textContent = '▶';
+                    progress.style.animationPlayState = 'paused';
+                    isPlaying = false;
+                }} else {{
+                    btn.textContent = '⏸';
+                    progress.style.transition = 'width 8s linear';
+                    progress.style.width = '100%';
+                    isPlaying = true;
+                }}
+            }}
+
+            // Auto-play first track animation on load
+            setTimeout(() => {{
+                document.getElementById('np-progress').style.transition = 'width 8s linear';
+                document.getElementById('np-progress').style.width = '100%';
+                document.getElementById('np-play-btn').textContent = '⏸';
+                isPlaying = true;
+            }}, 500);
+        </script>
     </body>
     </html>
     """
-    st_html(now_playing_html, height=85)
 
-    # Explanation below the posters — plain text, no box
+    st_html(full_html, height=420)
+
+    # Explanation below — plain text, no box
     st.markdown("""
     <p style="font-size:0.85rem; color:#636e72; margin-top:1.5rem; line-height:1.7;">
         Ranked by countryness score (lower = more equally spread across nations). A name with fewer total babies can rank higher 
