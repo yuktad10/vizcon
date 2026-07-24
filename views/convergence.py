@@ -1058,7 +1058,7 @@ def render_convergence_timeline(df):
 
 # ─── Section: Import/Export Economy ─────────────────────────────────────────────
 def render_import_export(df):
-    """The Record Label Map — chord diagram showing name flows."""
+    """The Record Label Map — animated particle flow."""
     
     st.markdown("""
     <h2 style="margin: 0 0 4px 0;">💿 The Record Label Map</h2>
@@ -1066,193 +1066,228 @@ def render_import_export(df):
         Every hit has a label behind it. We mapped which countries <b>produce</b> the names and which ones <b>play</b> them.
     </p>
     <p style="font-size: 0.82em; color: #636e72; margin: 0 0 1.5rem 0;">
-        For names that spread to 5+ countries — the wider the chord, the more names flow between them.
+        Watch names flow from their origin country outward — more particles = more names exported.
     </p>
     """, unsafe_allow_html=True)
     
     from streamlit.components.v1 import html as st_html
-    import math
     
-    # Compute flows
-    df_all = load_all_names()
-    name_countries = df_all.groupby("name")["country"].nunique().reset_index()
-    name_countries.columns = ["name", "n_countries"]
-    global_names = name_countries[name_countries["n_countries"] >= 5]["name"].tolist()
-    
-    df_global = df_all[df_all["name"].isin(global_names)]
-    name_country_totals = df_global.groupby(["name", "country"])["frequency"].sum().reset_index()
-    
-    home_countries = name_country_totals.loc[name_country_totals.groupby("name")["frequency"].idxmax()]
-    home_countries = home_countries[["name", "country"]].rename(columns={"country": "home_country"})
-    
-    df_flows = name_country_totals.merge(home_countries, on="name")
-    df_flows = df_flows[df_flows["country"] != df_flows["home_country"]]
-    
-    flow_matrix_df = df_flows.groupby(["home_country", "country"]).size().reset_index(name="n_names")
-    flow_matrix_df.columns = ["source", "target", "n_names"]
-    
-    name_map = {
-        "USA": "USA", "England and Wales": "England", "Canada": "Canada",
-        "Australia": "Australia", "Scotland": "Scotland", "Ireland": "Ireland",
-        "Northern Ireland": "N.Ireland", "New Zealand": "NZ"
-    }
-    flow_matrix_df["source"] = flow_matrix_df["source"].map(name_map)
-    flow_matrix_df["target"] = flow_matrix_df["target"].map(name_map)
-    flow_matrix_df = flow_matrix_df[flow_matrix_df["n_names"] >= 50]
-    
-    countries = ["USA", "England", "Canada", "Ireland", "Scotland", "Australia", "N.Ireland", "NZ"]
-    colors = {
-        "USA": "#3498db", "England": "#e74c3c", "Canada": "#9b59b6",
-        "Ireland": "#f39c12", "Scotland": "#1abc9c", "Australia": "#2ecc71",
-        "N.Ireland": "#00bcd4", "NZ": "#e91e63"
-    }
-    
-    # Compute total flow per country
-    total_flow = {}
-    for c in countries:
-        out_f = flow_matrix_df[flow_matrix_df["source"] == c]["n_names"].sum()
-        in_f = flow_matrix_df[flow_matrix_df["target"] == c]["n_names"].sum()
-        total_flow[c] = out_f + in_f
-    
-    total_all = sum(total_flow.values())
-    
-    # Angular positions (with gaps)
-    gap = 0.04
-    available = 2 * math.pi - gap * len(countries)
-    
-    arcs = {}
-    angle = 0
-    for c in countries:
-        span = (total_flow[c] / total_all) * available
-        arcs[c] = {"start": angle, "end": angle + span, "mid": angle + span / 2}
-        angle += span + gap
-    
-    # Build SVG chord diagram
-    cx, cy, r = 250, 250, 200
-    inner_r = 185
-    
-    def polar_to_cart(a, radius):
-        return cx + radius * math.cos(a - math.pi/2), cy + radius * math.sin(a - math.pi/2)
-    
-    def arc_path(start_a, end_a, radius):
-        x1, y1 = polar_to_cart(start_a, radius)
-        x2, y2 = polar_to_cart(end_a, radius)
-        large = 1 if (end_a - start_a) > math.pi else 0
-        return f"M {x1:.1f} {y1:.1f} A {radius} {radius} 0 {large} 1 {x2:.1f} {y2:.1f}"
-    
-    # Generate outer arcs (country segments)
-    svg_arcs = ""
-    svg_labels = ""
-    for c in countries:
-        a = arcs[c]
-        path = arc_path(a["start"], a["end"], r)
-        svg_arcs += f'<path d="{path}" fill="none" stroke="{colors[c]}" stroke-width="12" stroke-linecap="round" opacity="0.9"/>'
-        
-        # Label
-        lx, ly = polar_to_cart(a["mid"], r + 22)
-        # Rotate text for readability
-        angle_deg = math.degrees(a["mid"] - math.pi/2)
-        rotation = angle_deg if -90 < angle_deg < 90 else angle_deg + 180
-        anchor = "start" if -90 < angle_deg < 90 else "end"
-        svg_labels += f'<text x="{lx:.1f}" y="{ly:.1f}" fill="rgba(255,255,255,0.85)" font-size="10" font-weight="600" font-family="Arial" text-anchor="middle" dominant-baseline="middle">{c}</text>'
-    
-    # Generate chords
-    svg_chords = ""
-    for _, row in flow_matrix_df.iterrows():
-        src, tgt, val = row["source"], row["target"], row["n_names"]
-        if src in arcs and tgt in arcs:
-            # Chord width proportional to flow
-            max_val = flow_matrix_df["n_names"].max()
-            width_frac = val / total_flow[src] if total_flow[src] > 0 else 0
-            
-            # Source arc segment for this chord
-            s_span = arcs[src]["end"] - arcs[src]["start"]
-            # Track used angle per source (simple: distribute evenly)
-            
-            # Simple approach: use midpoints with slight offset
-            s_angle = arcs[src]["start"] + s_span * 0.3 + s_span * 0.4 * (list(flow_matrix_df[flow_matrix_df["source"]==src]["target"]).index(tgt) if tgt in list(flow_matrix_df[flow_matrix_df["source"]==src]["target"]) else 0) / max(1, len(flow_matrix_df[flow_matrix_df["source"]==src]) - 1)
-            
-            t_span = arcs[tgt]["end"] - arcs[tgt]["start"]
-            t_sources = list(flow_matrix_df[flow_matrix_df["target"]==tgt]["source"])
-            t_idx = t_sources.index(src) if src in t_sources else 0
-            t_angle = arcs[tgt]["start"] + t_span * 0.3 + t_span * 0.4 * t_idx / max(1, len(t_sources) - 1)
-            
-            x1, y1 = polar_to_cart(s_angle, inner_r)
-            x2, y2 = polar_to_cart(t_angle, inner_r)
-            
-            # Quadratic bezier through center (with offset for visual separation)
-            opacity = 0.15 + 0.35 * (val / max_val)
-            width = 1 + 6 * (val / max_val)
-            
-            path = f"M {x1:.1f} {y1:.1f} Q {cx} {cy} {x2:.1f} {y2:.1f}"
-            c_hex = colors[src]
-            
-            svg_chords += f'<path d="{path}" fill="none" stroke="{c_hex}" stroke-width="{width:.1f}" opacity="{opacity:.2f}" class="chord" data-info="{src} → {tgt}: {val:,} names"/>'
-    
-    chord_html = f"""
+    flow_html = """
     <html>
     <head>
     <style>
-        body {{ margin:0; padding:0; background: #0d1117; display:flex; justify-content:center; align-items:center; }}
-        svg {{ display:block; }}
-        .chord {{ transition: opacity 0.2s; cursor: pointer; }}
-        .chord:hover {{ opacity: 0.8 !important; stroke-width: 5 !important; }}
-        .tooltip {{
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0d1117; overflow: hidden; }
+        canvas { display: block; }
+        .legend {
             position: absolute;
-            background: rgba(30,30,50,0.95);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-family: Arial;
-            pointer-events: none;
-            display: none;
-            border: 1px solid rgba(255,255,255,0.1);
-        }}
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+            font-family: Arial, sans-serif;
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
     </style>
     </head>
     <body>
-        <div style="position:relative;">
-            <svg width="500" height="500" viewBox="0 0 500 500">
-                <!-- Chords (behind arcs) -->
-                {svg_chords}
-                <!-- Outer arcs -->
-                {svg_arcs}
-                <!-- Labels -->
-                {svg_labels}
-            </svg>
-            <div class="tooltip" id="tooltip"></div>
+        <canvas id="canvas"></canvas>
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#3498db"></div>From USA (13,976)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>From England (4,657)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>From Canada (444)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div>From Ireland (271)</div>
         </div>
         <script>
-            document.querySelectorAll('.chord').forEach(el => {{
-                el.addEventListener('mouseenter', (e) => {{
-                    const tip = document.getElementById('tooltip');
-                    tip.textContent = el.getAttribute('data-info');
-                    tip.style.display = 'block';
-                    tip.style.left = (e.offsetX + 10) + 'px';
-                    tip.style.top = (e.offsetY - 30) + 'px';
-                }});
-                el.addEventListener('mouseleave', () => {{
-                    document.getElementById('tooltip').style.display = 'none';
-                }});
-                el.addEventListener('mousemove', (e) => {{
-                    const tip = document.getElementById('tooltip');
-                    tip.style.left = (e.offsetX + 10) + 'px';
-                    tip.style.top = (e.offsetY - 30) + 'px';
-                }});
-            }});
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Responsive sizing
+            const W = canvas.width = canvas.parentElement.clientWidth;
+            const H = canvas.height = 500;
+            
+            // Country positions (relative to canvas)
+            const nodes = {
+                'USA':        { x: W * 0.15, y: H * 0.45, color: '#3498db', size: 28 },
+                'England':    { x: W * 0.82, y: H * 0.42, color: '#e74c3c', size: 20 },
+                'Canada':     { x: W * 0.25, y: H * 0.15, color: '#9b59b6', size: 14 },
+                'Australia':  { x: W * 0.70, y: H * 0.82, color: '#2ecc71', size: 12 },
+                'Scotland':   { x: W * 0.72, y: H * 0.15, color: '#1abc9c', size: 12 },
+                'Ireland':    { x: W * 0.55, y: H * 0.20, color: '#f39c12', size: 12 },
+                'N.Ireland':  { x: W * 0.90, y: H * 0.22, color: '#00bcd4', size: 11 },
+                'NZ':         { x: W * 0.50, y: H * 0.80, color: '#e91e63', size: 11 }
+            };
+            
+            // Flows: [source, target, volume]
+            const flows = [
+                ['USA', 'England', 2461], ['USA', 'Canada', 2459], ['USA', 'Scotland', 2256],
+                ['USA', 'Ireland', 2147], ['USA', 'Australia', 1724], ['USA', 'N.Ireland', 1552],
+                ['USA', 'NZ', 1377], ['England', 'Scotland', 873], ['England', 'Canada', 853],
+                ['England', 'Ireland', 820], ['England', 'N.Ireland', 534],
+                ['England', 'Australia', 411], ['England', 'NZ', 283]
+            ];
+            
+            // Normalize flows to particle count (1-8 particles per flow)
+            const maxFlow = 2461;
+            
+            // Particle system
+            let particles = [];
+            
+            function createParticle(src, tgt, color) {
+                const s = nodes[src];
+                const t = nodes[tgt];
+                
+                // Bezier control point (curved path)
+                const mx = (s.x + t.x) / 2;
+                const my = (s.y + t.y) / 2;
+                const dx = t.x - s.x;
+                const dy = t.y - s.y;
+                const len = Math.sqrt(dx*dx + dy*dy);
+                const offset = 30 + Math.random() * 40;
+                const nx = -dy / len * offset;
+                const ny = dx / len * offset;
+                
+                return {
+                    sx: s.x, sy: s.y,
+                    tx: t.x, ty: t.y,
+                    cx: mx + nx, cy: my + ny,
+                    t: Math.random(), // progress along path (0-1)
+                    speed: 0.003 + Math.random() * 0.004,
+                    color: color,
+                    size: 2 + Math.random() * 2,
+                    alpha: 0.6 + Math.random() * 0.4
+                };
+            }
+            
+            // Initialize particles
+            function initParticles() {
+                particles = [];
+                flows.forEach(([src, tgt, vol]) => {
+                    const count = Math.max(2, Math.round((vol / maxFlow) * 10));
+                    const color = nodes[src].color;
+                    for (let i = 0; i < count; i++) {
+                        particles.push(createParticle(src, tgt, color));
+                    }
+                });
+            }
+            
+            // Get position along quadratic bezier
+            function bezierPoint(p, sx, sy, cx, cy, tx, ty) {
+                const x = (1-p)*(1-p)*sx + 2*(1-p)*p*cx + p*p*tx;
+                const y = (1-p)*(1-p)*sy + 2*(1-p)*p*cy + p*p*ty;
+                return { x, y };
+            }
+            
+            function draw() {
+                ctx.fillStyle = '#0d1117';
+                ctx.fillRect(0, 0, W, H);
+                
+                // Draw faint path lines
+                ctx.lineWidth = 0.5;
+                flows.forEach(([src, tgt, vol]) => {
+                    const s = nodes[src];
+                    const t = nodes[tgt];
+                    const mx = (s.x + t.x) / 2;
+                    const my = (s.y + t.y) / 2;
+                    const dx = t.x - s.x;
+                    const dy = t.y - s.y;
+                    const len = Math.sqrt(dx*dx + dy*dy);
+                    const offset = 35;
+                    const nx = -dy / len * offset;
+                    const ny = dx / len * offset;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(s.x, s.y);
+                    ctx.quadraticCurveTo(mx + nx, my + ny, t.x, t.y);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+                    ctx.stroke();
+                });
+                
+                // Draw particles
+                particles.forEach(p => {
+                    const pos = bezierPoint(p.t, p.sx, p.sy, p.cx, p.cy, p.tx, p.ty);
+                    
+                    // Glow effect
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, p.size + 2, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color.replace(')', `,${p.alpha * 0.3})`).replace('rgb', 'rgba');
+                    ctx.fill();
+                    
+                    // Core
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    
+                    // Update position
+                    p.t += p.speed;
+                    if (p.t > 1) {
+                        p.t = 0;
+                        p.speed = 0.003 + Math.random() * 0.004;
+                        p.alpha = 0.6 + Math.random() * 0.4;
+                    }
+                });
+                
+                // Draw country nodes
+                Object.entries(nodes).forEach(([name, n]) => {
+                    // Outer glow
+                    const gradient = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.size + 8);
+                    gradient.addColorStop(0, n.color + '40');
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, n.size + 8, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    
+                    // Node circle
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+                    ctx.fillStyle = n.color;
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    
+                    // Label
+                    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                    ctx.font = '11px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(name, n.x, n.y + n.size + 16);
+                });
+                
+                requestAnimationFrame(draw);
+            }
+            
+            initParticles();
+            draw();
         </script>
     </body>
     </html>
     """
     
-    st_html(chord_html, height=520)
+    st_html(flow_html, height=550)
     
     # Summary
     st.markdown("""
     <p style="font-size:0.82rem; color:#2d3436; margin-top:1rem; line-height:1.6;">
         The naming world has just two major record labels: <b style="color:#3498db;">USA</b> and <b style="color:#e74c3c;">England</b> — together they originate 95% of names that go global.
-        The thicker the chord, the more names flow. Hover over any chord to see the exact count.
+        More particles = more names flowing. Notice how the US broadcasts to <i>everyone</i>, while England primarily feeds its neighbours.
     </p>
     """, unsafe_allow_html=True)
     st.markdown("---")
