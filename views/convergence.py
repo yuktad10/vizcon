@@ -673,7 +673,7 @@ def render_media_eras(df):
     </html>
     """
 
-    st_html(timeline_html, height=280)
+    st_html(timeline_html, height=330)
 
 
 # ─── Section: Insights Infographic ────────────────────────────────────────────
