@@ -1072,10 +1072,8 @@ def render_import_export(df):
     
     import math
     
-    # Compute flows from data
+    # Compute flows
     df_all = load_all_names()
-    
-    # Names in 5+ countries
     name_countries = df_all.groupby("name")["country"].nunique().reset_index()
     name_countries.columns = ["name", "n_countries"]
     global_names = name_countries[name_countries["n_countries"] >= 5]["name"].tolist()
@@ -1083,7 +1081,6 @@ def render_import_export(df):
     df_global = df_all[df_all["name"].isin(global_names)]
     name_country_totals = df_global.groupby(["name", "country"])["frequency"].sum().reset_index()
     
-    # Home = country with highest frequency
     home_countries = name_country_totals.loc[name_country_totals.groupby("name")["frequency"].idxmax()]
     home_countries = home_countries[["name", "country"]].rename(columns={"country": "home_country"})
     
@@ -1093,7 +1090,6 @@ def render_import_export(df):
     flow_matrix = df_flows.groupby(["home_country", "country"]).size().reset_index(name="n_names")
     flow_matrix.columns = ["source", "target", "n_names"]
     
-    # Short names
     name_map = {
         "USA": "USA", "England and Wales": "England", "Canada": "Canada",
         "Australia": "Australia", "Scotland": "Scotland", "Ireland": "Ireland",
@@ -1103,61 +1099,63 @@ def render_import_export(df):
     flow_matrix["target"] = flow_matrix["target"].map(name_map)
     flow_matrix = flow_matrix[flow_matrix["n_names"] >= 30]
     
-    # Separate source and target node lists
-    # Sources on left, targets on right — use " (out)" and " (in)" suffixes internally
-    source_order = ["USA", "England", "Canada", "Ireland", "Scotland", "Australia"]
-    target_order = ["Canada", "Scotland", "Ireland", "England", "N.Ireland", "Australia", "NZ"]
+    # Layout matching reference: small exporters top, big bottom
+    source_names = ["Canada", "Australia", "Scotland", "Ireland", "NZ", "England", "USA"]
+    target_names = ["England", "Ireland", "Scotland", "Canada", "Australia", "N.Ireland", "NZ"]
     
-    # Labels shown to user (without suffix)
-    all_labels = source_order + target_order
-    n_src = len(source_order)
+    n_src = len(source_names)
+    n_tgt = len(target_names)
+    
+    # Zero-width space makes right-side labels unique (Plotly needs unique labels)
+    zws = "\u200b"
+    all_labels = source_names + [t + zws for t in target_names]
     
     node_colors = {
-        "Canada": "#9b59b6",
-        "Australia": "#2ecc71",
-        "Scotland": "#1abc9c",
-        "Ireland": "#f39c12",
-        "NZ": "#e91e63",
-        "England": "#e74c3c",
-        "USA": "#3498db",
-        "N.Ireland": "#00bcd4"
+        "Canada": "#9b59b6", "Australia": "#2ecc71", "Scotland": "#1abc9c",
+        "Ireland": "#f39c12", "NZ": "#e91e63", "England": "#e74c3c",
+        "USA": "#3498db", "N.Ireland": "#00bcd4"
     }
     
-    colors = [node_colors[n] for n in source_order] + [node_colors[n] for n in target_order]
+    colors = [node_colors[n] for n in source_names] + [node_colors[n] for n in target_names]
+    
+    # Evenly spaced y positions
+    x_left = [0.001] * n_src
+    x_right = [0.999] * n_tgt
+    y_left = [(i + 0.5) / n_src for i in range(n_src)]
+    y_right = [(i + 0.5) / n_tgt for i in range(n_tgt)]
     
     # Build links with sqrt scaling
-    sources_idx = []
-    targets_idx = []
-    values = []
-    link_colors = []
+    link_src = []
+    link_tgt = []
+    link_val = []
+    link_col = []
     
     for _, row in flow_matrix.iterrows():
-        src = row["source"]
-        tgt = row["target"]
-        if src in source_order and tgt in target_order:
-            sources_idx.append(source_order.index(src))
-            targets_idx.append(n_src + target_order.index(tgt))
-            values.append(math.sqrt(row["n_names"]))  # sqrt scaling
-            c = node_colors[src]
+        s, t, v = row["source"], row["target"], row["n_names"]
+        if s in source_names and t in target_names:
+            link_src.append(source_names.index(s))
+            link_tgt.append(n_src + target_names.index(t))
+            link_val.append(math.sqrt(v))
+            c = node_colors[s]
             r, g, b = int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16)
-            link_colors.append(f"rgba({r},{g},{b},0.4)")
+            link_col.append(f"rgba({r},{g},{b},0.4)")
     
     fig = go.Figure(data=[go.Sankey(
-        arrangement="snap",
+        arrangement="fixed",
         node=dict(
-            pad=30,
+            pad=20,
             thickness=14,
-            line=dict(color="rgba(255,255,255,0.2)", width=0.5),
+            line=dict(color="rgba(255,255,255,0.15)", width=0.5),
             label=all_labels,
             color=colors,
-            x=[0.001] * n_src + [0.999] * len(target_order),
-            y=[(i + 0.5) / n_src for i in range(n_src)] + [(i + 0.5) / len(target_order) for i in range(len(target_order))]
+            x=x_left + x_right,
+            y=y_left + y_right
         ),
         link=dict(
-            source=sources_idx,
-            target=targets_idx,
-            value=values,
-            color=link_colors
+            source=link_src,
+            target=link_tgt,
+            value=link_val,
+            color=link_col
         )
     )])
     
@@ -1165,7 +1163,7 @@ def render_import_export(df):
         font=dict(size=11, color="rgba(255,255,255,0.85)", family="Arial"),
         paper_bgcolor="#0d1117",
         plot_bgcolor="#0d1117",
-        height=550,
+        height=500,
         margin=dict(l=0, r=0, t=5, b=5)
     )
     
