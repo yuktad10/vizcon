@@ -371,7 +371,7 @@ def render_track_lookup(df_metrics):
             c1, c2, c3 = st.columns(3)
             with c1:
                 st.markdown(f"""
-                <div style="text-align:center; padding:1rem; background:#faf6f0; border-radius:12px; border:1px solid #ede5d8;">
+                <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
                     <div style="font-size:0.65rem; color:#636e72; text-transform:uppercase; letter-spacing:1px;">🎧 Total Streams</div>
                     <div style="font-size:1.6rem; font-weight:800; color:#667eea; margin:0.3rem 0;">{total_streams:,}</div>
                     <div style="font-size:0.7rem; color:#636e72;">babies (1997-2023)</div>
@@ -379,7 +379,7 @@ def render_track_lookup(df_metrics):
                 """, unsafe_allow_html=True)
             with c2:
                 st.markdown(f"""
-                <div style="text-align:center; padding:1rem; background:#faf6f0; border-radius:12px; border:1px solid #ede5d8;">
+                <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
                     <div style="font-size:0.65rem; color:#636e72; text-transform:uppercase; letter-spacing:1px;">🌍 Listeners</div>
                     <div style="font-size:1.6rem; font-weight:800; color:#7c9a8e; margin:0.3rem 0;">{max_countries}/8</div>
                     <div style="font-size:0.7rem; color:#636e72;">countries charting</div>
@@ -387,7 +387,7 @@ def render_track_lookup(df_metrics):
                 """, unsafe_allow_html=True)
             with c3:
                 st.markdown(f"""
-                <div style="text-align:center; padding:1rem; background:#faf6f0; border-radius:12px; border:1px solid #ede5d8;">
+                <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
                     <div style="font-size:0.65rem; color:#636e72; text-transform:uppercase; letter-spacing:1px;">📊 Chart Rank</div>
                     <div style="font-size:1.6rem; font-weight:800; color:#2d3436; margin:0.3rem 0;">#{rank_val:,}</div>
                     <div style="font-size:0.7rem; color:#636e72;">of {total_names:,} tracks</div>
@@ -397,7 +397,7 @@ def render_track_lookup(df_metrics):
             # ─── Extra stats row ───────────────────────────────────
             st.markdown('<div style="height: 0.5rem;"></div>', unsafe_allow_html=True)
             st.markdown(f"""
-            <div style="background:#f0f4f8; border-radius:10px; padding:0.8rem 1.2rem; margin:0.5rem 0; border:1px solid #e2e8f0;">
+            <div style="background:#eef6ff; border-radius:10px; padding:0.8rem 1.2rem; margin:0.5rem 0; border:1px solid #d4e8fc;">
                 <span style="font-size:0.78rem; color:#636e72;">🎯 Countryness: </span><span style="font-weight:700;">{countryness_val:.2f}</span>
                 <span style="margin:0 1rem; color:#ddd;">|</span>
                 <span style="font-size:0.78rem; color:#636e72;">🏠 Home Market: </span><span style="font-weight:700;">{peak_country}</span>
@@ -410,7 +410,7 @@ def render_track_lookup(df_metrics):
                 for c in countries_list[:8]
             )
             st.markdown(f"""
-            <div style="margin-top:0.8rem; background:#f0f4f8; border-radius:12px; padding:1rem 1.2rem; border:1px solid #e2e8f0;">
+            <div style="margin-top:0.8rem; background:#eef6ff; border-radius:12px; padding:1rem 1.2rem; border:1px solid #d4e8fc;">
                 <div style="font-size:0.8rem; color:#636e72; margin-bottom:0.5rem;">
                     🔊 Streaming in {len(countries_list)} markets <span style="font-size:0.7rem;">(👑 = #1 market)</span>
                 </div>
@@ -575,21 +575,21 @@ def render_convergence_timeline(df):
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"""
-        <div style="text-align:center; padding:1rem; background:#faf6f0; border-radius:12px; border:1px solid #ede5d8;">
+        <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
             <div style="font-size:2rem; font-weight:800; color:{PURPLE};">{start_val:.1f}</div>
             <div style="font-size:0.8rem; color:{TEXT_MUTED};">1997 Average</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown(f"""
-        <div style="text-align:center; padding:1rem; background:#faf6f0; border-radius:12px; border:1px solid #ede5d8;">
+        <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
             <div style="font-size:2rem; font-weight:800; color:{SAGE};">{end_val:.1f}</div>
             <div style="font-size:0.8rem; color:{TEXT_MUTED};">2023 Average</div>
         </div>
         """, unsafe_allow_html=True)
     with col3:
         st.markdown(f"""
-        <div style="text-align:center; padding:1rem; background:#faf6f0; border-radius:12px; border:1px solid #ede5d8;">
+        <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
             <div style="font-size:2rem; font-weight:800; color:{CORAL};">27%</div>
             <div style="font-size:0.8rem; color:{TEXT_MUTED};">Convergence Drop</div>
         </div>
