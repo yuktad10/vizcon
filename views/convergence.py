@@ -437,7 +437,7 @@ def render_track_lookup(df_metrics):
 def render_leaderboard(df):
     st.markdown("---")
     st.markdown("""
-    <h2 style="margin: 0 0 4px 0;">🏆 The Global 6</h2>
+    <h2 style="margin: 0 0 4px 0;">🎧 Now Streaming Worldwide</h2>
     <p style="font-size: 0.95em; color: #636e72; margin: 0 0 1.5rem 0;">
         The six biggest cross-border anthems — names that charted equally in all 8 nations. No single home country. Pure global hits.
     </p>
@@ -455,14 +455,14 @@ def render_leaderboard(df):
 
     from streamlit.components.v1 import html as st_html
 
-    # Subtle/muted poster themes — softer versions
+    # Light/pastel poster themes — easy on eyes, text clearly visible
     poster_themes = [
-        {"bg": "linear-gradient(135deg, #b84a43, #9e3a34)", "accent": "#ffecd2", "icon": "🎤", "label": "#1 HIT"},
-        {"bg": "linear-gradient(135deg, #4a3f9e, #6350a8)", "accent": "#ffd700", "icon": "🎸", "label": "CHART BREAKER"},
-        {"bg": "linear-gradient(135deg, #1a7568, #238f86)", "accent": "#e0fff8", "icon": "🎹", "label": "GLOBAL SOUND"},
-        {"bg": "linear-gradient(135deg, #9e4e70, #864465)", "accent": "#ffe4f0", "icon": "🎧", "label": "ON REPEAT"},
-        {"bg": "linear-gradient(135deg, #a06b15, #8b5e12)", "accent": "#fff8e8", "icon": "🎷", "label": "CLASSIC"},
-        {"bg": "linear-gradient(135deg, #2563a0, #4080b8)", "accent": "#e0f2ff", "icon": "🎵", "label": "RISING STAR"},
+        {"bg": "linear-gradient(135deg, #3d2c5e, #5b3f8f)", "accent": "#f0c040", "icon": "🎤", "label": "#1 HIT"},
+        {"bg": "linear-gradient(135deg, #1e3a5f, #2c5282)", "accent": "#63b3ed", "icon": "🎸", "label": "CHART BREAKER"},
+        {"bg": "linear-gradient(135deg, #1a4a42, #276b5d)", "accent": "#68d391", "icon": "🎹", "label": "GLOBAL SOUND"},
+        {"bg": "linear-gradient(135deg, #4a2040, #6b3060)", "accent": "#f687b3", "icon": "🎧", "label": "ON REPEAT"},
+        {"bg": "linear-gradient(135deg, #3d3020, #5c4a2a)", "accent": "#ecc94b", "icon": "🎷", "label": "CLASSIC"},
+        {"bg": "linear-gradient(135deg, #1a3650, #2a5070)", "accent": "#90cdf4", "icon": "🎵", "label": "RISING STAR"},
     ]
 
     taglines = [
@@ -500,7 +500,7 @@ def render_leaderboard(df):
              style="flex:1; min-width:150px; max-width:185px; cursor:pointer; transition:transform 0.2s;"
              onmouseover="this.style.transform='translateY(-4px)'"
              onmouseout="this.style.transform='none'">
-            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.12); position:relative; overflow:hidden; height:260px;">
+            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 4px 16px rgba(0,0,0,0.12); position:relative; overflow:hidden; height:250px;">
                 <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 7px;">
                     <span style="font-size:0.55rem; color:rgba(255,255,255,0.9); font-weight:700; letter-spacing:1px;">{theme['label']}</span>
                 </div>
@@ -542,7 +542,7 @@ def render_leaderboard(df):
         <!-- Now Playing Bar -->
         <div id="now-playing" style="background:linear-gradient(90deg, #1a1a2e, #2d2d44); border-radius:12px; padding:0.8rem 1.2rem; margin-top:1.2rem; display:flex; align-items:center; gap:1rem; box-shadow:0 4px 16px rgba(0,0,0,0.2);">
             <!-- Album art -->
-            <div id="np-art" style="width:44px; height:44px; border-radius:8px; background:linear-gradient(135deg, #b84a43, #9e3a34); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background 0.4s;">
+            <div id="np-art" style="width:44px; height:44px; border-radius:8px; background:linear-gradient(135deg, #3d2c5e, #5b3f8f); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background 0.4s;">
                 <span id="np-letter" style="color:white; font-size:1.2rem; font-weight:800;">{first['name'][0]}</span>
             </div>
             <!-- Track info -->
@@ -627,7 +627,7 @@ def render_leaderboard(df):
     </html>
     """
 
-    st_html(full_html, height=420)
+    st_html(full_html, height=450)
 
     # Explanation below — plain text, no box
     st.markdown("""
