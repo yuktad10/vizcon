@@ -230,6 +230,18 @@ def inject_styles():
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        /* Override Streamlit input focus border */
+        .stTextInput > div > div > input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 1px #667eea !important;
+        }
+        .stTextInput > div > div {
+            border-color: #ddd !important;
+        }
+        .stTextInput > div > div:focus-within {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 1px #667eea !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -241,18 +253,15 @@ def render_track_lookup(df_metrics):
     # Load the summary dataset (pre-aggregated 1997-2023)
     df_summary = load_summary()
     
-    # Search input with music-themed container
+    # Section heading — plain text, no box
     st.markdown("""
-    <div style="background: linear-gradient(135deg, #f5f0ff, #ede9fe);
-                border-radius: 16px; padding: 1.2rem 1.5rem; border: 1px solid #e2d9f3; margin-bottom: 1rem;">
-        <h2 style="margin: 0 0 4px 0;">🔍 Track Lookup</h2>
-        <p style="font-size: 1.1em; font-weight: 600; color: #2D3748; margin: 0 0 4px 0;">
-            🎵 Every name is a track. What are you listening to?
-        </p>
-        <p style="font-size: 0.85em; color: #636e72; margin: 0;">
-            Search any name to see its streaming stats, chart history, and which nations have it on repeat.
-        </p>
-    </div>
+    <h2 style="margin: 0 0 4px 0;">🔍 Track Lookup</h2>
+    <p style="font-size: 1.1em; font-weight: 600; color: #2D3748; margin: 0 0 4px 0;">
+        🎵 Every name is a track. What are you listening to?
+    </p>
+    <p style="font-size: 0.85em; color: #636e72; margin: 0 0 1rem 0;">
+        Search any name to see its streaming stats, chart history, and which nations have it on repeat.
+    </p>
     """, unsafe_allow_html=True)
 
     search_name = st.text_input(
@@ -344,8 +353,8 @@ def render_track_lookup(df_metrics):
 
             # ─── Track title + badge + verdict ─────────────────────
             st.markdown(f"""
-            <div style="background: white; border-radius: 16px; padding: 2rem; border: 1px solid #eee;
-                        box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin-top: 1rem;">
+            <div style="background: linear-gradient(135deg, #f9f5ff, #f3eeff); border-radius: 16px; padding: 2rem; border: 1px solid #e8ddf5;
+                        box-shadow: 0 4px 16px rgba(102,126,234,0.08); margin-top: 1rem;">
                 <div style="margin-bottom:0.5rem;">
                     <span style="font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;">{search_name_clean} {sex_emoji}</span>
                     <span class="{badge_class}" style="margin-left: 0.8rem;">{badge_text}</span>
@@ -640,7 +649,7 @@ def render_media_eras(df):
         arrow = "→" if i < len(era_stats) - 1 else ""
         
         era_cards += f"""
-        <div style="text-align:center; flex:1; min-width: 120px; background:white; border-radius:10px; padding:0.8rem 0.3rem; border:1px solid #eee;">
+        <div style="text-align:center; flex:1; min-width: 120px; background:#fffdf5; border-radius:10px; padding:0.8rem 0.3rem; border:1px solid #f5edd8;">
             <div style="font-size:2rem; margin-bottom:0.3rem;">{era['icon']}</div>
             <div style="font-size:0.85rem; font-weight:700; color:#2d3436;">{era['era']}</div>
             <div style="font-size:0.65rem; color:#636e72; margin:0.2rem 0;">{era['years']}</div>
