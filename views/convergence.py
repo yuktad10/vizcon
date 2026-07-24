@@ -600,12 +600,12 @@ def render_media_eras(df):
 
     # Define media eras
     eras = [
-        {"era": "Radio Era", "years": "1997–2000", "start": 1997, "end": 2000, "icon": "📻"},
-        {"era": "Early TV", "years": "2001–2005", "start": 2001, "end": 2005, "icon": "📺"},
-        {"era": "Cable & DVD", "years": "2006–2009", "start": 2006, "end": 2009, "icon": "📀"},
-        {"era": "Internet", "years": "2010–2014", "start": 2010, "end": 2014, "icon": "💻"},
-        {"era": "Social Media", "years": "2015–2019", "start": 2015, "end": 2019, "icon": "📱"},
-        {"era": "Streaming", "years": "2020–2023", "start": 2020, "end": 2023, "icon": "🎧"},
+        {"era": "Radio", "years": "1997–2000", "start": 1997, "end": 2000, "icon": "📻", "note": "Local DJs ruled"},
+        {"era": "Early TV", "years": "2001–2005", "start": 2001, "end": 2005, "icon": "📺", "note": "Friends & soaps"},
+        {"era": "Cable & DVD", "years": "2006–2009", "start": 2006, "end": 2009, "icon": "📀", "note": "Global franchises"},
+        {"era": "Internet", "years": "2010–2014", "start": 2010, "end": 2014, "icon": "💻", "note": "YouTube era"},
+        {"era": "Social Media", "years": "2015–2019", "start": 2015, "end": 2019, "icon": "📱", "note": "Viral culture"},
+        {"era": "Streaming", "years": "2020–2023", "start": 2020, "end": 2023, "icon": "🎧", "note": "Same playlist"},
     ]
 
     # Calculate avg countryness per era
@@ -615,37 +615,75 @@ def render_media_eras(df):
         avg_c = era_data["countryness"].mean() if not era_data.empty else 0
         era_stats.append({**era, "avg_countryness": avg_c})
 
-    # Render as a horizontal bar/progression
-    cols = st.columns(len(era_stats))
-    for i, (col, era) in enumerate(zip(cols, era_stats)):
-        with col:
-            # Color intensity based on value (higher = more coral, lower = more sage)
-            max_val = max(e["avg_countryness"] for e in era_stats)
-            min_val = min(e["avg_countryness"] for e in era_stats)
-            ratio = (era["avg_countryness"] - min_val) / (max_val - min_val) if max_val != min_val else 0
-            # Blend from sage (global) to coral (local)
-            color = SAGE if ratio < 0.5 else CORAL if ratio > 0.8 else PURPLE
-
-            st.markdown(f"""
-            <div style="text-align:center; padding:1rem 0.5rem; background:white; border-radius:12px; border:1px solid #eee; height: 100%;">
-                <div style="font-size:1.5rem;">{era['icon']}</div>
-                <div style="font-size:0.7rem; color:#636e72; margin:0.3rem 0;">{era['era']}</div>
-                <div style="font-size:1.4rem; font-weight:800; color:{color};">{era['avg_countryness']:.1f}</div>
-                <div style="font-size:0.6rem; color:#636e72;">{era['years']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # Summary line
     first_val = era_stats[0]["avg_countryness"]
     last_val = era_stats[-1]["avg_countryness"]
     drop_pct = ((first_val - last_val) / first_val) * 100
-    st.markdown(f"""
-    <div style="text-align:center; margin-top:1.5rem; padding:1rem; background:#fafbfc; border-radius:10px;">
-        <p style="font-size:0.9rem; color:#2d3436; margin:0;">
-            📉 From <b>{first_val:.1f}</b> in the Radio Era to <b>{last_val:.1f}</b> in the Streaming Age — a <span style="color:#667eea; font-weight:800;">{drop_pct:.0f}%</span> drop in cultural distinctness.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+
+    # Build a visual timeline using streamlit.components.v1.html for better styling
+    from streamlit.components.v1 import html as st_html
+
+    # Generate era cards HTML
+    era_cards = ""
+    for i, era in enumerate(era_stats):
+        # Progress bar width (inverted — lower countryness = more filled = more global)
+        max_val = max(e["avg_countryness"] for e in era_stats)
+        bar_pct = 100 - ((era["avg_countryness"] / max_val) * 100)
+        
+        # Color based on how global (lower = more sage/green)
+        if era["avg_countryness"] < 20:
+            bar_color = "#7c9a8e"
+        elif era["avg_countryness"] < 30:
+            bar_color = "#667eea"
+        else:
+            bar_color = "#c99e85"
+        
+        arrow = "→" if i < len(era_stats) - 1 else ""
+        
+        era_cards += f"""
+        <div style="text-align:center; flex:1; min-width: 120px;">
+            <div style="font-size:2rem; margin-bottom:0.3rem;">{era['icon']}</div>
+            <div style="font-size:0.85rem; font-weight:700; color:#2d3436;">{era['era']}</div>
+            <div style="font-size:0.65rem; color:#636e72; margin:0.2rem 0;">{era['years']}</div>
+            <div style="margin:0.5rem auto; width:80%; height:6px; background:#eee; border-radius:3px; overflow:hidden;">
+                <div style="width:{bar_pct}%; height:100%; background:{bar_color}; border-radius:3px;"></div>
+            </div>
+            <div style="font-size:1.3rem; font-weight:800; color:{bar_color};">{era['avg_countryness']:.1f}</div>
+            <div style="font-size:0.6rem; color:#999; font-style:italic;">{era['note']}</div>
+        </div>
+        """
+
+    timeline_html = f"""
+    <html>
+    <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <div style="background:white; border-radius:16px; padding:2rem; border:1px solid #eee; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <!-- Era cards in a row -->
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.5rem; flex-wrap:wrap;">
+                {era_cards}
+            </div>
+            
+            <!-- Gradient progress bar below -->
+            <div style="margin-top:1.5rem; padding:0 1rem;">
+                <div style="height:8px; border-radius:4px; background: linear-gradient(90deg, #c99e85 0%, #667eea 50%, #7c9a8e 100%);"></div>
+                <div style="display:flex; justify-content:space-between; margin-top:0.4rem;">
+                    <span style="font-size:0.7rem; color:#c99e85; font-weight:600;">More Distinct</span>
+                    <span style="font-size:0.7rem; color:#7c9a8e; font-weight:600;">More Synced</span>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div style="text-align:center; margin-top:1.5rem; padding:1rem; background:#f8f9fa; border-radius:10px;">
+                <p style="font-size:0.9rem; color:#2d3436; margin:0;">
+                    📉 Cultural distinctness dropped from <b>{first_val:.1f}</b> to <b>{last_val:.1f}</b> — 
+                    a <span style="color:#667eea; font-weight:800;">{drop_pct:.0f}%</span> sync-up across the Anglosphere.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    st_html(timeline_html, height=320)
+
 
 # ─── Section: Insights Infographic ────────────────────────────────────────────
 def render_insights():
@@ -745,9 +783,9 @@ def render():
 
     # Section order: Track Lookup first (interactive), then the rest
     render_track_lookup(df)
+    render_media_eras(df)
     render_leaderboard(df)
     render_convergence_timeline(df)
-    render_media_eras(df)
     render_insights()
 
 
