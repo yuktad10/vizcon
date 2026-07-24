@@ -643,193 +643,212 @@ def render_leaderboard(df):
     st.markdown("---")
 
 
-# ─── Section: Convergence Timeline ───────────────────────────────────────────
+# ─── Section: One-Hit Wonders ──────────────────────────────────────────────────
 def render_convergence_timeline(df):
     st.markdown("""
-    <div class="section-divider">
-        <h2>📉 The Convergence Timeline</h2>
-        <p>How naming trends across 8 nations have been syncing up like a global playlist on shuffle</p>
-    </div>
+    <h2 style="margin: 0 0 4px 0;">🎤 One-Hit Wonders</h2>
+    <p style="font-size: 0.95em; color: #2d3436; margin: 0 0 1.5rem 0;">
+        The fastest rise, the shortest life. Pop culture creates instant global sync — but these names burn bright and fade fast.
+    </p>
     """, unsafe_allow_html=True)
 
-    # Calculate average countryness per year
-    yearly_avg = (
-        df.groupby("year")["countryness"]
-        .mean()
-        .reset_index()
-        .rename(columns={"countryness": "avg_countryness"})
-    )
-    yearly_avg = yearly_avg[(yearly_avg["year"] >= 1997) & (yearly_avg["year"] <= 2023)]
+    # ─── Part 1: Spike Chart — "The Viral Moment" ──────────────────
+    st.markdown("""
+    <p style="font-size: 0.9em; font-weight: 600; color: #2d3436; margin: 0 0 0.5rem 0;">
+        💥 The Viral Moment — when pop culture drops a name into every country at once
+    </p>
+    """, unsafe_allow_html=True)
 
-    # Calculate % drop
-    start_val = yearly_avg["avg_countryness"].iloc[0]
-    end_val = yearly_avg["avg_countryness"].iloc[-1]
-    pct_drop = ((start_val - end_val) / start_val) * 100
+    # Load detailed data
+    try:
+        df_all = load_all_names()
+    except Exception:
+        st.caption("📊 Requires full dataset.")
+        return
+
+    # Pop culture names to chart
+    pop_names_data = {
+        "Nevaeh": {"trigger": "2001: 'Heaven' backwards\ngoes viral on MTV", "trigger_year": 2001, "color": "#667eea"},
+        "Khaleesi": {"trigger": "2011: Game of\nThrones S1", "trigger_year": 2011, "color": "#e63946"},
+        "Arya": {"trigger": "2011: GoT +\nPretty Little Liars", "trigger_year": 2011, "color": "#2a9d8f"},
+        "Elsa": {"trigger": "2013: Frozen\nreleased", "trigger_year": 2013, "color": "#457b9d"},
+        "Britney": {"trigger": "1999: ...Baby\nOne More Time", "trigger_year": 1999, "color": "#c99e85"},
+    }
 
     fig = go.Figure()
 
-    # Main line
-    fig.add_trace(go.Scatter(
-        x=yearly_avg["year"],
-        y=yearly_avg["avg_countryness"],
-        mode="lines+markers",
-        line=dict(color=PURPLE, width=3, shape="spline"),
-        marker=dict(size=6, color=PURPLE),
-        fill="tozeroy",
-        fillcolor="rgba(102, 126, 234, 0.08)",
-        name="Avg Countryness",
-        hovertemplate="<b>%{x}</b><br>Avg Countryness: %{y:.2f}<extra></extra>",
-    ))
+    for name, info in pop_names_data.items():
+        name_data = df_all[df_all["name"].str.upper() == name.upper()]
+        if not name_data.empty:
+            yearly = name_data.groupby("year")["frequency"].sum().reset_index()
+            fig.add_trace(go.Scatter(
+                x=yearly["year"],
+                y=yearly["frequency"],
+                mode="lines",
+                name=name,
+                line=dict(width=2.5, color=info["color"], shape="spline"),
+                hovertemplate=f"<b>{name}</b><br>Year: %{{x}}<br>Babies: %{{y:,}}<extra></extra>",
+            ))
 
-    # Annotation
-    mid_year = 2010
-    mid_val = yearly_avg[yearly_avg["year"] == mid_year]["avg_countryness"].values
-    mid_val = mid_val[0] if len(mid_val) > 0 else yearly_avg["avg_countryness"].median()
-
-    fig.add_annotation(
-        x=mid_year,
-        y=mid_val,
-        text=f"↓ {pct_drop:.0f}% drop in countryness<br><i>Names are converging globally</i>",
-        showarrow=True,
-        arrowhead=2,
-        arrowsize=1,
-        arrowcolor=PURPLE,
-        ax=60,
-        ay=-60,
-        font=dict(size=12, color=PURPLE),
-        bgcolor="rgba(255,255,255,0.9)",
-        bordercolor=PURPLE,
-        borderwidth=1,
-        borderpad=8,
-    )
+            # Add annotation at trigger point
+            trigger_data = yearly[yearly["year"] == info["trigger_year"]]
+            if not trigger_data.empty:
+                fig.add_annotation(
+                    x=info["trigger_year"],
+                    y=int(trigger_data["frequency"].iloc[0]),
+                    text=info["trigger"],
+                    showarrow=True,
+                    arrowhead=2,
+                    arrowsize=0.8,
+                    arrowcolor=info["color"],
+                    ax=0,
+                    ay=-40,
+                    font=dict(size=9, color=info["color"]),
+                    bgcolor="rgba(255,255,255,0.9)",
+                    bordercolor=info["color"],
+                    borderwidth=1,
+                    borderpad=4,
+                )
 
     fig.update_layout(
         plot_bgcolor="white",
         paper_bgcolor="white",
-        font=dict(family="Inter, sans-serif", color=TEXT_DARK),
-        xaxis=dict(
-            title="Year",
-            showgrid=False,
-            dtick=2,
-            tickfont=dict(size=11),
-        ),
+        font=dict(family="Inter, sans-serif", color="#2d3436", size=12),
+        xaxis=dict(title="", showgrid=False, dtick=3, tickfont=dict(size=10)),
         yaxis=dict(
-            title="Average Countryness Score",
+            title="Total babies per year",
             showgrid=True,
             gridcolor="rgba(0,0,0,0.05)",
             zeroline=False,
-            tickfont=dict(size=11),
+            tickfont=dict(size=10),
         ),
-        margin=dict(l=60, r=30, t=40, b=50),
-        height=420,
+        margin=dict(l=60, r=30, t=30, b=40),
+        height=380,
         hovermode="x unified",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=11),
+        ),
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # Key stats below the chart
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-        <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
-            <div style="font-size:2rem; font-weight:800; color:{PURPLE};">{start_val:.1f}</div>
-            <div style="font-size:0.8rem; color:{TEXT_MUTED};">1997 Average</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""
-        <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
-            <div style="font-size:2rem; font-weight:800; color:{SAGE};">{end_val:.1f}</div>
-            <div style="font-size:0.8rem; color:{TEXT_MUTED};">2023 Average</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""
-        <div style="text-align:center; padding:1rem; background:#fff0f3; border-radius:12px; border:1px solid #fcd5df;">
-            <div style="font-size:2rem; font-weight:800; color:{CORAL};">27%</div>
-            <div style="font-size:0.8rem; color:{TEXT_MUTED};">Convergence Drop</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-
-
-
-# ─── Section: Media Eras ──────────────────────────────────────────────────────
-def render_media_eras(df):
-    st.markdown("---")
+    # ─── Part 2: Lifespan Comparison — "The Staying Power Test" ────
     st.markdown("""
-    <h2 style="margin: 0 0 4px 0;">🔊 Turning Up The Volume</h2>
-    <p style="font-size: 0.95em; color: #636e72; margin: 0 0 1.5rem 0;">
-        From silent films to TikTok, each media revolution amplified names across borders. The louder the shared signal, the more our playlists sync up.
+    <p style="font-size: 0.9em; font-weight: 600; color: #2d3436; margin: 2rem 0 0.5rem 0;">
+        ⏳ The Staying Power Test — how long do these viral names last?
     </p>
     """, unsafe_allow_html=True)
 
-    # Define media eras
-    eras = [
-        {"era": "Radio", "years": "1997–2000", "start": 1997, "end": 2000, "icon": "📻", "note": "Local DJs ruled"},
-        {"era": "Early TV", "years": "2001–2005", "start": 2001, "end": 2005, "icon": "📺", "note": "Friends & soaps"},
-        {"era": "Cable & DVD", "years": "2006–2009", "start": 2006, "end": 2009, "icon": "📀", "note": "Global franchises"},
-        {"era": "Internet", "years": "2010–2014", "start": 2010, "end": 2014, "icon": "💻", "note": "YouTube era"},
-        {"era": "Social Media", "years": "2015–2019", "start": 2015, "end": 2019, "icon": "📱", "note": "Viral culture"},
-        {"era": "Streaming", "years": "2020–2023", "start": 2020, "end": 2023, "icon": "🎧", "note": "Same playlist"},
+    # Calculate lifespan data
+    lifespan_data = []
+    comparison_names = [
+        ("James", "Classic", "🎵 Evergreen"),
+        ("William", "Classic", "🎵 Evergreen"),
+        ("Nevaeh", "Pop Culture", "💥 One-Hit Wonder"),
+        ("Britney", "Pop Culture", "💥 One-Hit Wonder"),
+        ("Khaleesi", "Pop Culture", "💥 One-Hit Wonder"),
+        ("Elsa", "Pop Culture", "💥 One-Hit Wonder"),
+        ("Arya", "Pop Culture", "📈 Still Charting"),
     ]
 
-    # Calculate avg countryness per era
-    era_stats = []
-    for era in eras:
-        era_data = df[(df["year"] >= era["start"]) & (df["year"] <= era["end"])]
-        avg_c = era_data["countryness"].mean() if not era_data.empty else 0
-        era_stats.append({**era, "avg_countryness": avg_c})
+    for name, category, label in comparison_names:
+        name_data = df_all[df_all["name"].str.upper() == name.upper()]
+        if not name_data.empty:
+            yearly = name_data.groupby("year")["frequency"].sum().reset_index()
+            peak_year = int(yearly.loc[yearly["frequency"].idxmax(), "year"])
+            peak_val = int(yearly["frequency"].max())
+            current_val = int(yearly[yearly["year"] == 2023]["frequency"].sum()) if 2023 in yearly["year"].values else 0
+            years_active = len(yearly)
+            
+            # Calculate "fall" — how much it dropped from peak
+            if peak_val > 0 and current_val > 0:
+                fall_pct = int(((peak_val - current_val) / peak_val) * 100)
+            else:
+                fall_pct = 100
 
-    first_val = era_stats[0]["avg_countryness"]
-    last_val = era_stats[-1]["avg_countryness"]
-    drop_pct = ((first_val - last_val) / first_val) * 100
+            lifespan_data.append({
+                "name": name,
+                "category": category,
+                "label": label,
+                "peak_year": peak_year,
+                "peak_val": peak_val,
+                "current_val": current_val,
+                "fall_pct": fall_pct,
+                "years_active": years_active,
+            })
 
-    # Build clean timeline using components.html
+    # Render as a styled comparison using st.columns
     from streamlit.components.v1 import html as st_html
 
-    era_cards = ""
-    for i, era in enumerate(era_stats):
-        # Color: coral for high (distinct) → sage for low (synced)
-        if era["avg_countryness"] > 20:
-            color = "#c99e85"
-        elif era["avg_countryness"] > 16:
-            color = "#667eea"
+    rows_html = ""
+    for item in lifespan_data:
+        # Bar width based on years active (out of 27 max)
+        bar_width = int((item["years_active"] / 27) * 100)
+        
+        # Color based on category
+        if item["category"] == "Classic":
+            bar_color = "#7c9a8e"
+            badge_bg = "background:#e8f5e9; color:#2e7d32;"
+        elif "Still" in item["label"]:
+            bar_color = "#667eea"
+            badge_bg = "background:#e8eaf6; color:#3949ab;"
         else:
-            color = "#7c9a8e"
+            bar_color = "#c99e85"
+            badge_bg = "background:#fff3e0; color:#e65100;"
 
-        era_cards += f"""
-        <div style="text-align:center; flex:1; min-width:100px; background:#fefefe; border-radius:12px; padding:1.2rem 0.5rem; border:1px solid #f0ebe3;">
-            <div style="font-size:1.8rem; margin-bottom:0.4rem;">{era['icon']}</div>
-            <div style="font-size:0.82rem; font-weight:700; color:#2d3436;">{era['era']}</div>
-            <div style="font-size:0.7rem; color:#999; margin:0.2rem 0 0.6rem 0;">{era['years']}</div>
-            <div style="font-size:1.5rem; font-weight:800; color:{color};">{era['avg_countryness']:.1f}</div>
-            <div style="font-size:0.65rem; color:#999; font-style:italic; margin-top:0.2rem;">{era['note']}</div>
+        rows_html += f"""
+        <div style="display:flex; align-items:center; padding:0.6rem 0; border-bottom:1px solid #f0f0f0; gap:0.8rem;">
+            <div style="width:90px; font-weight:700; font-size:0.85rem; color:#2d3436; flex-shrink:0;">{item['name']}</div>
+            <div style="flex:1;">
+                <div style="height:14px; background:#f5f5f5; border-radius:7px; overflow:hidden;">
+                    <div style="height:100%; width:{bar_width}%; background:{bar_color}; border-radius:7px;"></div>
+                </div>
+            </div>
+            <div style="width:50px; text-align:center; font-size:0.75rem; color:#636e72; flex-shrink:0;">{item['years_active']} yrs</div>
+            <div style="width:55px; text-align:center; font-size:0.75rem; color:#636e72; flex-shrink:0;">↓{item['fall_pct']}%</div>
+            <div style="flex-shrink:0;">
+                <span style="{badge_bg} padding:0.15rem 0.5rem; border-radius:8px; font-size:0.65rem; font-weight:600;">{item['label']}</span>
+            </div>
         </div>
         """
 
-    timeline_html = f"""
+    table_html = f"""
     <html>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="background: linear-gradient(135deg, #fffbf0, #fff8e8); border-radius:16px; padding:1.5rem; border:1px solid #f0e6d0;">
-            <!-- Era cards -->
-            <div style="display:flex; align-items:stretch; justify-content:space-between; gap:0.6rem;">
-                {era_cards}
+        <div style="background:white; border-radius:12px; padding:1rem 1.2rem; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <!-- Header -->
+            <div style="display:flex; align-items:center; padding:0.4rem 0; border-bottom:2px solid #eee; gap:0.8rem; margin-bottom:0.3rem;">
+                <div style="width:90px; font-size:0.65rem; color:#999; text-transform:uppercase; letter-spacing:1px; flex-shrink:0;">Name</div>
+                <div style="flex:1; font-size:0.65rem; color:#999; text-transform:uppercase; letter-spacing:1px;">Lifespan</div>
+                <div style="width:50px; text-align:center; font-size:0.65rem; color:#999; text-transform:uppercase; flex-shrink:0;">Years</div>
+                <div style="width:55px; text-align:center; font-size:0.65rem; color:#999; text-transform:uppercase; flex-shrink:0;">Fall</div>
+                <div style="width:100px; font-size:0.65rem; color:#999; text-transform:uppercase; letter-spacing:1px; flex-shrink:0;">Type</div>
             </div>
-
-            <!-- Summary line -->
-            <div style="text-align:center; margin-top:1.2rem; padding:0.8rem 1rem; background:#fefefe; border-radius:10px; border:1px solid #f0ebe3;">
-                <p style="font-size:0.88rem; color:#2d3436; margin:0;">
-                    📉 Cultural distinctness dropped from <b>{first_val:.1f}</b> to <b>{last_val:.1f}</b> — 
-                    a <span style="color:#667eea; font-weight:800;">{drop_pct:.0f}%</span> sync-up across the Anglosphere.
-                </p>
-            </div>
+            {rows_html}
         </div>
     </body>
     </html>
     """
 
-    st_html(timeline_html, height=330)
+    st_html(table_html, height=340)
+
+    # Insight callout
+    st.markdown("""
+    <p style="font-size:0.85rem; color:#2d3436; margin-top:1.5rem; line-height:1.7;">
+        Pop culture is the fastest way to make a name sync across countries — a single movie, show, or song can put a name on every nation's playlist overnight. 
+        But the same force that creates instant global recognition also creates disposable names. The louder the debut, the faster the fade.
+    </p>
+    <p style="font-size:0.82rem; color:#2d3436; line-height:1.6; margin-top:0.3rem;">
+        Classic names like James and William are the evergreen tracks — steady, reliable, never out of rotation.
+        Pop culture names are the viral singles — explosive but short-lived. The exception? Names like Arya that tap into deeper phonetic appeal and outlast their source material.
+    </p>
+    """, unsafe_allow_html=True)
+    st.markdown("---")
 
 
 # ─── Section: Insights Infographic ────────────────────────────────────────────
