@@ -442,7 +442,7 @@ def render_leaderboard(df):
         The six biggest cross-border anthems — names that charted equally in all 8 nations. No single home country. Pure global hits.
     </p>
     <p style="font-size: 0.78em; color: #999; font-style: italic; margin: 0 0 1.5rem 0;">
-        ⓘ Ranked purely by countryness score — the lower the score, the more equally a name is distributed across all nations.
+        ⓘ Ranked by countryness score (lower = more equally spread across nations). A name with fewer total babies can rank higher if it's perfectly balanced — being a small hit <i>everywhere</i> beats being a massive hit in just one place.
     </p>
     """, unsafe_allow_html=True)
 
@@ -458,20 +458,20 @@ def render_leaderboard(df):
 
     from streamlit.components.v1 import html as st_html
 
-    # Concert poster themes — music-inspired
+    # Warm/vibrant music poster themes — no vinyl, use music hit icons instead
     poster_themes = [
-        {"bg": "linear-gradient(135deg, #667eea, #764ba2)", "accent": "#ffd700", "genre": "Pop Anthem", "label": "PLATINUM"},
-        {"bg": "linear-gradient(135deg, #1a1a2e, #16213e)", "accent": "#00d4ff", "genre": "Alt-Rock", "label": "WORLD TOUR"},
-        {"bg": "linear-gradient(135deg, #2d3436, #636e72)", "accent": "#ff6b6b", "genre": "Indie", "label": "SOLD OUT"},
-        {"bg": "linear-gradient(135deg, #0f3443, #34e89e)", "accent": "#ffffff", "genre": "Electronic", "label": "RISING"},
-        {"bg": "linear-gradient(135deg, #4a1942, #c74b50)", "accent": "#ffd700", "genre": "Classic Rock", "label": "LEGENDARY"},
-        {"bg": "linear-gradient(135deg, #141e30, #243b55)", "accent": "#e9c46a", "genre": "R&B Soul", "label": "NEW WAVE"},
+        {"bg": "linear-gradient(135deg, #ff6b6b, #ee5a24)", "accent": "#fff", "icon": "🎤", "label": "#1 HIT"},
+        {"bg": "linear-gradient(135deg, #6c5ce7, #a55eea)", "accent": "#ffd700", "icon": "🎸", "label": "CHART BREAKER"},
+        {"bg": "linear-gradient(135deg, #00b894, #00cec9)", "accent": "#fff", "icon": "🎹", "label": "GLOBAL SOUND"},
+        {"bg": "linear-gradient(135deg, #fd79a8, #e84393)", "accent": "#fff", "icon": "🎧", "label": "ON REPEAT"},
+        {"bg": "linear-gradient(135deg, #f39c12, #e67e22)", "accent": "#fff", "icon": "🎷", "label": "CLASSIC"},
+        {"bg": "linear-gradient(135deg, #0984e3, #74b9ff)", "accent": "#fff", "icon": "🎵", "label": "RISING STAR"},
     ]
 
     taglines = [
         "The #1 hit everywhere, all the time",
         "Breaking borders at record speed",
-        "Strength in every market",
+        "Strength in every single market",
         "Quietly conquering the charts",
         "A timeless classic on repeat",
         "The smoothest global groove",
@@ -487,41 +487,32 @@ def render_leaderboard(df):
 
         posters_html += f"""
         <div style="flex:1; min-width:155px; max-width:190px;">
-            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.25); position:relative; overflow:hidden; height:280px;">
+            <div style="background:{theme['bg']}; border-radius:14px; padding:1.2rem 0.8rem; text-align:center; box-shadow:0 6px 24px rgba(0,0,0,0.2); position:relative; overflow:hidden; height:270px;">
                 <!-- Label ribbon -->
-                <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.15); backdrop-filter:blur(4px); border-radius:6px; padding:2px 7px;">
-                    <span style="font-size:0.55rem; color:rgba(255,255,255,0.9); font-weight:700; letter-spacing:1px;">{theme['label']}</span>
+                <div style="position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.2); backdrop-filter:blur(4px); border-radius:6px; padding:2px 7px;">
+                    <span style="font-size:0.55rem; color:rgba(255,255,255,0.95); font-weight:700; letter-spacing:1px;">{theme['label']}</span>
                 </div>
                 <!-- Rank -->
-                <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.3); border-radius:6px; padding:2px 7px;">
+                <div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.25); border-radius:6px; padding:2px 7px;">
                     <span style="font-size:0.7rem; color:white; font-weight:700;">#{rank}</span>
                 </div>
                 
-                <!-- Vinyl icon -->
-                <div style="font-size:2rem; margin:0.8rem 0 0.2rem 0;">💿</div>
+                <!-- Music icon -->
+                <div style="font-size:2.2rem; margin:0.8rem 0 0.3rem 0;">{theme['icon']}</div>
                 
                 <!-- Name -->
-                <div style="font-size:1.4rem; font-weight:900; color:white; letter-spacing:-0.5px; margin:0.2rem 0;">{row['name']}</div>
-                <div style="font-size:0.65rem; color:{theme['accent']}; font-weight:600; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:0.2rem;">{theme['genre']}</div>
-                
-                <!-- Tagline -->
-                <div style="font-size:0.62rem; color:rgba(255,255,255,0.6); font-style:italic; margin-bottom:0.8rem; padding:0 0.3rem;">"{taglines[i]}"</div>
+                <div style="font-size:1.5rem; font-weight:900; color:white; letter-spacing:-0.5px; margin:0.2rem 0;">{row['name']}</div>
+                <div style="font-size:0.6rem; color:rgba(255,255,255,0.7); font-style:italic; margin-bottom:0.7rem; padding:0 0.3rem;">"{taglines[i]}"</div>
                 
                 <!-- Stats panel -->
-                <div style="background:rgba(0,0,0,0.25); border-radius:8px; padding:0.5rem 0.4rem; margin:0 0.2rem;">
-                    <div style="font-size:1.2rem; font-weight:800; color:{theme['accent']};">{total}</div>
-                    <div style="font-size:0.55rem; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.5px;">total plays • 8 countries</div>
+                <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:0.5rem 0.4rem; margin:0 0.2rem;">
+                    <div style="font-size:1.1rem; font-weight:800; color:{theme['accent']};">{total}</div>
+                    <div style="font-size:0.55rem; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:0.5px;">total plays • 8 countries</div>
                 </div>
                 
-                <!-- Equalizer bars decoration -->
-                <div style="margin-top:0.6rem; display:flex; justify-content:center; gap:2px; align-items:flex-end; height:18px;">
-                    <div style="width:3px; height:8px; background:{theme['accent']}; border-radius:1px; opacity:0.6;"></div>
-                    <div style="width:3px; height:14px; background:{theme['accent']}; border-radius:1px; opacity:0.8;"></div>
-                    <div style="width:3px; height:18px; background:{theme['accent']}; border-radius:1px;"></div>
-                    <div style="width:3px; height:12px; background:{theme['accent']}; border-radius:1px; opacity:0.7;"></div>
-                    <div style="width:3px; height:6px; background:{theme['accent']}; border-radius:1px; opacity:0.5;"></div>
-                    <div style="width:3px; height:16px; background:{theme['accent']}; border-radius:1px; opacity:0.9;"></div>
-                    <div style="width:3px; height:10px; background:{theme['accent']}; border-radius:1px; opacity:0.6;"></div>
+                <!-- Score badge -->
+                <div style="margin-top:0.6rem;">
+                    <span style="background:rgba(255,255,255,0.2); padding:0.2rem 0.6rem; border-radius:10px; font-size:0.7rem; color:white; font-weight:600;">Score: {score}</span>
                 </div>
             </div>
         </div>
@@ -537,7 +528,7 @@ def render_leaderboard(df):
     </html>
     """
 
-    st_html(full_html, height=330)
+    st_html(full_html, height=320)
 
 
 # ─── Section: Convergence Timeline ───────────────────────────────────────────
