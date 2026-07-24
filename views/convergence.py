@@ -600,11 +600,12 @@ def render_convergence_timeline(df):
 
 # ─── Section: Media Eras ──────────────────────────────────────────────────────
 def render_media_eras(df):
+    st.markdown("---")
     st.markdown("""
-    <div class="section-divider">
-        <h2>🔊 Turning Up The Volume</h2>
-        <p>From silent films to TikTok, each media revolution amplified names across borders. The louder the shared signal, the more our playlists sync up.</p>
-    </div>
+    <h2 style="margin: 0 0 4px 0;">🔊 Turning Up The Volume</h2>
+    <p style="font-size: 0.95em; color: #636e72; margin: 0 0 1.5rem 0;">
+        From silent films to TikTok, each media revolution amplified names across borders. The louder the shared signal, the more our playlists sync up.
+    </p>
     """, unsafe_allow_html=True)
 
     # Define media eras
@@ -680,7 +681,7 @@ def render_media_eras(df):
             </div>
 
             <!-- Summary -->
-            <div style="text-align:center; margin-top:1.5rem; padding:1rem; background:#f8f9fa; border-radius:10px;">
+            <div style="text-align:center; margin-top:1.5rem; padding:1rem; background:#fffbf0; border-radius:10px; border:1px solid #f0e6d0;">
                 <p style="font-size:0.9rem; color:#2d3436; margin:0;">
                     📉 Cultural distinctness dropped from <b>{first_val:.1f}</b> to <b>{last_val:.1f}</b> — 
                     a <span style="color:#667eea; font-weight:800;">{drop_pct:.0f}%</span> sync-up across the Anglosphere.
