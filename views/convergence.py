@@ -1058,7 +1058,7 @@ def render_convergence_timeline(df):
 
 # ─── Section: Import/Export Economy ─────────────────────────────────────────────
 def render_import_export(df):
-    """The Record Label Map — network graph showing name flows."""
+    """The Record Label Map — chord diagram showing name flows."""
     
     st.markdown("""
     <h2 style="margin: 0 0 4px 0;">💿 The Record Label Map</h2>
@@ -1066,10 +1066,11 @@ def render_import_export(df):
         Every hit has a label behind it. We mapped which countries <b>produce</b> the names and which ones <b>play</b> them.
     </p>
     <p style="font-size: 0.82em; color: #636e72; margin: 0 0 1.5rem 0;">
-        For names that spread to 5+ countries — where do they originate, and who picks them up?
+        For names that spread to 5+ countries — the wider the chord, the more names flow between them.
     </p>
     """, unsafe_allow_html=True)
     
+    from streamlit.components.v1 import html as st_html
     import math
     
     # Compute flows
@@ -1087,131 +1088,171 @@ def render_import_export(df):
     df_flows = name_country_totals.merge(home_countries, on="name")
     df_flows = df_flows[df_flows["country"] != df_flows["home_country"]]
     
-    flow_matrix = df_flows.groupby(["home_country", "country"]).size().reset_index(name="n_names")
-    flow_matrix.columns = ["source", "target", "n_names"]
+    flow_matrix_df = df_flows.groupby(["home_country", "country"]).size().reset_index(name="n_names")
+    flow_matrix_df.columns = ["source", "target", "n_names"]
     
     name_map = {
         "USA": "USA", "England and Wales": "England", "Canada": "Canada",
         "Australia": "Australia", "Scotland": "Scotland", "Ireland": "Ireland",
         "Northern Ireland": "N.Ireland", "New Zealand": "NZ"
     }
-    flow_matrix["source"] = flow_matrix["source"].map(name_map)
-    flow_matrix["target"] = flow_matrix["target"].map(name_map)
-    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 50]
+    flow_matrix_df["source"] = flow_matrix_df["source"].map(name_map)
+    flow_matrix_df["target"] = flow_matrix_df["target"].map(name_map)
+    flow_matrix_df = flow_matrix_df[flow_matrix_df["n_names"] >= 50]
     
-    # Node positions (custom layout for visual clarity)
-    positions = {
-        "USA":        (0.12, 0.5),
-        "England":    (0.88, 0.5),
-        "Canada":     (0.28, 0.88),
-        "Australia":  (0.72, 0.12),
-        "Scotland":   (0.72, 0.88),
-        "Ireland":    (0.5, 0.92),
-        "N.Ireland":  (0.88, 0.78),
-        "NZ":         (0.5, 0.08)
+    countries = ["USA", "England", "Canada", "Ireland", "Scotland", "Australia", "N.Ireland", "NZ"]
+    colors = {
+        "USA": "#3498db", "England": "#e74c3c", "Canada": "#9b59b6",
+        "Ireland": "#f39c12", "Scotland": "#1abc9c", "Australia": "#2ecc71",
+        "N.Ireland": "#00bcd4", "NZ": "#e91e63"
     }
     
-    node_colors = {
-        "Canada": "#9b59b6", "Australia": "#2ecc71", "Scotland": "#1abc9c",
-        "Ireland": "#f39c12", "NZ": "#e91e63", "England": "#e74c3c",
-        "USA": "#3498db", "N.Ireland": "#00bcd4"
-    }
+    # Compute total flow per country
+    total_flow = {}
+    for c in countries:
+        out_f = flow_matrix_df[flow_matrix_df["source"] == c]["n_names"].sum()
+        in_f = flow_matrix_df[flow_matrix_df["target"] == c]["n_names"].sum()
+        total_flow[c] = out_f + in_f
     
-    # Export volumes for node sizing
-    export_totals = flow_matrix.groupby("source")["n_names"].sum()
-    import_totals = flow_matrix.groupby("target")["n_names"].sum()
+    total_all = sum(total_flow.values())
     
-    max_flow = flow_matrix["n_names"].max()
+    # Angular positions (with gaps)
+    gap = 0.04
+    available = 2 * math.pi - gap * len(countries)
     
-    fig = go.Figure()
+    arcs = {}
+    angle = 0
+    for c in countries:
+        span = (total_flow[c] / total_all) * available
+        arcs[c] = {"start": angle, "end": angle + span, "mid": angle + span / 2}
+        angle += span + gap
     
-    # Draw edges as bezier curves
-    for _, row in flow_matrix.iterrows():
+    # Build SVG chord diagram
+    cx, cy, r = 250, 250, 200
+    inner_r = 185
+    
+    def polar_to_cart(a, radius):
+        return cx + radius * math.cos(a - math.pi/2), cy + radius * math.sin(a - math.pi/2)
+    
+    def arc_path(start_a, end_a, radius):
+        x1, y1 = polar_to_cart(start_a, radius)
+        x2, y2 = polar_to_cart(end_a, radius)
+        large = 1 if (end_a - start_a) > math.pi else 0
+        return f"M {x1:.1f} {y1:.1f} A {radius} {radius} 0 {large} 1 {x2:.1f} {y2:.1f}"
+    
+    # Generate outer arcs (country segments)
+    svg_arcs = ""
+    svg_labels = ""
+    for c in countries:
+        a = arcs[c]
+        path = arc_path(a["start"], a["end"], r)
+        svg_arcs += f'<path d="{path}" fill="none" stroke="{colors[c]}" stroke-width="12" stroke-linecap="round" opacity="0.9"/>'
+        
+        # Label
+        lx, ly = polar_to_cart(a["mid"], r + 22)
+        # Rotate text for readability
+        angle_deg = math.degrees(a["mid"] - math.pi/2)
+        rotation = angle_deg if -90 < angle_deg < 90 else angle_deg + 180
+        anchor = "start" if -90 < angle_deg < 90 else "end"
+        svg_labels += f'<text x="{lx:.1f}" y="{ly:.1f}" fill="rgba(255,255,255,0.85)" font-size="10" font-weight="600" font-family="Arial" text-anchor="middle" dominant-baseline="middle">{c}</text>'
+    
+    # Generate chords
+    svg_chords = ""
+    for _, row in flow_matrix_df.iterrows():
         src, tgt, val = row["source"], row["target"], row["n_names"]
-        if src in positions and tgt in positions:
-            x0, y0 = positions[src]
-            x1, y1 = positions[tgt]
+        if src in arcs and tgt in arcs:
+            # Chord width proportional to flow
+            max_val = flow_matrix_df["n_names"].max()
+            width_frac = val / total_flow[src] if total_flow[src] > 0 else 0
             
-            # Bezier control point (offset perpendicular to the line)
-            mx, my = (x0 + x1) / 2, (y0 + y1) / 2
-            dx, dy = x1 - x0, y1 - y0
-            length = math.sqrt(dx*dx + dy*dy)
-            if length > 0:
-                # Perpendicular offset (curve the line)
-                offset = 0.08
-                nx, ny = -dy / length * offset, dx / length * offset
-                cx, cy = mx + nx, my + ny
-            else:
-                cx, cy = mx, my
+            # Source arc segment for this chord
+            s_span = arcs[src]["end"] - arcs[src]["start"]
+            # Track used angle per source (simple: distribute evenly)
             
-            # Generate points along quadratic bezier
-            n_points = 30
-            xs, ys = [], []
-            for t in [i / n_points for i in range(n_points + 1)]:
-                bx = (1-t)**2 * x0 + 2*(1-t)*t * cx + t**2 * x1
-                by = (1-t)**2 * y0 + 2*(1-t)*t * cy + t**2 * y1
-                xs.append(bx)
-                ys.append(by)
+            # Simple approach: use midpoints with slight offset
+            s_angle = arcs[src]["start"] + s_span * 0.3 + s_span * 0.4 * (list(flow_matrix_df[flow_matrix_df["source"]==src]["target"]).index(tgt) if tgt in list(flow_matrix_df[flow_matrix_df["source"]==src]["target"]) else 0) / max(1, len(flow_matrix_df[flow_matrix_df["source"]==src]) - 1)
             
-            # Width and opacity based on flow
-            width = 1 + 4 * (val / max_flow)
-            opacity = 0.3 + 0.5 * (val / max_flow)
+            t_span = arcs[tgt]["end"] - arcs[tgt]["start"]
+            t_sources = list(flow_matrix_df[flow_matrix_df["target"]==tgt]["source"])
+            t_idx = t_sources.index(src) if src in t_sources else 0
+            t_angle = arcs[tgt]["start"] + t_span * 0.3 + t_span * 0.4 * t_idx / max(1, len(t_sources) - 1)
             
-            c = node_colors.get(src, "#999")
-            r, g, b = int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16)
+            x1, y1 = polar_to_cart(s_angle, inner_r)
+            x2, y2 = polar_to_cart(t_angle, inner_r)
             
-            fig.add_trace(go.Scatter(
-                x=xs, y=ys,
-                mode="lines",
-                line=dict(width=width, color=f"rgba({r},{g},{b},{opacity:.2f})", shape="spline"),
-                hoverinfo="text",
-                hovertext=f"{src} → {tgt}: {val:,} names",
-                showlegend=False
-            ))
+            # Quadratic bezier through center (with offset for visual separation)
+            opacity = 0.15 + 0.35 * (val / max_val)
+            width = 1 + 6 * (val / max_val)
+            
+            path = f"M {x1:.1f} {y1:.1f} Q {cx} {cy} {x2:.1f} {y2:.1f}"
+            c_hex = colors[src]
+            
+            svg_chords += f'<path d="{path}" fill="none" stroke="{c_hex}" stroke-width="{width:.1f}" opacity="{opacity:.2f}" class="chord" data-info="{src} → {tgt}: {val:,} names"/>'
     
-    # Draw nodes
-    for country, (x, y) in positions.items():
-        exp = export_totals.get(country, 0)
-        imp = import_totals.get(country, 0)
-        total = exp + imp
-        
-        # Node size: min 20, max 55
-        size = 20 + 35 * (total / (export_totals.max() + import_totals.max()))
-        size = max(size, 20)
-        
-        fig.add_trace(go.Scatter(
-            x=[x], y=[y],
-            mode="markers+text",
-            marker=dict(
-                size=size,
-                color=node_colors.get(country, "#999"),
-                line=dict(color="rgba(255,255,255,0.8)", width=2),
-                opacity=0.9
-            ),
-            text=country,
-            textposition="top center",
-            textfont=dict(color="rgba(255,255,255,0.9)", size=11, family="Arial"),
-            hoverinfo="text",
-            hovertext=f"<b>{country}</b><br>Exports: {exp:,} names<br>Imports: {imp:,} names",
-            showlegend=False
-        ))
+    chord_html = f"""
+    <html>
+    <head>
+    <style>
+        body {{ margin:0; padding:0; background: #0d1117; display:flex; justify-content:center; align-items:center; }}
+        svg {{ display:block; }}
+        .chord {{ transition: opacity 0.2s; cursor: pointer; }}
+        .chord:hover {{ opacity: 0.8 !important; stroke-width: 5 !important; }}
+        .tooltip {{
+            position: absolute;
+            background: rgba(30,30,50,0.95);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: Arial;
+            pointer-events: none;
+            display: none;
+            border: 1px solid rgba(255,255,255,0.1);
+        }}
+    </style>
+    </head>
+    <body>
+        <div style="position:relative;">
+            <svg width="500" height="500" viewBox="0 0 500 500">
+                <!-- Chords (behind arcs) -->
+                {svg_chords}
+                <!-- Outer arcs -->
+                {svg_arcs}
+                <!-- Labels -->
+                {svg_labels}
+            </svg>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+        <script>
+            document.querySelectorAll('.chord').forEach(el => {{
+                el.addEventListener('mouseenter', (e) => {{
+                    const tip = document.getElementById('tooltip');
+                    tip.textContent = el.getAttribute('data-info');
+                    tip.style.display = 'block';
+                    tip.style.left = (e.offsetX + 10) + 'px';
+                    tip.style.top = (e.offsetY - 30) + 'px';
+                }});
+                el.addEventListener('mouseleave', () => {{
+                    document.getElementById('tooltip').style.display = 'none';
+                }});
+                el.addEventListener('mousemove', (e) => {{
+                    const tip = document.getElementById('tooltip');
+                    tip.style.left = (e.offsetX + 10) + 'px';
+                    tip.style.top = (e.offsetY - 30) + 'px';
+                }});
+            }});
+        </script>
+    </body>
+    </html>
+    """
     
-    fig.update_layout(
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.05, 1.05]),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.05, 1.05]),
-        paper_bgcolor="#0d1117",
-        plot_bgcolor="#0d1117",
-        height=500,
-        margin=dict(l=10, r=10, t=10, b=10)
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
+    st_html(chord_html, height=520)
     
     # Summary
     st.markdown("""
     <p style="font-size:0.82rem; color:#2d3436; margin-top:1rem; line-height:1.6;">
         The naming world has just two major record labels: <b style="color:#3498db;">USA</b> and <b style="color:#e74c3c;">England</b> — together they originate 95% of names that go global.
-        The thicker the line, the more names flow. Notice how the US connects to <i>everyone</i>, while England primarily feeds its neighbours.
+        The thicker the chord, the more names flow. Hover over any chord to see the exact count.
     </p>
     """, unsafe_allow_html=True)
     st.markdown("---")
