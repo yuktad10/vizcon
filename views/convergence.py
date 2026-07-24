@@ -730,13 +730,6 @@ def render_convergence_timeline(df):
     </p>
     """, unsafe_allow_html=True)
 
-    # ─── Part 1: Spike Chart — "The Viral Moment" ──────────────────
-    st.markdown("""
-    <p style="font-size: 0.9em; font-weight: 600; color: #2d3436; margin: 0 0 0.5rem 0;">
-        💥 The Viral Moment — when pop culture drops a name into every country at once
-    </p>
-    """, unsafe_allow_html=True)
-
     # Load detailed data
     try:
         df_all = load_all_names()
@@ -744,186 +737,128 @@ def render_convergence_timeline(df):
         st.caption("📊 Requires full dataset.")
         return
 
-    # Pop culture names to chart
-    pop_names_data = {
-        "Nevaeh": {"trigger": "2001: 'Heaven' backwards\ngoes viral on MTV", "trigger_year": 2001, "color": "#667eea"},
-        "Khaleesi": {"trigger": "2011: Game of\nThrones S1", "trigger_year": 2011, "color": "#e63946"},
-        "Arya": {"trigger": "2011: GoT +\nPretty Little Liars", "trigger_year": 2011, "color": "#2a9d8f"},
-        "Elsa": {"trigger": "2013: Frozen\nreleased", "trigger_year": 2013, "color": "#457b9d"},
-        "Britney": {"trigger": "1999: ...Baby\nOne More Time", "trigger_year": 1999, "color": "#c99e85"},
-    }
-
-    fig = go.Figure()
-
-    for name, info in pop_names_data.items():
-        name_data = df_all[df_all["name"].str.upper() == name.upper()]
-        if not name_data.empty:
-            yearly = name_data.groupby("year")["frequency"].sum().reset_index()
-            fig.add_trace(go.Scatter(
-                x=yearly["year"],
-                y=yearly["frequency"],
-                mode="lines",
-                name=name,
-                line=dict(width=2.5, color=info["color"], shape="spline"),
-                hovertemplate=f"<b>{name}</b><br>Year: %{{x}}<br>Babies: %{{y:,}}<extra></extra>",
-            ))
-
-            # Add annotation at trigger point
-            trigger_data = yearly[yearly["year"] == info["trigger_year"]]
-            if not trigger_data.empty:
-                fig.add_annotation(
-                    x=info["trigger_year"],
-                    y=int(trigger_data["frequency"].iloc[0]),
-                    text=info["trigger"],
-                    showarrow=True,
-                    arrowhead=2,
-                    arrowsize=0.8,
-                    arrowcolor=info["color"],
-                    ax=0,
-                    ay=-40,
-                    font=dict(size=9, color=info["color"]),
-                    bgcolor="rgba(255,255,255,0.9)",
-                    bordercolor=info["color"],
-                    borderwidth=1,
-                    borderpad=4,
-                )
-
-    fig.update_layout(
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(family="Inter, sans-serif", color="#2d3436", size=12),
-        xaxis=dict(title="", showgrid=False, dtick=3, tickfont=dict(size=10)),
-        yaxis=dict(
-            title="Total babies per year",
-            showgrid=True,
-            gridcolor="rgba(0,0,0,0.05)",
-            zeroline=False,
-            tickfont=dict(size=10),
-        ),
-        margin=dict(l=60, r=30, t=30, b=40),
-        height=380,
-        hovermode="x unified",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.2,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=11),
-        ),
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    # ─── Part 2: Lifespan Comparison — "The Staying Power Test" ────
-    st.markdown("""
-    <p style="font-size: 0.9em; font-weight: 600; color: #2d3436; margin: 2rem 0 0.5rem 0;">
-        ⏳ The Staying Power Test — how long do these viral names last?
-    </p>
-    """, unsafe_allow_html=True)
-
-    # Calculate lifespan data
-    lifespan_data = []
-    comparison_names = [
-        ("James", "Classic", "🎵 Evergreen"),
-        ("William", "Classic", "🎵 Evergreen"),
-        ("Nevaeh", "Pop Culture", "💥 One-Hit Wonder"),
-        ("Britney", "Pop Culture", "💥 One-Hit Wonder"),
-        ("Khaleesi", "Pop Culture", "💥 One-Hit Wonder"),
-        ("Elsa", "Pop Culture", "💥 One-Hit Wonder"),
-        ("Arya", "Pop Culture", "📈 Still Charting"),
+    # Calculate stats for each pop culture name
+    pop_names_info = [
+        {"name": "Britney", "year": 1999, "icon": "🎤", "trigger": "Britney Spears drops '...Baby One More Time'"},
+        {"name": "Nevaeh", "year": 2001, "icon": "💥", "trigger": "'Nevaeh' (heaven backwards) goes viral on MTV"},
+        {"name": "Khaleesi", "year": 2011, "icon": "🐉", "trigger": "Game of Thrones Season 1 premieres"},
+        {"name": "Arya", "year": 2011, "icon": "⚔️", "trigger": "GoT's fierce warrior princess captures hearts"},
+        {"name": "Elsa", "year": 2013, "icon": "❄️", "trigger": "Frozen released — 'Let It Go' everywhere"},
     ]
 
-    for name, category, label in comparison_names:
-        name_data = df_all[df_all["name"].str.upper() == name.upper()]
+    timeline_events = []
+    for info in pop_names_info:
+        name_data = df_all[df_all["name"].str.upper() == info["name"].upper()]
         if not name_data.empty:
             yearly = name_data.groupby("year")["frequency"].sum().reset_index()
-            peak_year = int(yearly.loc[yearly["frequency"].idxmax(), "year"])
-            peak_val = int(yearly["frequency"].max())
-            current_val = int(yearly[yearly["year"] == 2023]["frequency"].sum()) if 2023 in yearly["year"].values else 0
-            years_active = len(yearly)
+            peak_row = yearly.loc[yearly["frequency"].idxmax()]
+            peak_year = int(peak_row["year"])
+            peak_val = int(peak_row["frequency"])
+            current = int(yearly[yearly["year"] == 2023]["frequency"].sum()) if 2023 in yearly["year"].values else 0
+            fall_pct = int(((peak_val - current) / peak_val) * 100) if peak_val > 0 else 0
             
-            # Calculate "fall" — how much it dropped from peak
-            if peak_val > 0 and current_val > 0:
-                fall_pct = int(((peak_val - current_val) / peak_val) * 100)
+            # Determine status
+            if fall_pct > 80:
+                status = "❌ Basically gone"
+                status_color = "#e63946"
+            elif fall_pct > 50:
+                status = "📉 Fading"
+                status_color = "#c99e85"
+            elif fall_pct > 25:
+                status = "⚠️ Slowly fading"
+                status_color = "#e9c46a"
             else:
-                fall_pct = 100
+                status = "✅ Still charting"
+                status_color = "#7c9a8e"
 
-            lifespan_data.append({
-                "name": name,
-                "category": category,
-                "label": label,
+            timeline_events.append({
+                **info,
                 "peak_year": peak_year,
                 "peak_val": peak_val,
-                "current_val": current_val,
+                "current": current,
                 "fall_pct": fall_pct,
-                "years_active": years_active,
+                "status": status,
+                "status_color": status_color,
             })
 
-    # Render as a styled comparison using st.columns
+    # Build vertical timeline HTML
     from streamlit.components.v1 import html as st_html
 
-    rows_html = ""
-    for item in lifespan_data:
-        # Bar width based on years active (out of 27 max)
-        bar_width = int((item["years_active"] / 27) * 100)
+    events_html = ""
+    for i, evt in enumerate(timeline_events):
+        is_last = (i == len(timeline_events) - 1)
+        line_style = "border-left:3px solid #e0e0e0;" if not is_last else "border-left:3px solid transparent;"
         
-        # Color based on category
-        if item["category"] == "Classic":
-            bar_color = "#7c9a8e"
-            badge_bg = "background:#e8f5e9; color:#2e7d32;"
-        elif "Still" in item["label"]:
-            bar_color = "#667eea"
-            badge_bg = "background:#e8eaf6; color:#3949ab;"
-        else:
-            bar_color = "#c99e85"
-            badge_bg = "background:#fff3e0; color:#e65100;"
-
-        rows_html += f"""
-        <div style="display:flex; align-items:center; padding:0.6rem 0; border-bottom:1px solid #f0f0f0; gap:0.8rem;">
-            <div style="width:90px; font-weight:700; font-size:0.85rem; color:#2d3436; flex-shrink:0;">{item['name']}</div>
-            <div style="flex:1;">
-                <div style="height:14px; background:#f5f5f5; border-radius:7px; overflow:hidden;">
-                    <div style="height:100%; width:{bar_width}%; background:{bar_color}; border-radius:7px;"></div>
+        events_html += f"""
+        <div style="display:flex; gap:1rem; {line_style} padding-left:1.5rem; padding-bottom:2rem; margin-left:1rem; position:relative;">
+            <!-- Dot on timeline -->
+            <div style="position:absolute; left:-8px; top:0; width:16px; height:16px; border-radius:50%; background:white; border:3px solid #667eea; z-index:1;"></div>
+            
+            <!-- Content -->
+            <div style="flex:1; background:white; border-radius:12px; padding:1.2rem; border:1px solid #f0f0f0; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <!-- Year + trigger -->
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                    <span style="background:#667eea; color:white; padding:0.2rem 0.6rem; border-radius:8px; font-size:0.75rem; font-weight:700;">{evt['year']}</span>
+                    <span style="font-size:1.2rem;">{evt['icon']}</span>
+                    <span style="font-size:0.95rem; font-weight:700; color:#2d3436;">{evt['name']}</span>
                 </div>
-            </div>
-            <div style="width:50px; text-align:center; font-size:0.75rem; color:#636e72; flex-shrink:0;">{item['years_active']} yrs</div>
-            <div style="width:55px; text-align:center; font-size:0.75rem; color:#636e72; flex-shrink:0;">↓{item['fall_pct']}%</div>
-            <div style="flex-shrink:0;">
-                <span style="{badge_bg} padding:0.15rem 0.5rem; border-radius:8px; font-size:0.65rem; font-weight:600;">{item['label']}</span>
+                <p style="font-size:0.82rem; color:#4a5568; margin:0 0 0.8rem 0; line-height:1.5;">
+                    {evt['trigger']}
+                </p>
+                
+                <!-- Stats row -->
+                <div style="display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap;">
+                    <div>
+                        <span style="font-size:0.65rem; color:#999; text-transform:uppercase;">Peak</span><br>
+                        <span style="font-size:1rem; font-weight:800; color:#667eea;">{evt['peak_val']:,}</span>
+                        <span style="font-size:0.7rem; color:#999;"> ({evt['peak_year']})</span>
+                    </div>
+                    <div style="font-size:1.2rem; color:#ccc;">→</div>
+                    <div>
+                        <span style="font-size:0.65rem; color:#999; text-transform:uppercase;">Now (2023)</span><br>
+                        <span style="font-size:1rem; font-weight:800; color:#2d3436;">{evt['current']:,}</span>
+                    </div>
+                    <div>
+                        <span style="font-size:0.65rem; color:#999; text-transform:uppercase;">Drop</span><br>
+                        <span style="font-size:1rem; font-weight:800; color:{evt['status_color']};">↓{evt['fall_pct']}%</span>
+                    </div>
+                    <div>
+                        <span style="background:{evt['status_color']}22; color:{evt['status_color']}; padding:0.2rem 0.5rem; border-radius:8px; font-size:0.7rem; font-weight:600;">{evt['status']}</span>
+                    </div>
+                </div>
             </div>
         </div>
         """
 
-    table_html = f"""
-    <html>
-    <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="background:white; border-radius:12px; padding:1rem 1.2rem; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <!-- Header -->
-            <div style="display:flex; align-items:center; padding:0.4rem 0; border-bottom:2px solid #eee; gap:0.8rem; margin-bottom:0.3rem;">
-                <div style="width:90px; font-size:0.65rem; color:#999; text-transform:uppercase; letter-spacing:1px; flex-shrink:0;">Name</div>
-                <div style="flex:1; font-size:0.65rem; color:#999; text-transform:uppercase; letter-spacing:1px;">Lifespan</div>
-                <div style="width:50px; text-align:center; font-size:0.65rem; color:#999; text-transform:uppercase; flex-shrink:0;">Years</div>
-                <div style="width:55px; text-align:center; font-size:0.65rem; color:#999; text-transform:uppercase; flex-shrink:0;">Fall</div>
-                <div style="width:100px; font-size:0.65rem; color:#999; text-transform:uppercase; letter-spacing:1px; flex-shrink:0;">Type</div>
-            </div>
-            {rows_html}
+    # Final "Today" marker
+    events_html += """
+    <div style="display:flex; gap:1rem; padding-left:1.5rem; margin-left:1rem; position:relative;">
+        <div style="position:absolute; left:-8px; top:0; width:16px; height:16px; border-radius:50%; background:#667eea; z-index:1;"></div>
+        <div style="padding:0.5rem 0;">
+            <span style="font-size:0.85rem; font-weight:700; color:#667eea;">2023 — Who survived?</span>
         </div>
+    </div>
+    """
+
+    timeline_html = f"""
+    <html>
+    <body style="margin:0; padding:1rem 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        {events_html}
     </body>
     </html>
     """
 
-    st_html(table_html, height=340)
+    st_html(timeline_html, height=700)
 
-    # Insight callout
+    # Insight text
     st.markdown("""
-    <p style="font-size:0.85rem; color:#2d3436; margin-top:1.5rem; line-height:1.7;">
+    <p style="font-size:0.85rem; color:#2d3436; margin-top:1rem; line-height:1.7;">
         Pop culture is the fastest way to make a name sync across countries — a single movie, show, or song can put a name on every nation's playlist overnight. 
         But the same force that creates instant global recognition also creates disposable names. The louder the debut, the faster the fade.
     </p>
     <p style="font-size:0.82rem; color:#2d3436; line-height:1.6; margin-top:0.3rem;">
-        Classic names like James and William are the evergreen tracks — steady, reliable, never out of rotation.
-        Pop culture names are the viral singles — explosive but short-lived. The exception? Names like Arya that tap into deeper phonetic appeal and outlast their source material.
+        The exception? Names like Arya that tap into deeper phonetic appeal and outlast their source material.
+        A name that <i>sounds</i> right survives. A name that only <i>references</i> something fades with it.
     </p>
     """, unsafe_allow_html=True)
     st.markdown("---")
