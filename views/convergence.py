@@ -245,8 +245,8 @@ def render_track_lookup(df_metrics):
     st.markdown("""
     <div style="background: linear-gradient(135deg, #EEF2FF, #F0FFF4);
                 border-radius: 16px; padding: 2rem; border: 1px solid #E2E8F0; margin-bottom: 1rem;">
+        <h2 style="margin: 0 0 4px 0;">🔍 Track Lookup</h2>
         <p style="font-size: 1.1em; font-weight: 600; color: #2D3748; margin: 0 0 4px 0;">
-        <h2>🔍 Track Lookup</h2>
             🎵 Every name is a track. What are you listening to?
         </p>
         <p style="font-size: 0.85em; color: #636e72; margin: 0;">
@@ -338,7 +338,7 @@ def render_track_lookup(df_metrics):
             else:
                 badge_text = "🚫 Cultural Exclusive"
                 badge_class = "badge-local"
-                verdict = "This name is a cultural passport — it exists almost exclusively in one nation."
+                verdict = "This track is a one-country anthem — it exists almost exclusively in one nation's playlist."
                 verdict_emoji = "🏠"
                 genre_tag = "Genre: Heritage"
 
