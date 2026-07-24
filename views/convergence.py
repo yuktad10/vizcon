@@ -643,7 +643,7 @@ def render_media_eras(df):
             color = "#7c9a8e"
 
         era_cards += f"""
-        <div style="text-align:center; flex:1; min-width:100px; background:#fffdf5; border-radius:12px; padding:1.2rem 0.5rem; border:1px solid #f5edd8;">
+        <div style="text-align:center; flex:1; min-width:100px; background:#fefefe; border-radius:12px; padding:1.2rem 0.5rem; border:1px solid #f0ebe3;">
             <div style="font-size:1.8rem; margin-bottom:0.4rem;">{era['icon']}</div>
             <div style="font-size:0.82rem; font-weight:700; color:#2d3436;">{era['era']}</div>
             <div style="font-size:0.7rem; color:#999; margin:0.2rem 0 0.6rem 0;">{era['years']}</div>
@@ -662,7 +662,7 @@ def render_media_eras(df):
             </div>
 
             <!-- Summary line -->
-            <div style="text-align:center; margin-top:1.2rem; padding:0.8rem 1rem; background:#fffdf5; border-radius:10px; border:1px solid #f5edd8;">
+            <div style="text-align:center; margin-top:1.2rem; padding:0.8rem 1rem; background:#fefefe; border-radius:10px; border:1px solid #f0ebe3;">
                 <p style="font-size:0.88rem; color:#2d3436; margin:0;">
                     📉 Cultural distinctness dropped from <b>{first_val:.1f}</b> to <b>{last_val:.1f}</b> — 
                     a <span style="color:#667eea; font-weight:800;">{drop_pct:.0f}%</span> sync-up across the Anglosphere.
