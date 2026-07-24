@@ -1070,6 +1070,8 @@ def render_import_export(df):
     </p>
     """, unsafe_allow_html=True)
     
+    import math
+    
     # Compute flows from data
     df_all = load_all_names()
     
@@ -1099,11 +1101,16 @@ def render_import_export(df):
     }
     flow_matrix["source"] = flow_matrix["source"].map(name_map)
     flow_matrix["target"] = flow_matrix["target"].map(name_map)
-    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 50]
+    flow_matrix = flow_matrix[flow_matrix["n_names"] >= 30]
     
-    # Node layout matching the reference
-    source_order = ["Canada", "Australia", "Scotland", "Ireland", "NZ", "England", "USA"]
-    target_order = ["England", "Ireland", "Scotland", "Canada", "Australia", "N.Ireland", "NZ"]
+    # Separate source and target node lists
+    # Sources on left, targets on right — use " (out)" and " (in)" suffixes internally
+    source_order = ["USA", "England", "Canada", "Ireland", "Scotland", "Australia"]
+    target_order = ["Canada", "Scotland", "Ireland", "England", "N.Ireland", "Australia", "NZ"]
+    
+    # Labels shown to user (without suffix)
+    all_labels = source_order + target_order
+    n_src = len(source_order)
     
     node_colors = {
         "Canada": "#9b59b6",
@@ -1116,16 +1123,11 @@ def render_import_export(df):
         "N.Ireland": "#00bcd4"
     }
     
-    all_labels = source_order + target_order
-    n_src = len(source_order)
+    colors = [node_colors[n] for n in source_order] + [node_colors[n] for n in target_order]
     
-    # Even vertical spacing
-    y_sources = [(i + 0.5) / len(source_order) for i in range(len(source_order))]
-    y_targets = [(i + 0.5) / len(target_order) for i in range(len(target_order))]
-    
-    # Build links
-    sources = []
-    targets = []
+    # Build links with sqrt scaling
+    sources_idx = []
+    targets_idx = []
     values = []
     link_colors = []
     
@@ -1133,40 +1135,38 @@ def render_import_export(df):
         src = row["source"]
         tgt = row["target"]
         if src in source_order and tgt in target_order:
-            sources.append(source_order.index(src))
-            targets.append(n_src + target_order.index(tgt))
-            values.append(row["n_names"])
+            sources_idx.append(source_order.index(src))
+            targets_idx.append(n_src + target_order.index(tgt))
+            values.append(math.sqrt(row["n_names"]))  # sqrt scaling
             c = node_colors[src]
             r, g, b = int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16)
-            link_colors.append(f"rgba({r},{g},{b},0.45)")
-    
-    colors = [node_colors[n] for n in source_order] + [node_colors[n] for n in target_order]
+            link_colors.append(f"rgba({r},{g},{b},0.4)")
     
     fig = go.Figure(data=[go.Sankey(
-        arrangement="fixed",
+        arrangement="snap",
         node=dict(
-            pad=25,
-            thickness=12,
-            line=dict(color="rgba(0,0,0,0)", width=0),
+            pad=30,
+            thickness=14,
+            line=dict(color="rgba(255,255,255,0.2)", width=0.5),
             label=all_labels,
             color=colors,
-            x=[0.01] * n_src + [0.99] * len(target_order),
-            y=y_sources + y_targets
+            x=[0.001] * n_src + [0.999] * len(target_order),
+            y=[(i + 0.5) / n_src for i in range(n_src)] + [(i + 0.5) / len(target_order) for i in range(len(target_order))]
         ),
         link=dict(
-            source=sources,
-            target=targets,
+            source=sources_idx,
+            target=targets_idx,
             value=values,
             color=link_colors
         )
     )])
     
     fig.update_layout(
-        font=dict(size=12, color="white", family="Arial"),
+        font=dict(size=11, color="rgba(255,255,255,0.85)", family="Arial"),
         paper_bgcolor="#0d1117",
         plot_bgcolor="#0d1117",
-        height=400,
-        margin=dict(l=5, r=5, t=10, b=10)
+        height=550,
+        margin=dict(l=0, r=0, t=5, b=5)
     )
     
     st.plotly_chart(fig, use_container_width=True)
