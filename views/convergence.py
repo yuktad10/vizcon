@@ -453,75 +453,73 @@ def render_leaderboard(df):
         .reset_index(drop=True)
     )
 
-    # Render as a vertical countdown strip using components.html
     from streamlit.components.v1 import html as st_html
 
-    tracks_html = ""
+    # Concert poster colors — each name gets a unique gradient
+    poster_themes = [
+        {"bg": "linear-gradient(135deg, #667eea, #764ba2)", "accent": "#ffd700"},  # Purple/gold
+        {"bg": "linear-gradient(135deg, #1a1a2e, #16213e)", "accent": "#00d4ff"},  # Dark navy/cyan
+        {"bg": "linear-gradient(135deg, #2d3436, #636e72)", "accent": "#ff6b6b"},  # Charcoal/coral
+        {"bg": "linear-gradient(135deg, #0f3443, #34e89e)", "accent": "#ffffff"},  # Teal/green
+        {"bg": "linear-gradient(135deg, #4a1942, #c74b50)", "accent": "#ffd700"},  # Plum/rose
+        {"bg": "linear-gradient(135deg, #141e30, #243b55)", "accent": "#e9c46a"},  # Midnight/gold
+    ]
+
+    posters_html = ""
     for i, row in top6.iterrows():
+        theme = poster_themes[i]
         rank = i + 1
         sex_emoji = "♀️" if row["sex"] == "F" else "♂️"
         total = f"{int(row['total_babies_with_name']):,}"
         score = f"{row['countryness']:.3f}"
         
-        # Alternating subtle backgrounds
-        bg = "#fafbfc" if rank % 2 == 0 else "white"
-        
-        # Rank colors
-        if rank == 1:
-            rank_color = "#FFD700"
-            rank_icon = "🥇"
-        elif rank == 2:
-            rank_color = "#C0C0C0"
-            rank_icon = "🥈"
-        elif rank == 3:
-            rank_color = "#CD7F32"
-            rank_icon = "🥉"
-        else:
-            rank_color = "#667eea"
-            rank_icon = f"#{rank}"
+        # Taglines for each
+        taglines = [
+            "The most borderless name on Earth",
+            "Rising fast across all frontiers",
+            "A modern classic going global",
+            "The quiet chart-climber",
+            "A timeless anthem everywhere",
+            "Soft, universal, unstoppable",
+        ]
 
-        # Album art square — using first letter as a stylized "cover"
-        letter = row['name'][0]
-        art_colors = ["#667eea", "#7c9a8e", "#c99e85", "#457b9d", "#2a9d8f", "#e9c46a"]
-        art_bg = art_colors[i % len(art_colors)]
-
-        tracks_html += f"""
-        <div style="display:flex; align-items:center; padding:1rem 1.2rem; background:{bg}; border-bottom:1px solid #f0f0f0;">
-            <!-- Album art square -->
-            <div style="width:52px; height:52px; border-radius:8px; background:linear-gradient(135deg, {art_bg}, {art_bg}dd); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 8px {art_bg}44;">
-                <span style="color:white; font-size:1.6rem; font-weight:800;">{letter}</span>
-            </div>
-            <!-- Track info -->
-            <div style="flex:1; margin-left:1rem;">
-                <div style="font-size:1.1rem; font-weight:700; color:#2d3436;">{rank_icon} {row['name']} <span style="font-weight:400; font-size:0.85rem;">{sex_emoji}</span></div>
-                <div style="font-size:0.75rem; color:#636e72; margin-top:3px;">
-                    {total} streams • 8 countries • Peak: {row['max_country']}
+        posters_html += f"""
+        <div style="flex:1; min-width:160px; max-width:200px;">
+            <div style="background:{theme['bg']}; border-radius:14px; padding:1.3rem 1rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.2); position:relative; overflow:hidden;">
+                <!-- Rank badge -->
+                <div style="position:absolute; top:10px; right:10px; background:rgba(255,255,255,0.15); border-radius:8px; padding:2px 8px;">
+                    <span style="font-size:0.7rem; color:rgba(255,255,255,0.8); font-weight:700;">#{rank}</span>
                 </div>
-            </div>
-            <!-- Countryness score -->
-            <div style="text-align:right; flex-shrink:0;">
-                <div style="font-size:1.2rem; font-weight:800; color:#7c9a8e;">{score}</div>
-                <div style="font-size:0.6rem; color:#999; text-transform:uppercase; letter-spacing:0.5px;">score</div>
+                <!-- Star decoration -->
+                <div style="font-size:0.9rem; color:{theme['accent']}; margin-bottom:0.3rem;">✦ ✦ ✦</div>
+                <!-- Name -->
+                <div style="font-size:1.5rem; font-weight:900; color:white; letter-spacing:-0.5px; margin:0.4rem 0;">{row['name']}</div>
+                <div style="font-size:0.7rem; color:rgba(255,255,255,0.6); font-style:italic; margin-bottom:0.8rem;">"{taglines[i]}"</div>
+                <!-- Stats -->
+                <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:0.5rem; margin-top:0.5rem;">
+                    <div style="font-size:0.65rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:1px;">🌍 8 countries</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:{theme['accent']}; margin:0.2rem 0;">{total}</div>
+                    <div style="font-size:0.6rem; color:rgba(255,255,255,0.5);">streams worldwide</div>
+                </div>
+                <!-- Score -->
+                <div style="margin-top:0.6rem; font-size:0.7rem; color:rgba(255,255,255,0.5);">
+                    Score: <span style="color:{theme['accent']}; font-weight:700;">{score}</span>
+                </div>
             </div>
         </div>
         """
 
-    countdown_html = f"""
+    full_html = f"""
     <html>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <div style="border-radius:16px; overflow:hidden; border:1px solid #eee; box-shadow:0 4px 16px rgba(0,0,0,0.06);">
-            <!-- Header bar -->
-            <div style="background:linear-gradient(135deg, #667eea, #764ba2); padding:0.8rem 1.2rem; display:flex; align-items:center; justify-content:space-between;">
-                <span style="color:white; font-weight:700; font-size:0.9rem;">🎧 TOP 6 COUNTDOWN</span>
-                <span style="color:rgba(255,255,255,0.7); font-size:0.75rem;">All-Time Global Chart</span>
-            </div>
-            <!-- Tracks -->
-            {tracks_html}
+        <div style="display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center;">
+            {posters_html}
         </div>
     </body>
     </html>
     """
-    st_html(countdown_html, height=460)
+
+    st_html(full_html, height=340)
 
 
 # ─── Section: Convergence Timeline ───────────────────────────────────────────
