@@ -33,6 +33,16 @@ def load_all_names():
     return pd.read_csv(path)
 
 
+# ─── Audio Helper ─────────────────────────────────────────────────────────────
+def audio_to_base64(filepath):
+    """Convert audio file to base64 data URI."""
+    import base64
+    with open(filepath, "rb") as f:
+        data = base64.b64encode(f.read()).decode()
+    return f"data:audio/wav;base64,{data}"
+
+
+
 # ─── Shared Styles ────────────────────────────────────────────────────────────
 def inject_styles():
     st.markdown("""
@@ -531,7 +541,18 @@ def render_leaderboard(df):
         .reset_index(drop=True)
     )
 
-    from streamlit.components.v1 import html as st_html
+    # Load audio files for each name
+    audio_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
+    audio_names = ["Isabella", "Jaxon", "Maximus", "Emily", "Laila", "Daniella"]
+    audio_data = {}
+    for aname in audio_names:
+        audio_path = os.path.join(audio_dir, f"{aname}.wav")
+        if os.path.exists(audio_path):
+            audio_data[aname] = audio_to_base64(audio_path)
+        else:
+            audio_data[aname] = ""
+
+        from streamlit.components.v1 import html as st_html
 
     # Light/pastel poster themes — easy on eyes, text clearly visible
     poster_themes = [
@@ -603,6 +624,12 @@ def render_leaderboard(df):
     first = poster_data[0]
     first_total = f"{first['total']:,}"
 
+    # Build audio elements with base64 data
+    audio_elements = ""
+    for aname in audio_names:
+        if audio_data.get(aname):
+            audio_elements += f'<audio id="audio-{aname}" src="{audio_data[aname]}" preload="auto"></audio>\n'
+
     full_html = f"""
     <html>
     <head>
@@ -612,6 +639,8 @@ def render_leaderboard(df):
         </style>
     </head>
     <body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <!-- Audio Elements -->
+        {audio_elements}
         <!-- Posters -->
         <div style="display:flex; gap:0.7rem; flex-wrap:wrap; justify-content:center;">
             {posters_html}
@@ -657,6 +686,11 @@ def render_leaderboard(df):
             let isPlaying = false;
             
             function playTrack(name, total, country, score, bg, accent) {{
+                // Stop any currently playing audio
+                document.querySelectorAll('audio').forEach(function(a) {{ a.pause(); a.currentTime = 0; }});
+                // Play the audio for this name
+                var audioEl = document.getElementById('audio-' + name);
+                if (audioEl) {{ audioEl.play(); }}
                 // Update Now Playing bar
                 document.getElementById('np-name').textContent = name;
                 document.getElementById('np-letter').textContent = name[0];
@@ -681,14 +715,17 @@ def render_leaderboard(df):
             function togglePlay() {{
                 const btn = document.getElementById('np-play-btn');
                 const progress = document.getElementById('np-progress');
+                const audios = document.querySelectorAll('audio');
                 if (isPlaying) {{
                     btn.textContent = '▶';
                     progress.style.animationPlayState = 'paused';
+                    audios.forEach(function(a) {{ if (!a.paused) a.pause(); }});
                     isPlaying = false;
                 }} else {{
                     btn.textContent = '⏸';
                     progress.style.transition = 'width 8s linear';
                     progress.style.width = '100%';
+                    audios.forEach(function(a) {{ if (a.currentTime > 0) a.play(); }});
                     isPlaying = true;
                 }}
             }}
