@@ -93,38 +93,33 @@ def render():
 
     # ─── Map Image (reduced height) ──────────────────────────────
     # ─── Map Image with animation ────────────────────────────────
+    map_path = "assets/world_map.png"
+    import base64 as b64_mod
+    with open(map_path, "rb") as _mf:
+        _map_data = b64_mod.b64encode(_mf.read()).decode()
+    
     st.markdown(
-        """
+        f"""
         <style>
-            .animated-map-container {
-                position: relative;
-                border-radius: 12px;
-                overflow: hidden;
-                animation: gentleFloat 4s ease-in-out infinite;
-                border: 2px solid rgba(102, 126, 234, 0.2);
-                box-shadow: 0 0 0px rgba(102,126,234,0);
-            }
-            .animated-map-container:hover {
-                border-color: rgba(102, 126, 234, 0.4);
-                box-shadow: 0 0 12px rgba(102,126,234,0.15);
-            }
-            .animated-map-container img {
-                max-height: 160px;
-                object-fit: cover;
-                object-position: center;
-                border-radius: 10px;
-            }
-            @keyframes gentleFloat {
-                0%, 100% { transform: translateY(0px); }
-                50% { transform: translateY(-4px); }
-            }
+            @keyframes gentleFloat {{
+                0%, 100% {{ transform: translateY(0px); }}
+                50% {{ transform: translateY(-4px); }}
+            }}
+            @keyframes glowPulse {{
+                0%, 100% {{ border-color: rgba(102, 126, 234, 0.15); }}
+                50% {{ border-color: rgba(102, 126, 234, 0.4); }}
+            }}
         </style>
+        <div style="border-radius:12px; overflow:hidden; 
+                    animation: gentleFloat 4s ease-in-out infinite, glowPulse 3s ease-in-out infinite;
+                    border: 2px solid rgba(102, 126, 234, 0.2);">
+            <img src="data:image/png;base64,{_map_data}" 
+                 style="width:100%; max-height:160px; object-fit:cover; object-position:center; display:block; border-radius:10px;"
+                 alt="Anglosphere World Map">
+        </div>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown('<div class="animated-map-container">', unsafe_allow_html=True)
-    st.image("assets/world_map.png", width="stretch")
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
     # ─── How We Measured It ───────────────────────────────────────
