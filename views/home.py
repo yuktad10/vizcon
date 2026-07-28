@@ -93,112 +93,67 @@ def render():
 
     # ─── Map Image (reduced height) ──────────────────────────────
     # ─── Map Image with animated travel lines ─────────────────────
-    import base64 as b64_mod
-    with open("assets/world_map.png", "rb") as _mf:
-        _map_data = b64_mod.b64encode(_mf.read()).decode()
+    st.image("assets/world_map.png", use_container_width=True)
     
     from streamlit.components.v1 import html as st_html_map
     
-    map_anim_html = f"""
+    # Overlay animated travel lines (positioned to overlap the map above)
+    travel_lines_html = """
     <html>
     <head>
     <style>
-        body {{ margin: 0; padding: 0; }}
-        .map-container {{
-            position: relative;
-            width: 100%;
-            max-height: 200px;
-            overflow: hidden;
-            border-radius: 12px;
-            border: 2px solid rgba(102, 126, 234, 0.2);
-        }}
-        .map-container img {{
-            width: 100%;
-            display: block;
-            object-fit: cover;
-            object-position: center;
-            max-height: 200px;
-        }}
-        .travel-lines {{
-            position: absolute;
-            top: 0; left: 0;
+        body { margin: 0; padding: 0; }
+        .lines-container {
             width: 100%;
             height: 100%;
-            pointer-events: none;
-        }}
+            margin-top: -10px;
+        }
+        svg { width: 100%; height: 100%; }
         
-        /* Animated dashed lines */
-        .travel-path {{
+        .travel-path {
             fill: none;
-            stroke-width: 1.5;
-            stroke-dasharray: 6 4;
-            opacity: 0.7;
+            stroke-width: 2;
+            stroke-dasharray: 8 5;
+            opacity: 0.6;
             animation: dashMove 2s linear infinite;
-        }}
-        @keyframes dashMove {{
-            to {{ stroke-dashoffset: -20; }}
-        }}
+        }
+        @keyframes dashMove {
+            to { stroke-dashoffset: -26; }
+        }
         
-        /* Glowing dots at endpoints */
-        .travel-dot {{
+        .travel-dot {
             animation: dotPulse 2s ease-in-out infinite;
-        }}
-        @keyframes dotPulse {{
-            0%, 100% {{ r: 3; opacity: 0.8; }}
-            50% {{ r: 5; opacity: 1; }}
-        }}
-        
-        /* Traveling particle along path */
-        .particle {{
-            fill: white;
-            opacity: 0;
-            animation: particleMove 3s ease-in-out infinite;
-        }}
-        .particle.p2 {{ animation-delay: 1s; }}
-        .particle.p3 {{ animation-delay: 2s; }}
-        
-        @keyframes particleMove {{
-            0% {{ opacity: 0; offset-distance: 0%; }}
-            10% {{ opacity: 1; }}
-            90% {{ opacity: 1; }}
-            100% {{ opacity: 0; offset-distance: 100%; }}
-        }}
+        }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
     </style>
     </head>
     <body>
-        <div class="map-container">
-            <img src="data:image/png;base64,{{_map_data}}" alt="Anglosphere World Map">
-            <svg class="travel-lines" viewBox="0 0 1000 400" preserveAspectRatio="none">
-                <!-- USA to England -->
-                <path class="travel-path" d="M 250 170 Q 450 100 680 160" stroke="#667eea" style="animation-delay: 0s;"/>
-                <!-- USA to Canada -->
-                <path class="travel-path" d="M 240 155 Q 260 110 290 120" stroke="#3498db" style="animation-delay: 0.3s;"/>
-                <!-- USA to Australia -->
-                <path class="travel-path" d="M 260 190 Q 500 320 820 310" stroke="#2ecc71" style="animation-delay: 0.6s;"/>
-                <!-- England to NZ -->
-                <path class="travel-path" d="M 700 160 Q 800 280 900 330" stroke="#e91e63" style="animation-delay: 0.9s;"/>
-                <!-- England to Ireland -->
-                <path class="travel-path" d="M 670 155 Q 650 140 640 150" stroke="#f39c12" style="animation-delay: 1.2s;"/>
-                <!-- Canada to Scotland -->
-                <path class="travel-path" d="M 290 125 Q 480 80 670 140" stroke="#9b59b6" style="animation-delay: 1.5s;"/>
-                <!-- USA to NZ -->
-                <path class="travel-path" d="M 270 195 Q 550 380 900 330" stroke="#e74c3c" style="animation-delay: 1.8s;"/>
+        <div class="lines-container">
+            <svg viewBox="0 0 1000 60" preserveAspectRatio="none">
+                <!-- Animated connecting lines (horizontal, representing travel) -->
+                <path class="travel-path" d="M 50 30 Q 200 10 400 30 Q 600 50 800 25 Q 900 15 950 30" stroke="#667eea" style="animation-delay: 0s;"/>
+                <path class="travel-path" d="M 80 40 Q 250 55 450 35 Q 650 15 850 40" stroke="#3498db" style="animation-delay: 0.5s;"/>
+                <path class="travel-path" d="M 100 20 Q 300 45 500 25 Q 700 40 900 20" stroke="#9b59b6" style="animation-delay: 1s;"/>
+                <path class="travel-path" d="M 150 45 Q 350 20 550 45 Q 750 25 920 35" stroke="#e74c3c" style="animation-delay: 1.5s;"/>
                 
-                <!-- Endpoint dots -->
-                <circle class="travel-dot" cx="250" cy="170" r="3" fill="#3498db" style="animation-delay: 0s;"/>
-                <circle class="travel-dot" cx="680" cy="160" r="3" fill="#e74c3c" style="animation-delay: 0.5s;"/>
-                <circle class="travel-dot" cx="290" cy="120" r="3" fill="#9b59b6" style="animation-delay: 1s;"/>
-                <circle class="travel-dot" cx="820" cy="310" r="3" fill="#2ecc71" style="animation-delay: 1.5s;"/>
-                <circle class="travel-dot" cx="900" cy="330" r="3" fill="#e91e63" style="animation-delay: 2s;"/>
-                <circle class="travel-dot" cx="640" cy="150" r="3" fill="#f39c12" style="animation-delay: 0.3s;"/>
-                <circle class="travel-dot" cx="670" cy="140" r="3" fill="#1abc9c" style="animation-delay: 0.7s;"/>
+                <!-- Dots representing countries -->
+                <circle class="travel-dot" cx="100" cy="30" r="4" fill="#3498db" style="animation-delay: 0s;"/>
+                <circle class="travel-dot" cx="300" cy="30" r="4" fill="#9b59b6" style="animation-delay: 0.3s;"/>
+                <circle class="travel-dot" cx="500" cy="30" r="4" fill="#f39c12" style="animation-delay: 0.6s;"/>
+                <circle class="travel-dot" cx="680" cy="30" r="4" fill="#e74c3c" style="animation-delay: 0.9s;"/>
+                <circle class="travel-dot" cx="780" cy="30" r="4" fill="#1abc9c" style="animation-delay: 1.2s;"/>
+                <circle class="travel-dot" cx="900" cy="30" r="4" fill="#2ecc71" style="animation-delay: 1.5s;"/>
+                <circle class="travel-dot" cx="950" cy="30" r="4" fill="#e91e63" style="animation-delay: 1.8s;"/>
             </svg>
         </div>
     </body>
     </html>
     """
     
-    st_html_map(map_anim_html, height=210)
+    st_html_map(travel_lines_html, height=50)
 
     # ─── How We Measured It ───────────────────────────────────────
     st.markdown(
