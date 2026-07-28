@@ -92,35 +92,113 @@ def render():
     )
 
     # ─── Map Image (reduced height) ──────────────────────────────
-    # ─── Map Image with animation ────────────────────────────────
-    map_path = "assets/world_map.png"
+    # ─── Map Image with animated travel lines ─────────────────────
     import base64 as b64_mod
-    with open(map_path, "rb") as _mf:
+    with open("assets/world_map.png", "rb") as _mf:
         _map_data = b64_mod.b64encode(_mf.read()).decode()
     
-    st.markdown(
-        f"""
-        <style>
-            @keyframes gentleFloat {{
-                0%, 100% {{ transform: translateY(0px); }}
-                50% {{ transform: translateY(-4px); }}
-            }}
-            @keyframes glowPulse {{
-                0%, 100% {{ border-color: rgba(102, 126, 234, 0.15); }}
-                50% {{ border-color: rgba(102, 126, 234, 0.4); }}
-            }}
-        </style>
-        <div style="border-radius:12px; overflow:hidden; 
-                    animation: gentleFloat 4s ease-in-out infinite, glowPulse 3s ease-in-out infinite;
-                    border: 2px solid rgba(102, 126, 234, 0.2);">
-            <img src="data:image/png;base64,{_map_data}" 
-                 style="width:100%; max-height:160px; object-fit:cover; object-position:center; display:block; border-radius:10px;"
-                 alt="Anglosphere World Map">
+    from streamlit.components.v1 import html as st_html_map
+    
+    map_anim_html = f"""
+    <html>
+    <head>
+    <style>
+        body {{ margin: 0; padding: 0; }}
+        .map-container {{
+            position: relative;
+            width: 100%;
+            max-height: 200px;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }}
+        .map-container img {{
+            width: 100%;
+            display: block;
+            object-fit: cover;
+            object-position: center;
+            max-height: 200px;
+        }}
+        .travel-lines {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }}
+        
+        /* Animated dashed lines */
+        .travel-path {{
+            fill: none;
+            stroke-width: 1.5;
+            stroke-dasharray: 6 4;
+            opacity: 0.7;
+            animation: dashMove 2s linear infinite;
+        }}
+        @keyframes dashMove {{
+            to {{ stroke-dashoffset: -20; }}
+        }}
+        
+        /* Glowing dots at endpoints */
+        .travel-dot {{
+            animation: dotPulse 2s ease-in-out infinite;
+        }}
+        @keyframes dotPulse {{
+            0%, 100% {{ r: 3; opacity: 0.8; }}
+            50% {{ r: 5; opacity: 1; }}
+        }}
+        
+        /* Traveling particle along path */
+        .particle {{
+            fill: white;
+            opacity: 0;
+            animation: particleMove 3s ease-in-out infinite;
+        }}
+        .particle.p2 {{ animation-delay: 1s; }}
+        .particle.p3 {{ animation-delay: 2s; }}
+        
+        @keyframes particleMove {{
+            0% {{ opacity: 0; offset-distance: 0%; }}
+            10% {{ opacity: 1; }}
+            90% {{ opacity: 1; }}
+            100% {{ opacity: 0; offset-distance: 100%; }}
+        }}
+    </style>
+    </head>
+    <body>
+        <div class="map-container">
+            <img src="data:image/png;base64,{{_map_data}}" alt="Anglosphere World Map">
+            <svg class="travel-lines" viewBox="0 0 1000 400" preserveAspectRatio="none">
+                <!-- USA to England -->
+                <path class="travel-path" d="M 250 170 Q 450 100 680 160" stroke="#667eea" style="animation-delay: 0s;"/>
+                <!-- USA to Canada -->
+                <path class="travel-path" d="M 240 155 Q 260 110 290 120" stroke="#3498db" style="animation-delay: 0.3s;"/>
+                <!-- USA to Australia -->
+                <path class="travel-path" d="M 260 190 Q 500 320 820 310" stroke="#2ecc71" style="animation-delay: 0.6s;"/>
+                <!-- England to NZ -->
+                <path class="travel-path" d="M 700 160 Q 800 280 900 330" stroke="#e91e63" style="animation-delay: 0.9s;"/>
+                <!-- England to Ireland -->
+                <path class="travel-path" d="M 670 155 Q 650 140 640 150" stroke="#f39c12" style="animation-delay: 1.2s;"/>
+                <!-- Canada to Scotland -->
+                <path class="travel-path" d="M 290 125 Q 480 80 670 140" stroke="#9b59b6" style="animation-delay: 1.5s;"/>
+                <!-- USA to NZ -->
+                <path class="travel-path" d="M 270 195 Q 550 380 900 330" stroke="#e74c3c" style="animation-delay: 1.8s;"/>
+                
+                <!-- Endpoint dots -->
+                <circle class="travel-dot" cx="250" cy="170" r="3" fill="#3498db" style="animation-delay: 0s;"/>
+                <circle class="travel-dot" cx="680" cy="160" r="3" fill="#e74c3c" style="animation-delay: 0.5s;"/>
+                <circle class="travel-dot" cx="290" cy="120" r="3" fill="#9b59b6" style="animation-delay: 1s;"/>
+                <circle class="travel-dot" cx="820" cy="310" r="3" fill="#2ecc71" style="animation-delay: 1.5s;"/>
+                <circle class="travel-dot" cx="900" cy="330" r="3" fill="#e91e63" style="animation-delay: 2s;"/>
+                <circle class="travel-dot" cx="640" cy="150" r="3" fill="#f39c12" style="animation-delay: 0.3s;"/>
+                <circle class="travel-dot" cx="670" cy="140" r="3" fill="#1abc9c" style="animation-delay: 0.7s;"/>
+            </svg>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    </body>
+    </html>
+    """
+    
+    st_html_map(map_anim_html, height=210)
 
     # ─── How We Measured It ───────────────────────────────────────
     st.markdown(
