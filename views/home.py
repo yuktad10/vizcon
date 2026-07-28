@@ -17,22 +17,6 @@ def render():
     year_max = df["year"].max()
     total_records = len(df)
 
-    #  ───Fixed layout — sticky tabs + wider content  ─────────────────────────────────────────────
-    st.markdown("""
-    <style>
-        .stTabs [data-baseweb="tab-list"] {
-            position: sticky;
-            top: 0;
-            z-index: 999;
-            background: #F0F8FF;
-        }
-        .block-container {
-            max-width: 1200px;
-            padding-left: 2rem;
-            padding-right: 2rem;
-        }
-    </style>
-    """, unsafe_allow_html=True)
     # ─── Hero Section ─────────────────────────────────────────────
     st.markdown(
         """
@@ -41,7 +25,7 @@ def render():
                        background: linear-gradient(135deg, #667eea, #764ba2);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        margin-bottom: 5px;">
-                <span style="-webkit-text-fill-color: initial;"> 📼</span> The Anglosphere Mixtape
+                <span style="-webkit-text-fill-color: initial;">🎶</span> Now Playing: The Name Playlist
             </h1>
             <p style="font-size:1.05em; color:#6b7280; max-width:700px; margin:0 auto;">
                 Where names become hits—or hidden gems.
@@ -79,12 +63,14 @@ def render():
             border:1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
             margin-bottom:1rem;">
             <h3 style="margin:0 0 14px; color:#1f2937; font-size:1.4rem;">
-                🌍 The Anglosphere
+                👇 The Anglosphere Mixtape
             </h3>
             <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
                 The term "Anglosphere" was coined by sci-fi writer <strong>Neal Stephenson</strong>
                 in his 1995 novel <em>The Diamond Age</em>. A fictional concept that became a geopolitical reality.
                 Today it represents just <strong>6% of the world's population</strong> — but over <strong>30% of its economy</strong>.
+            </p>
+            <p style="font-size:1.02rem; color:#374151; line-height:1.8; margin:0 0 12px;">
                 Every year, millions of babies receive a name across the English-speaking world—from
                 New York to New Zealand, London to Lagos. Our dataset spans <strong>27 years, 8 countries, 117 million babies, and 17,575 unique names.</strong>
             </p>
@@ -110,7 +96,7 @@ def render():
         """
         <style>
             .map-container img {
-                max-height: 50px;
+                max-height: 160px;
                 object-fit: cover;
                 object-position: center;
                 border-radius: 10px;
@@ -122,6 +108,95 @@ def render():
     st.markdown('<div class="map-container">', unsafe_allow_html=True)
     st.image("assets/world_map.png", width="stretch")
     st.markdown('</div>', unsafe_allow_html=True)
+
+
+    # ─── How We Measured It ───────────────────────────────────────
+    st.markdown(
+        """
+        <div style="margin: 2rem 0 1.5rem;">
+            <h3 style="margin:0 0 8px; color:#1f2937; font-size:1.3rem; text-align:center;">
+                📐 How We Measured It
+            </h3>
+            <p style="font-size:0.92rem; color:#6b7280; text-align:center; margin:0 0 1.2rem; max-width:700px; margin-left:auto; margin-right:auto;">
+                We created the <strong>Countryness Score</strong> — a single number that tells you whether a name is a global hit or a local gem.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Formula card
+    st.markdown(
+        """
+        <div style="padding:20px 28px; background:linear-gradient(135deg, #f8f9ff, #eef1ff); 
+                    border-radius:12px; border:1px solid rgba(102,126,234,0.15);
+                    margin-bottom:1.2rem; text-align:center;">
+            <p style="font-size:0.8rem; color:#667eea; font-weight:600; letter-spacing:1px; 
+                      text-transform:uppercase; margin:0 0 8px;">The Formula</p>
+            <p style="font-size:1.2rem; font-weight:700; color:#1f2937; margin:0 0 10px; font-family: 'Courier New', monospace;">
+                Countryness = Proportion in Top Country ÷ Avg Proportion in Other Countries
+            </p>
+            <p style="font-size:0.85rem; color:#6b7280; margin:0; line-height:1.6;">
+                A score of <strong>1.0</strong> = perfectly equal usage across all nations.<br>
+                The higher the score, the more "local" the name — it lives in just one country.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Classification table
+    st.markdown(
+        """
+        <div style="padding:20px 24px; background:white; border-radius:12px;
+                    border:1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+            <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                <thead>
+                    <tr style="border-bottom:2px solid #e5e7eb;">
+                        <th style="text-align:left; padding:8px 12px; color:#374151;">Score</th>
+                        <th style="text-align:left; padding:8px 12px; color:#374151;">Classification</th>
+                        <th style="text-align:left; padding:8px 12px; color:#374151;">Meaning</th>
+                        <th style="text-align:right; padding:8px 12px; color:#374151;">Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:10px 12px; font-weight:600; color:#7c9a8e;">< 5</td>
+                        <td style="padding:10px 12px;"><span style="background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:6px; font-weight:600; font-size:0.8rem;">🎧 Global Hit</span></td>
+                        <td style="padding:10px 12px; color:#6b7280;">Charts in every country equally</td>
+                        <td style="padding:10px 12px; text-align:right; font-weight:600;">Isabella (1.06)</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:10px 12px; font-weight:600; color:#667eea;">5 – 10</td>
+                        <td style="padding:10px 12px;"><span style="background:#e8eaf6; color:#3949ab; padding:2px 8px; border-radius:6px; font-weight:600; font-size:0.8rem;">🌍 Leaning Global</span></td>
+                        <td style="padding:10px 12px; color:#6b7280;">Popular in most, peaks in one</td>
+                        <td style="padding:10px 12px; text-align:right; font-weight:600;">Nevaeh (7.2)</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:10px 12px; font-weight:600; color:#f39c12;">10 – 100</td>
+                        <td style="padding:10px 12px;"><span style="background:#fff3e0; color:#e65100; padding:2px 8px; border-radius:6px; font-weight:600; font-size:0.8rem;">📻 Regional</span></td>
+                        <td style="padding:10px 12px; color:#6b7280;">Strong in a few, absent elsewhere</td>
+                        <td style="padding:10px 12px; text-align:right; font-weight:600;">Callum (42)</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:10px 12px; font-weight:600; color:#c99e85;">100 – 1000</td>
+                        <td style="padding:10px 12px;"><span style="background:#fce4ec; color:#c62828; padding:2px 8px; border-radius:6px; font-weight:600; font-size:0.8rem;">💿 Local Classic</span></td>
+                        <td style="padding:10px 12px; color:#6b7280;">Dominates one country only</td>
+                        <td style="padding:10px 12px; text-align:right; font-weight:600;">Siobhan (350)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px 12px; font-weight:600; color:#e63946;">1000+</td>
+                        <td style="padding:10px 12px;"><span style="background:#ffebee; color:#b71c1c; padding:2px 8px; border-radius:6px; font-weight:600; font-size:0.8rem;">🚫 Cultural Exclusive</span></td>
+                        <td style="padding:10px 12px; color:#6b7280;">Exists in one country, zero elsewhere</td>
+                        <td style="padding:10px 12px; text-align:right; font-weight:600;">Raewyn (168,731)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
     # ─── The Two Worlds (integrated baby section) ─────────────────
     st.markdown("")
@@ -146,7 +221,7 @@ def render():
                 Same Language. Different Cultures. One Choice.
             </h2>
             <p style="font-size:0.95rem; color:#9ca3af; margin:0;">
-               👇 Click on a baby to explore their world
+                👆 Click on a baby to explore their world
             </p>
         </div>
         """,
@@ -292,6 +367,7 @@ def render():
     """
 
     components.html(flip_html, height=450)
+
 
     # ─── Interactive Name Quiz ────────────────────────────────────
     st.markdown(
