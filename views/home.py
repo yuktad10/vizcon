@@ -496,13 +496,13 @@ def render():
         <div class="quiz-result global" id="result-global">
             <p class="result-emoji">🎧</p>
             <p class="result-text">🎉 This name became a cross-country favorite.</p>
-            <p class="result-cta">👆 Head to the 🎧 Global Playlist tab above to explore →</p>
+            <p class="result-cta">👇 Scroll down to explore the Global Playlist</p>
         </div>
 
         <div class="quiz-result local" id="result-local">
             <p class="result-emoji">💿</p>
             <p class="result-text">🏠 This name remained a hometown classic.</p>
-            <p class="result-cta">👆 Head to the 💿 Local Vinyl tab above to explore →</p>
+            <p class="result-cta">👇 Scroll down to explore the Local Vinyl</p>
         </div>
 
         <button class="reset-btn" id="reset-btn" onclick="resetQuiz()">↩ Reset</button>
