@@ -92,82 +92,39 @@ def render():
     )
 
     # ─── Map Image (reduced height) ──────────────────────────────
-    # Animated world map with bobbing effect
-    def img_to_base64_map(path):
-        import base64 as b64
-        with open(path, "rb") as f:
-            return b64.b64encode(f.read()).decode()
-    
-    map_b64 = img_to_base64_map("assets/world_map.png")
-    
-    from streamlit.components.v1 import html as st_html_map
-    
-    map_html = f"""
-    <html>
-    <head>
-    <style>
-        body {{ margin: 0; padding: 0; overflow: hidden; }}
-        .map-wrapper {{
-            position: relative;
-            width: 100%;
-            max-height: 180px;
-            overflow: hidden;
-            border-radius: 12px;
-        }}
-        .map-img {{
-            width: 100%;
-            object-fit: cover;
-            object-position: center;
-            border-radius: 12px;
-            animation: gentleFloat 4s ease-in-out infinite;
-        }}
-        @keyframes gentleFloat {{
-            0%, 100% {{ transform: translateY(0px) scale(1); }}
-            50% {{ transform: translateY(-4px) scale(1.005); }}
-        }}
-        
-        /* Subtle shimmer overlay */
-        .shimmer-overlay {{
-            position: absolute;
-            top: 0; left: -100%;
-            width: 60%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-            animation: shimmer 6s ease-in-out infinite;
-            pointer-events: none;
-        }}
-        @keyframes shimmer {{
-            0% {{ left: -60%; }}
-            50% {{ left: 100%; }}
-            100% {{ left: 100%; }}
-        }}
-        
-        /* Pulsing glow border */
-        .glow-border {{
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 12px;
-            border: 2px solid rgba(102, 126, 234, 0.2);
-            animation: glowPulse 3s ease-in-out infinite;
-            pointer-events: none;
-        }}
-        @keyframes glowPulse {{
-            0%, 100% {{ border-color: rgba(102, 126, 234, 0.15); box-shadow: 0 0 0px rgba(102,126,234,0); }}
-            50% {{ border-color: rgba(102, 126, 234, 0.35); box-shadow: 0 0 12px rgba(102,126,234,0.1); }}
-        }}
-    </style>
-    </head>
-    <body>
-        <div class="map-wrapper">
-            <img class="map-img" src="data:image/png;base64,{{map_b64}}" alt="Anglosphere World Map">
-            <div class="shimmer-overlay"></div>
-            <div class="glow-border"></div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    st_html_map(map_html, height=190)
+    # ─── Map Image with animation ────────────────────────────────
+    st.markdown(
+        """
+        <style>
+            .animated-map-container {
+                position: relative;
+                border-radius: 12px;
+                overflow: hidden;
+                animation: gentleFloat 4s ease-in-out infinite;
+                border: 2px solid rgba(102, 126, 234, 0.2);
+                box-shadow: 0 0 0px rgba(102,126,234,0);
+            }
+            .animated-map-container:hover {
+                border-color: rgba(102, 126, 234, 0.4);
+                box-shadow: 0 0 12px rgba(102,126,234,0.15);
+            }
+            .animated-map-container img {
+                max-height: 160px;
+                object-fit: cover;
+                object-position: center;
+                border-radius: 10px;
+            }
+            @keyframes gentleFloat {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-4px); }
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div class="animated-map-container">', unsafe_allow_html=True)
+    st.image("assets/world_map.png", width="stretch")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
     # ─── How We Measured It ───────────────────────────────────────
