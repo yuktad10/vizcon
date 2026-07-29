@@ -97,63 +97,81 @@ def render():
     
     from streamlit.components.v1 import html as st_html_map
     
-    # Overlay animated travel lines (positioned to overlap the map above)
-    travel_lines_html = """
+    # Floating name bubbles drifting across the map
+    bubbles_html = """
     <html>
     <head>
     <style>
-        body { margin: 0; padding: 0; }
-        .lines-container {
+        body { margin: 0; padding: 0; overflow: hidden; }
+        .bubbles-container {
+            position: relative;
             width: 100%;
             height: 100%;
-            margin-top: -10px;
+            overflow: hidden;
         }
-        svg { width: 100%; height: 100%; }
+        .name-bubble {
+            position: absolute;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            white-space: nowrap;
+            opacity: 0;
+            animation: floatAcross var(--duration) linear infinite;
+            animation-delay: var(--delay);
+        }
         
-        .travel-path {
-            fill: none;
-            stroke-width: 2;
-            stroke-dasharray: 8 5;
-            opacity: 0.6;
-            animation: dashMove 2s linear infinite;
-        }
-        @keyframes dashMove {
-            to { stroke-dashoffset: -26; }
+        @keyframes floatAcross {
+            0% { transform: translateX(-100px) translateY(0); opacity: 0; }
+            5% { opacity: 0.85; }
+            50% { transform: translateX(50vw) translateY(var(--drift)); opacity: 0.85; }
+            95% { opacity: 0.85; }
+            100% { transform: translateX(calc(100vw + 50px)) translateY(0); opacity: 0; }
         }
         
-        .travel-dot {
-            animation: dotPulse 2s ease-in-out infinite;
+        .bubble-global {
+            background: rgba(124, 154, 142, 0.15);
+            color: #5a7d6f;
+            border: 1px solid rgba(124, 154, 142, 0.3);
         }
-        @keyframes dotPulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
+        .bubble-local {
+            background: rgba(201, 158, 133, 0.15);
+            color: #a07b5f;
+            border: 1px solid rgba(201, 158, 133, 0.3);
+        }
+        .bubble-neutral {
+            background: rgba(102, 126, 234, 0.12);
+            color: #5a6cb8;
+            border: 1px solid rgba(102, 126, 234, 0.25);
         }
     </style>
     </head>
     <body>
-        <div class="lines-container">
-            <svg viewBox="0 0 1000 60" preserveAspectRatio="none">
-                <!-- Animated connecting lines (horizontal, representing travel) -->
-                <path class="travel-path" d="M 50 30 Q 200 10 400 30 Q 600 50 800 25 Q 900 15 950 30" stroke="#667eea" style="animation-delay: 0s;"/>
-                <path class="travel-path" d="M 80 40 Q 250 55 450 35 Q 650 15 850 40" stroke="#3498db" style="animation-delay: 0.5s;"/>
-                <path class="travel-path" d="M 100 20 Q 300 45 500 25 Q 700 40 900 20" stroke="#9b59b6" style="animation-delay: 1s;"/>
-                <path class="travel-path" d="M 150 45 Q 350 20 550 45 Q 750 25 920 35" stroke="#e74c3c" style="animation-delay: 1.5s;"/>
-                
-                <!-- Dots representing countries -->
-                <circle class="travel-dot" cx="100" cy="30" r="4" fill="#3498db" style="animation-delay: 0s;"/>
-                <circle class="travel-dot" cx="300" cy="30" r="4" fill="#9b59b6" style="animation-delay: 0.3s;"/>
-                <circle class="travel-dot" cx="500" cy="30" r="4" fill="#f39c12" style="animation-delay: 0.6s;"/>
-                <circle class="travel-dot" cx="680" cy="30" r="4" fill="#e74c3c" style="animation-delay: 0.9s;"/>
-                <circle class="travel-dot" cx="780" cy="30" r="4" fill="#1abc9c" style="animation-delay: 1.2s;"/>
-                <circle class="travel-dot" cx="900" cy="30" r="4" fill="#2ecc71" style="animation-delay: 1.5s;"/>
-                <circle class="travel-dot" cx="950" cy="30" r="4" fill="#e91e63" style="animation-delay: 1.8s;"/>
-            </svg>
+        <div class="bubbles-container">
+            <!-- Global names (sage) -->
+            <div class="name-bubble bubble-global" style="top: 8px; --duration: 12s; --delay: 0s; --drift: 5px;">Isabella</div>
+            <div class="name-bubble bubble-global" style="top: 32px; --duration: 14s; --delay: 2s; --drift: -4px;">Oliver</div>
+            <div class="name-bubble bubble-global" style="top: 18px; --duration: 11s; --delay: 5s; --drift: 6px;">Emily</div>
+            <div class="name-bubble bubble-global" style="top: 40px; --duration: 13s; --delay: 7s; --drift: -3px;">Liam</div>
+            <div class="name-bubble bubble-global" style="top: 5px; --duration: 15s; --delay: 3s; --drift: 4px;">Jaxon</div>
+            
+            <!-- Local names (coral) -->
+            <div class="name-bubble bubble-local" style="top: 25px; --duration: 13s; --delay: 1s; --drift: -5px;">Siobhan</div>
+            <div class="name-bubble bubble-local" style="top: 45px; --duration: 12s; --delay: 4s; --drift: 3px;">Raewyn</div>
+            <div class="name-bubble bubble-local" style="top: 12px; --duration: 14s; --delay: 6s; --drift: -6px;">Callum</div>
+            <div class="name-bubble bubble-local" style="top: 35px; --duration: 11s; --delay: 8s; --drift: 5px;">Narelle</div>
+            
+            <!-- Neutral/purple -->
+            <div class="name-bubble bubble-neutral" style="top: 20px; --duration: 16s; --delay: 1.5s; --drift: -4px;">Nevaeh</div>
+            <div class="name-bubble bubble-neutral" style="top: 42px; --duration: 12s; --delay: 9s; --drift: 3px;">Arya</div>
+            <div class="name-bubble bubble-neutral" style="top: 3px; --duration: 13s; --delay: 4.5s; --drift: -5px;">Elsa</div>
         </div>
     </body>
     </html>
     """
     
-    st_html_map(travel_lines_html, height=50)
+    st_html_map(bubbles_html, height=55)
 
     # ─── How We Measured It ───────────────────────────────────────
     st.markdown(
