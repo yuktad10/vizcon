@@ -690,7 +690,13 @@ def render_leaderboard(df):
                 document.querySelectorAll('audio').forEach(function(a) {{ a.pause(); a.currentTime = 0; }});
                 // Play the audio for this name
                 var audioEl = document.getElementById('audio-' + name);
-                if (audioEl) {{ audioEl.play(); }}
+                if (audioEl) {{
+                    audioEl.play();
+                    audioEl.onended = function() {{
+                        document.getElementById('np-play-btn').textContent = '▶';
+                        isPlaying = false;
+                    }};
+                }}
                 // Update Now Playing bar
                 document.getElementById('np-name').textContent = name;
                 document.getElementById('np-letter').textContent = name[0];
@@ -703,7 +709,7 @@ def render_leaderboard(df):
                 progress.style.transition = 'none';
                 progress.style.width = '0%';
                 setTimeout(() => {{
-                    progress.style.transition = 'width 8s linear';
+                    progress.style.transition = 'width 5s linear';
                     progress.style.width = '100%';
                 }}, 50);
                 
@@ -723,7 +729,7 @@ def render_leaderboard(df):
                     isPlaying = false;
                 }} else {{
                     btn.textContent = '⏸';
-                    progress.style.transition = 'width 8s linear';
+                    progress.style.transition = 'width 5s linear';
                     progress.style.width = '100%';
                     audios.forEach(function(a) {{ if (a.currentTime > 0) a.play(); }});
                     isPlaying = true;
@@ -732,7 +738,7 @@ def render_leaderboard(df):
 
             // Auto-play first track animation on load
             setTimeout(() => {{
-                document.getElementById('np-progress').style.transition = 'width 8s linear';
+                document.getElementById('np-progress').style.transition = 'width 5s linear';
                 document.getElementById('np-progress').style.width = '100%';
                 document.getElementById('np-play-btn').textContent = '⏸';
                 isPlaying = true;
