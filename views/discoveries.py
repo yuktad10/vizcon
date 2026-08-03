@@ -1,24 +1,486 @@
 """
 Discoveries Tab — Full Page
 "🎉 I Never Knew That"
+All figures computed from the Anglosphere Baby Names dataset (1997–2023).
+Visuals are custom soundwave / multitrack / fader graphics (no plain charts).
 """
 import streamlit as st
-import plotly.graph_objects as go
-from utils.charts import CHART_LAYOUT, COLORS, COUNTRY_COLORS
+
+
+# ══════════════════════════════════════════════════════════════════
+# Reusable creative visuals (pure SVG/HTML — music-themed)
+# ══════════════════════════════════════════════════════════════════
+
+def soundwave(values, years, color, peak_emoji="🔊", height=150,
+              event_year=None, event_label=""):
+    """A mirrored audio waveform: each year is a bar above & below a centre line.
+    The peak year's bar is highlighted. Reads as a 'sound clip' of the name's life."""
+    n = len(values)
+    maxv = max(values) or 1
+    peak_i = values.index(maxv)
+    W, H = 900, height
+    cy = H / 2
+    pad = 16
+    slot = (W - 2 * pad) / n
+    bw = slot * 0.55
+    half = (H / 2) - 22
+
+    bars = ""
+    for i, v in enumerate(values):
+        x = pad + i * slot + (slot - bw) / 2
+        bh = (v / maxv) * half
+        is_peak = (i == peak_i)
+        c = color if not is_peak else "#2D3748"
+        op = "1" if is_peak else "0.75"
+        bars += (
+            f'<rect x="{x:.1f}" y="{cy - bh:.1f}" width="{bw:.1f}" height="{bh:.1f}" '
+            f'rx="2" fill="{c}" opacity="{op}"/>'
+            f'<rect x="{x:.1f}" y="{cy:.1f}" width="{bw:.1f}" height="{bh:.1f}" '
+            f'rx="2" fill="{c}" opacity="{float(op)*0.55:.2f}"/>'
+        )
+    # centre line
+    line = f'<line x1="{pad}" y1="{cy}" x2="{W-pad}" y2="{cy}" stroke="#CBD5E0" stroke-width="1"/>'
+    # peak marker
+    px = pad + peak_i * slot + slot / 2
+    peak_mark = (
+        f'<text x="{px:.1f}" y="{cy - half - 4:.1f}" text-anchor="middle" '
+        f'font-size="18">{peak_emoji}</text>'
+    )
+    # event marker (e.g. product launch / disaster)
+    event = ""
+    if event_year is not None and event_year in years:
+        ei = years.index(event_year)
+        ex = pad + ei * slot + slot / 2
+        event = (
+            f'<line x1="{ex:.1f}" y1="6" x2="{ex:.1f}" y2="{H-18}" stroke="#E63946" '
+            f'stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>'
+            f'<text x="{ex:.1f}" y="{H-4:.1f}" text-anchor="middle" font-size="10" '
+            f'fill="#E63946" font-weight="600">{event_label}</text>'
+        )
+    # year ticks (first / peak / last)
+    ticks = ""
+    for i in (0, peak_i, n - 1):
+        tx = pad + i * slot + slot / 2
+        ticks += (f'<text x="{tx:.1f}" y="14" text-anchor="middle" font-size="10" '
+                  f'fill="#A0AEC0">{years[i]}</text>')
+    return (
+        f'<svg width="100%" viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid meet" '
+        f'style="display:block;">{line}{bars}{peak_mark}{event}{ticks}</svg>'
+    )
+
+
+def rising_eq(values, years, color, height=200):
+    """A rising equalizer / spectrum: each year is a column of stacked level segments,
+    brighter toward the top — the 'sound' filling up as the name grows louder."""
+    n = len(values); mx = max(values) or 1
+    W, H = 900, height; pad = 20; base = H - 26
+    bw = (W - 2 * pad) / n * 0.62
+    peak_i = values.index(mx)
+    svg = f'<svg width="100%" viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid meet" style="display:block;">'
+    for i, v in enumerate(values):
+        x = pad + i * (W - 2 * pad) / n
+        h = v / mx * (base - 18)
+        segs = max(1, int(h / 9))
+        for s in range(segs):
+            svg += (f'<rect x="{x:.1f}" y="{base - (s + 1) * 9:.1f}" width="{bw:.1f}" height="7" rx="1.5" '
+                    f'fill="{color}" opacity="{0.4 + s / max(segs, 1) * 0.6:.2f}"/>')
+    # peak glow dot
+    px = pad + peak_i * (W - 2 * pad) / n + bw / 2
+    svg += f'<text x="{px:.1f}" y="{base - mx/mx*(base-18) - 8:.1f}" text-anchor="middle" font-size="15">🔊</text>'
+    for i in (0, peak_i, n - 1):
+        tx = pad + i * (W - 2 * pad) / n + bw / 2
+        svg += f'<text x="{tx:.1f}" y="{H-6}" text-anchor="middle" font-size="10" fill="#A0AEC0">{years[i]}</text>'
+    return svg + '</svg>'
+
+
+def rising_eq_card(title, values, years, color, caption):
+    return (
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);'
+        'border:1px solid #E2E8F0;border-radius:16px;padding:18px 20px;'
+        'box-shadow:0 4px 16px rgba(0,0,0,.06);margin-bottom:6px;">'
+        f'<div style="font-family:Georgia,serif;font-size:1.3em;font-weight:800;color:#2D3748;margin-bottom:2px;">{title}</div>'
+        f'<div style="font-size:.78em;color:#718096;margin-bottom:8px;">{caption}</div>'
+        + rising_eq(values, years, color) + '</div>'
+    )
+
+
+def staff(values, years, color, event_year=None, event_label="", crescendo=True, height=200):
+    """Notes climbing a musical staff — each year is a note; higher note = louder = more
+    popular. A crescendo hairpin underneath swells with the trend. Fully music-themed."""
+    n = len(values); maxv = max(values) or 1
+    peak_i = values.index(maxv)
+    W, H = 900, height
+    left, right = 70, W - 24
+    s_top, gap = 46, 16           # staff: 5 lines
+    s_bot = s_top + gap * 4
+    note_lo, note_hi = s_bot + gap, s_top - gap * 2   # value 0 sits below staff, peak floats above
+    def X(i): return left + i * (right - left) / (n - 1)
+    def Y(v): return note_lo - (v / maxv) * (note_lo - note_hi)
+    svg = f'<svg width="100%" viewBox="0 0 {W} {H}" preserveAspectRatio="xMidYMid meet" style="display:block;">'
+    # staff lines
+    for k in range(5):
+        y = s_top + k * gap
+        svg += f'<line x1="{left-6}" y1="{y}" x2="{right}" y2="{y}" stroke="#C7CFDD" stroke-width="1.4"/>'
+    # treble clef
+    svg += f'<text x="18" y="{s_bot+6}" font-size="{gap*5}" fill="{color}" opacity="0.9" font-family="serif">\U0001D11E</text>'
+    # connecting slur (light) through the note heads
+    pts = " ".join(f"{X(i):.1f},{Y(v):.1f}" for i, v in enumerate(values))
+    svg += f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.5" opacity="0.35"/>'
+    # notes
+    for i, v in enumerate(values):
+        x, y = X(i), Y(v)
+        is_peak = (i == peak_i)
+        r = 6 if is_peak else 4.5
+        stem = "" if is_peak else f'<line x1="{x+r-0.5:.1f}" y1="{y:.1f}" x2="{x+r-0.5:.1f}" y2="{y-22:.1f}" stroke="{color}" stroke-width="1.6"/>'
+        glow = f'<circle cx="{x:.1f}" cy="{y:.1f}" r="10" fill="{color}" opacity="0.2"/>' if is_peak else ""
+        svg += glow + f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="{r+1.5:.1f}" ry="{r:.1f}" fill="{color}" transform="rotate(-18 {x:.1f} {y:.1f})"/>' + stem
+    # crescendo / decrescendo hairpin under the staff
+    hair_y = s_bot + gap * 2.2
+    if crescendo:
+        svg += (f'<line x1="{left}" y1="{hair_y}" x2="{right-40}" y2="{hair_y-9}" stroke="{color}" stroke-width="2"/>'
+                f'<line x1="{left}" y1="{hair_y}" x2="{right-40}" y2="{hair_y+9}" stroke="{color}" stroke-width="2"/>'
+                f'<text x="{left-4}" y="{hair_y+22}" font-size="12" fill="#718096" font-style="italic">pp</text>'
+                f'<text x="{right-34}" y="{hair_y+4}" font-size="13" fill="{color}" font-style="italic" font-weight="700">ƒƒ crescendo</text>')
+    # event marker
+    if event_year is not None and event_year in years:
+        ex = X(years.index(event_year))
+        svg += (f'<line x1="{ex:.1f}" y1="{s_top-14}" x2="{ex:.1f}" y2="{s_bot+8}" stroke="#E63946" '
+                f'stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>'
+                f'<text x="{ex:.1f}" y="{s_top-18}" text-anchor="middle" font-size="10" fill="#E63946" font-weight="600">{event_label}</text>')
+    # year ticks
+    for i in (0, peak_i, n - 1):
+        svg += f'<text x="{X(i):.1f}" y="{H-6}" text-anchor="middle" font-size="10" fill="#A0AEC0">{years[i]}</text>'
+    return svg + '</svg>'
+
+
+def staff_card(title, values, years, color, event_year, event_label, caption, crescendo=True):
+    return (
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);'
+        'border:1px solid #E2E8F0;border-radius:16px;padding:18px 20px;'
+        'box-shadow:0 4px 16px rgba(0,0,0,.06);margin-bottom:6px;">'
+        f'<div style="font-family:Georgia,serif;font-size:1.3em;font-weight:800;color:#2D3748;margin-bottom:2px;">{title}</div>'
+        f'<div style="font-size:.78em;color:#718096;margin-bottom:6px;">{caption}</div>'
+        + staff(values, years, color, event_year, event_label, crescendo) + '</div>'
+    )
+
+
+def ridge(values, years, color, event_year=None, event_label="", height=150):
+    """A smooth filled area 'ridge' (single-direction, not mirrored bars) — clean
+    upward or rise/fall silhouette with a glowing peak dot."""
+    n = len(values); maxv = max(values) or 1
+    peak_i = values.index(maxv)
+    W, H = 900, height; pad = 16; base = H - 22; top = 14
+    def X(i): return pad + i * (W - 2 * pad) / (n - 1)
+    def Y(v): return base - (v / maxv) * (base - top)
+    pts = " ".join(f"{X(i):.1f},{Y(v):.1f}" for i, v in enumerate(values))
+    area = f"{pad},{base} {pts} {W-pad},{base}"
+    peak_dot = f'<circle cx="{X(peak_i):.1f}" cy="{Y(maxv):.1f}" r="5" fill="{color}"/>' \
+               f'<circle cx="{X(peak_i):.1f}" cy="{Y(maxv):.1f}" r="9" fill="{color}" opacity="0.25"/>'
+    event = ""
+    if event_year is not None and event_year in years:
+        ex = X(years.index(event_year))
+        event = (f'<line x1="{ex:.1f}" y1="6" x2="{ex:.1f}" y2="{base}" stroke="#E63946" '
+                 f'stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>'
+                 f'<text x="{ex:.1f}" y="{H-4:.1f}" text-anchor="middle" font-size="10" '
+                 f'fill="#E63946" font-weight="600">{event_label}</text>')
+    ticks = ""
+    for i in (0, peak_i, n - 1):
+        ticks += (f'<text x="{X(i):.1f}" y="12" text-anchor="middle" font-size="10" '
+                  f'fill="#A0AEC0">{years[i]}</text>')
+    return (
+        f'<svg width="100%" viewBox="0 0 {W} {H}" preserveAspectRatio="none" style="display:block;">'
+        f'<polygon points="{area}" fill="{color}" opacity="0.16"/>'
+        f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="3" '
+        f'stroke-linejoin="round" stroke-linecap="round"/>{peak_dot}{event}{ticks}</svg>'
+    )
+
+
+def ridge_card(title, values, years, color, event_year, event_label, caption):
+    return (
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);'
+        'border:1px solid #E2E8F0;border-radius:16px;padding:18px 20px;'
+        'box-shadow:0 4px 16px rgba(0,0,0,.06);margin-bottom:6px;">'
+        f'<div style="font-family:Georgia,serif;font-size:1.3em;font-weight:800;color:#2D3748;margin-bottom:2px;">{title}</div>'
+        f'<div style="font-size:.78em;color:#718096;margin-bottom:10px;">{caption}</div>'
+        + ridge(values, years, color, event_year, event_label) + '</div>'
+    )
+
+
+def wave_card(title, values, years, color, peak_emoji, event_year, event_label, caption):
+    """A framed soundwave with a title + caption."""
+    return (
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);'
+        'border:1px solid #E2E8F0;border-radius:16px;padding:18px 20px;'
+        'box-shadow:0 4px 16px rgba(0,0,0,.06);margin-bottom:6px;">'
+        f'<div style="font-family:Georgia,serif;font-size:1.3em;font-weight:800;color:#2D3748;'
+        f'margin-bottom:2px;">{title}</div>'
+        f'<div style="font-size:.78em;color:#718096;margin-bottom:10px;">{caption}</div>'
+        + soundwave(values, years, color, peak_emoji, 150, event_year, event_label) +
+        '</div>'
+    )
+
+
+def multitrack(rows, unit="peak"):
+    """Each name = a mixing-desk track: label + inline mini-waveform + peak readout."""
+    html = ('<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);'
+            'border:1px solid #E2E8F0;border-radius:16px;padding:16px 18px;'
+            'box-shadow:0 4px 16px rgba(0,0,0,.06);">')
+    for name, sub, values, years, color in rows:
+        peak = max(values)
+        peak_yr = years[values.index(peak)]
+        html += (
+            '<div style="display:grid;grid-template-columns:150px 1fr 90px;align-items:center;'
+            'gap:14px;padding:8px 0;border-bottom:1px solid rgba(226,232,240,0.7);">'
+            f'<div><div style="font-weight:800;color:#2D3748;font-size:1.05em;">{name}</div>'
+            f'<div style="font-size:.7em;color:#718096;line-height:1.25;">{sub}</div></div>'
+            f'<div>{soundwave(values, years, color, "▲", 64)}</div>'
+            f'<div style="text-align:right;"><div style="font-weight:800;color:{color};font-size:1.15em;">{peak:,}</div>'
+            f'<div style="font-size:.66em;color:#A0AEC0;">{unit} · {peak_yr}</div></div>'
+            '</div>'
+        )
+    html += '</div>'
+    return html
+
+
+def revival_panel(rows):
+    """All comeback names in ONE panel — each a row with a waveform that flatlines
+    then erupts, a ×N badge, and trough→peak markers. rows: (name, sub, values, years, color, ratio)."""
+    inner = ""
+    for i, (name, sub, values, years, color, ratio) in enumerate(rows):
+        trough = min(values); trough_yr = years[values.index(trough)]
+        peak = max(values); peak_yr = years[values.index(peak)]
+        border = "" if i == 0 else "border-top:1px solid rgba(226,232,240,0.9);padding-top:16px;"
+        inner += (
+            f'<div style="{border}margin-bottom:16px;">'
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">'
+            f'<div><span style="font-family:Georgia,serif;font-size:1.4em;font-weight:800;color:#2D3748;">{name}</span>'
+            f'<span style="font-size:.78em;color:#718096;margin-left:10px;">{sub}</span></div>'
+            f'<div style="background:{color};color:#fff;font-weight:800;font-size:.9em;'
+            f'padding:3px 14px;border-radius:20px;">▲ {ratio} revival</div>'
+            '</div>'
+            + soundwave(values, years, color, "📈", 96) +
+            '<div style="display:flex;justify-content:space-between;font-size:.72em;color:#718096;">'
+            f'<span>💀 flatlined at <b>{trough}</b> ({trough_yr})</span>'
+            f'<span>🔥 back to <b>{peak:,}</b> ({peak_yr})</span>'
+            '</div></div>'
+        )
+    return (
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);'
+        'border:1px solid #E2E8F0;border-radius:16px;padding:20px 24px;'
+        'box-shadow:0 4px 16px rgba(0,0,0,.06);">' + inner + '</div>'
+    )
+
+
+def cassette_pair(name, peak_val, peak_yr, now_val, now_yr, event, color):
+    """A cassette tape being ERASED: 'before' has full reels, 'after' is demagnetised/empty.
+    Perfect for the corporate-erasure story."""
+    def tape(label, val, yr, spool, dim, c):
+        op = "0.35" if dim else "1"
+        # two reels; 'spool' 0..1 = how full the tape still is
+        r_full = 6 + spool * 12
+        return (
+            '<div style="flex:1;min-width:230px;background:linear-gradient(160deg,#2A2438,#161226);'
+            'border-radius:14px;padding:20px;text-align:center;box-shadow:0 10px 26px rgba(0,0,0,.3);">'
+            f'<div style="font-size:.6rem;letter-spacing:2px;font-weight:800;color:{c};">{label}</div>'
+            f'<svg width="180" height="110" viewBox="0 0 180 110" style="margin:12px auto 4px;opacity:{op};">'
+            '<rect x="6" y="6" width="168" height="98" rx="10" fill="#12101c" stroke="#3a3350" stroke-width="1.5"/>'
+            '<rect x="26" y="30" width="128" height="40" rx="6" fill="#1c1830" stroke="#3a3350"/>'
+            # reels
+            f'<circle cx="60" cy="50" r="22" fill="none" stroke="#3a3350" stroke-width="2"/>'
+            f'<circle cx="60" cy="50" r="{r_full:.0f}" fill="{c}" opacity="0.9"/>'
+            f'<circle cx="60" cy="50" r="4" fill="#12101c"/>'
+            f'<circle cx="120" cy="50" r="22" fill="none" stroke="#3a3350" stroke-width="2"/>'
+            f'<circle cx="120" cy="50" r="{(1-spool)*12+6:.0f}" fill="{c}" opacity="0.9"/>'
+            f'<circle cx="120" cy="50" r="4" fill="#12101c"/>'
+            '<rect x="40" y="84" width="100" height="10" rx="3" fill="#1c1830"/>'
+            '</svg>'
+            f'<div style="font-size:2em;font-weight:800;color:{c};">{val}</div>'
+            f'<div style="font-size:.72em;color:#9A8FB0;">babies/yr · {yr}</div>'
+            '</div>'
+        )
+    return (
+        f'<div style="font-weight:700;color:#2D3748;margin-bottom:6px;">🎙️ {name} — {event}</div>'
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;">'
+        + tape("● RECORDED · PEAK", peak_val, peak_yr, 1.0, False, color)
+        + tape("● ERASED · TODAY", now_val, now_yr, 0.05, True, "#E63946")
+        + '</div>'
+    )
+
+
+def volume_dial(value, maxv, color, from_label, to_label, event):
+    """An amp gain knob turned up from silence — for a name going 0 → loud."""
+    import math
+    frac = min(value / maxv, 1.0)
+    ang = -135 + frac * 270            # -135° (min) .. +135° (max)
+    rad = math.radians(ang)
+    cx, cy, r = 90, 90, 60
+    px = cx + r * 0.7 * math.sin(rad)
+    py = cy - r * 0.7 * math.cos(rad)
+    # tick marks around the dial
+    ticks = ""
+    for t in range(11):
+        a = math.radians(-135 + t * 27)
+        x1 = cx + r * 0.92 * math.sin(a); y1 = cy - r * 0.92 * math.cos(a)
+        x2 = cx + r * 1.05 * math.sin(a); y2 = cy - r * 1.05 * math.cos(a)
+        lit = (t / 10) <= frac
+        ticks += (f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
+                  f'stroke="{color if lit else "#3a3350"}" stroke-width="3" stroke-linecap="round"/>')
+    return (
+        '<div style="background:linear-gradient(160deg,#2A2438,#161226);border-radius:16px;'
+        'padding:22px;text-align:center;box-shadow:0 8px 22px rgba(0,0,0,.3);">'
+        f'<div style="font-size:.62rem;letter-spacing:2px;color:{color};font-weight:800;margin-bottom:6px;">🔊 VOLUME · from silence to loud</div>'
+        f'<svg width="180" height="150" viewBox="0 0 180 150" style="margin:0 auto;">'
+        + ticks +
+        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="#12101c" stroke="{color}" stroke-width="2"/>'
+        f'<line x1="{cx}" y1="{cy}" x2="{px:.1f}" y2="{py:.1f}" stroke="{color}" stroke-width="4" stroke-linecap="round"/>'
+        f'<circle cx="{cx}" cy="{cy}" r="6" fill="{color}"/>'
+        f'<text x="{cx-r}" y="148" font-size="10" fill="#9A8FB0">{from_label}</text>'
+        f'<text x="{cx+r-20}" y="148" font-size="10" fill="{color}" font-weight="700">{to_label}</text>'
+        '</svg>'
+        f'<div style="font-size:.75em;color:#9A8FB0;margin-top:4px;">{event}</div>'
+        '</div>'
+    )
+
+
+def chart_countdown(rows):
+    """A radio 'Top of the Charts' countdown — ranked rows, each name climbing with an arrow.
+    rows: (name, sub, peak, peak_yr, color). Ranked by peak descending."""
+    rows = sorted(rows, key=lambda r: -r[2])
+    items = ""
+    for i, (name, sub, peak, peak_yr, color) in enumerate(rows):
+        rank = i + 1
+        items += (
+            '<div style="display:flex;align-items:center;gap:16px;padding:11px 16px;margin:7px 0;'
+            'background:#fff;border:1px solid #eee;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);">'
+            f'<div style="font-size:1.4em;font-weight:800;color:{color};min-width:36px;text-align:center;">#{rank}</div>'
+            f'<div style="flex:1;"><div style="font-weight:800;color:#2D3748;font-size:1.05em;">{name} '
+            f'<span style="color:{color};font-size:.8em;">▲ climbing</span></div>'
+            f'<div style="font-size:.72em;color:#718096;">{sub}</div></div>'
+            f'<div style="text-align:right;"><div style="font-weight:800;color:{color};font-size:1.15em;">{peak:,}</div>'
+            f'<div style="font-size:.66em;color:#A0AEC0;">peak · {peak_yr}</div></div>'
+            '</div>'
+        )
+    return (
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);border:1px solid #E2E8F0;'
+        'border-radius:16px;padding:16px 18px;box-shadow:0 4px 16px rgba(0,0,0,.06);">'
+        '<div style="text-align:center;font-size:.72em;letter-spacing:2px;color:#718096;'
+        'text-transform:uppercase;font-weight:700;margin-bottom:10px;">📻 TOP OF THE CHARTS · once-forbidden names</div>'
+        + items + '</div>'
+    )
+
+
+def vinyl_pair(left, right):
+    """Two spinning-record cards side by side — a 'before / after' 45rpm single.
+    Each: (label, name, sub, big_value, small, color, spun_out)."""
+    def disc(label, name, sub, big, small, color, dim=False):
+        op = "0.4" if dim else "1"
+        return (
+            '<div style="flex:1;min-width:220px;background:linear-gradient(160deg,#2A2438,#1A1626);'
+            'border-radius:16px;padding:24px;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.3);">'
+            f'<div style="font-size:.6rem;letter-spacing:3px;font-weight:800;color:{color};">{label}</div>'
+            f'<svg width="120" height="120" viewBox="0 0 100 100" style="margin:14px auto 6px;opacity:{op};">'
+            '<circle cx="50" cy="50" r="48" fill="#12101c"/>'
+            '<circle cx="50" cy="50" r="34" fill="none" stroke="#3a3350" stroke-width="1.2"/>'
+            '<circle cx="50" cy="50" r="24" fill="none" stroke="#3a3350" stroke-width="1.2"/>'
+            f'<circle cx="50" cy="50" r="15" fill="{color}"/><circle cx="50" cy="50" r="4" fill="#12101c"/></svg>'
+            f'<div style="font-family:Georgia,serif;font-size:1.5em;font-weight:800;color:#F0EBFA;">{name}</div>'
+            f'<div style="font-size:.72em;color:#9A8FB0;margin-bottom:8px;">{sub}</div>'
+            f'<div style="font-size:2em;font-weight:800;color:{color};">{big}</div>'
+            f'<div style="font-size:.72em;color:#A0AEC0;">{small}</div>'
+            '</div>'
+        )
+    return ('<div style="display:flex;gap:18px;flex-wrap:wrap;">'
+            + disc(*left) + disc(*right) + '</div>')
+
+
+def equalizer(rows, title):
+    """A vertical EQ: each item is a column of stacked 'level' segments (like a graphic
+    equalizer / VU meter). rows: (label, value, max_value, color)."""
+    cols = ""
+    for label, val, mx, color in rows:
+        lit = round(val / mx * 10)
+        segs = ""
+        for s in range(10, 0, -1):
+            on = s <= lit
+            segs += (f'<div style="width:26px;height:9px;border-radius:2px;margin:2px 0;'
+                     f'background:{color if on else "#E2E8F0"};opacity:{"1" if on else "0.6"};"></div>')
+        cols += (
+            '<div style="text-align:center;">'
+            f'<div style="display:flex;flex-direction:column;align-items:center;">{segs}</div>'
+            f'<div style="font-weight:800;color:{color};font-size:1.05em;margin-top:8px;">{val:,}</div>'
+            f'<div style="font-size:.72em;color:#4A5568;font-weight:600;">{label}</div>'
+            '</div>'
+        )
+    return (
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);'
+        'border:1px solid #E2E8F0;border-radius:16px;padding:24px 20px;box-shadow:0 4px 16px rgba(0,0,0,.06);">'
+        f'<div style="text-align:center;font-size:.72em;letter-spacing:2px;color:#718096;'
+        f'text-transform:uppercase;font-weight:700;margin-bottom:18px;">{title}</div>'
+        '<div style="display:flex;justify-content:center;gap:30px;align-items:flex-end;flex-wrap:wrap;">'
+        + cols + '</div></div>'
+    )
+
+
+def climb_cards(cards):
+    """Rising 'ascending stairs' cards — each riser shown as an upward arrow-ramp
+    with from → to values. cards: (name, meaning, from_v, to_v, color)."""
+    tiles = ""
+    for name, meaning, fromv, tov, color in cards:
+        # small ascending ramp of 5 blocks
+        ramp = "".join(
+            f'<div style="width:9px;height:{8 + i*7}px;background:{color};'
+            f'border-radius:2px;opacity:{0.5 + i*0.12:.2f};"></div>' for i in range(5)
+        )
+        tiles += (
+            '<div style="flex:1;min-width:150px;background:#fff;border:1px solid #E2E8F0;'
+            'border-radius:14px;padding:18px 16px;box-shadow:0 4px 12px rgba(0,0,0,.05);">'
+            f'<div style="font-family:Georgia,serif;font-size:1.4em;font-weight:800;color:#2D3748;">{name}</div>'
+            f'<div style="font-size:.72em;color:#718096;font-style:italic;margin-bottom:12px;">{meaning}</div>'
+            f'<div style="display:flex;align-items:flex-end;gap:4px;height:44px;">{ramp}'
+            f'<span style="margin-left:6px;color:{color};font-size:1.3em;">↗</span></div>'
+            f'<div style="margin-top:12px;font-size:.9em;color:#4A5568;">'
+            f'<b style="color:#A0AEC0;">{fromv}</b> <span style="color:#CBD5E0;">→</span> '
+            f'<b style="color:{color};font-size:1.15em;">{tov:,}</b></div>'
+            '<div style="font-size:.66em;color:#A0AEC0;">babies/yr · 1997 → 2023</div>'
+            '</div>'
+        )
+    return '<div style="display:flex;gap:14px;flex-wrap:wrap;">' + tiles + '</div>'
+
+
+def poster_wall(cards):
+    """Movie-marquee 'now showing' posters — for names invented by fiction.
+    cards: (name, source, year, from_zero_to, color)."""
+    tiles = ""
+    for name, source, year, arc, color in cards:
+        tiles += (
+            f'<div style="flex:1;min-width:150px;background:linear-gradient(180deg,#1A1A2E,#16213E);'
+            f'border-radius:10px;padding:18px 14px;text-align:center;border-top:4px solid {color};'
+            f'box-shadow:0 8px 20px rgba(0,0,0,.3);">'
+            '<div style="font-size:.55rem;letter-spacing:2px;color:#ECC94B;font-weight:700;">🎬 NOW SHOWING</div>'
+            f'<div style="font-family:Georgia,serif;font-size:1.5em;font-weight:800;color:#F0EBFA;margin:10px 0 2px;">{name}</div>'
+            f'<div style="font-size:.72em;color:#9FB0C8;font-style:italic;">{source}</div>'
+            f'<div style="margin:12px 0 4px;font-size:.7rem;color:#718096;">premiered {year}</div>'
+            f'<div style="font-size:1.05em;font-weight:800;color:{color};">{arc}</div>'
+            '</div>'
+        )
+    return '<div style="display:flex;gap:14px;flex-wrap:wrap;">' + tiles + '</div>'
 
 
 def render():
+    _years = list(range(1997, 2024))
+
     # ─── Header ───────────────────────────────────────────────────
     st.markdown(
         """
-        <div style="background: linear-gradient(135deg, #EEF2FF, #E8F4FD, #F0FFF4); 
-                    border-radius: 16px; padding: 50px 30px; text-align: center; 
+        <div style="background: linear-gradient(135deg, #EEF2FF, #E8F4FD, #F0FFF4);
+                    border-radius: 16px; padding: 50px 30px; text-align: center;
                     margin-bottom: 20px; border: 1px solid #E2E8F0;">
             <h1 style="font-size: 2.8em; font-weight: 800; color: #2D3748; margin: 0 0 12px 0;">
                 🎉 I Never Knew That
             </h1>
             <p style="font-size: 1.2em; color: #4A5568; max-width: 650px; margin: 0 auto; line-height: 1.7;">
-                Surprising stories hiding in 27 years of baby name data.
+                Five surprising stories hiding in 27 years of baby name data —
+                told the way they deserve: on record, on the charts, on the marquee.
             </p>
         </div>
         """,
@@ -28,874 +490,183 @@ def render():
     # ══════════════════════════════════════════════════════════════
     # 🤖 CORPORATE ERASURE
     # ══════════════════════════════════════════════════════════════
-
     st.markdown("### 🤖 Corporate Erasure")
-    st.markdown(
-        "What happens when a tech giant names a product after a human name? "
-        "The humans stop using it."
-    )
+    st.markdown("What happens when a tech giant names a product after a human name? The humans stop using it.")
 
-    # ─── Alexa & Siri line charts ─────────────────────────────────
-    alexa_data = {
-        "year": [1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023],
-        "frequency": [3398,3927,3926,3927,4197,4750,4938,4798,5039,6649,6348,5878,6063,5807,5288,5011,4785,4880,6702,5450,4535,3394,2128,1334,718,605,511]
-    }
-
-    siri_data = {
-        "year": [1997,1998,1999,2000,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2017,2021,2023],
-        "frequency": [8,7,9,5,6,25,33,65,68,66,83,94,69,66,10,11,8,3,3,7]
-    }
-
-    col_alexa, col_siri = st.columns(2)
-
-    with col_alexa:
-        fig_alexa = go.Figure()
-        fig_alexa.add_trace(go.Scatter(
-            x=alexa_data["year"],
-            y=alexa_data["frequency"],
-            mode="lines+markers",
-            line=dict(color="#7C9FD6", width=3),
-            marker=dict(size=5),
-            fill="tozeroy",
-            fillcolor="rgba(124,159,214,0.1)",
-        ))
-        fig_alexa.add_vline(x=2014, line_dash="dash", line_color="#E63946", opacity=0.7)
-        fig_alexa.add_annotation(
-            x=2014, y=6702,
-            text="Amazon Echo<br>launches",
-            showarrow=True, arrowhead=2,
-            font=dict(size=10, color="#E63946"),
-            ax=40, ay=-30
-        )
-        fig_alexa.update_layout(
-            **CHART_LAYOUT,
-            title="Alexa",
-            xaxis_title="",
-            yaxis_title="Babies per year",
-            height=350,
-        )
-        st.plotly_chart(fig_alexa, use_container_width=True)
-
-    with col_siri:
-        fig_siri = go.Figure()
-        fig_siri.add_trace(go.Scatter(
-            x=siri_data["year"],
-            y=siri_data["frequency"],
-            mode="lines+markers",
-            line=dict(color="#C8A8E8", width=3),
-            marker=dict(size=5),
-            fill="tozeroy",
-            fillcolor="rgba(200,168,232,0.1)",
-        ))
-        fig_siri.add_vline(x=2011, line_dash="dash", line_color="#E63946", opacity=0.7)
-        fig_siri.add_annotation(
-            x=2011, y=94,
-            text="Apple launches<br>Siri",
-            showarrow=True, arrowhead=2,
-            font=dict(size=10, color="#E63946"),
-            ax=40, ay=-30
-        )
-        fig_siri.update_layout(
-            **CHART_LAYOUT,
-            title="Siri",
-            xaxis_title="",
-            yaxis_title="Babies per year",
-            height=350,
-        )
-        st.plotly_chart(fig_siri, use_container_width=True)
-
-    # ─── Before/After stat cards ──────────────────────────────────
-    col_a1, col_a2, col_a3 = st.columns(3)
-
-    with col_a1:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #EEF2FF, #E8F4FD);
-                    border-radius: 12px; padding: 20px; text-align: center;
-                    border: 1px solid #E2E8F0;">
-            <div style="font-size: 0.75em; color: #718096; text-transform: uppercase; letter-spacing: 1px;">
-                Alexa — Peak (2015)
-            </div>
-            <div style="font-size: 2.2em; font-weight: 800; color: #7C9FD6;">
-                6,702
-            </div>
-            <div style="font-size: 0.8em; color: #4A5568;">babies/year</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_a2:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #FFF5F5, #FEE2E2);
-                    border-radius: 12px; padding: 20px; text-align: center;
-                    border: 1px solid #FECACA;">
-            <div style="font-size: 0.75em; color: #718096; text-transform: uppercase; letter-spacing: 1px;">
-                Alexa — Now (2023)
-            </div>
-            <div style="font-size: 2.2em; font-weight: 800; color: #E63946;">
-                511
-            </div>
-            <div style="font-size: 0.8em; color: #4A5568;">−92% erased</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_a3:
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, #F5F0FF, #EDE9FE);
-                    border-radius: 12px; padding: 20px; text-align: center;
-                    border: 1px solid #E2D9F3;">
-            <div style="font-size: 0.75em; color: #718096; text-transform: uppercase; letter-spacing: 1px;">
-                Siri — Peak → Now
-            </div>
-            <div style="font-size: 2.2em; font-weight: 800; color: #9B6FD4;">
-                94 → 7
-            </div>
-            <div style="font-size: 0.8em; color: #4A5568;">−93% erased</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ─── Insight text ─────────────────────────────────────────────
+    # Cassette tapes being erased — full reels (peak) → demagnetised/empty (today)
+    st.markdown(cassette_pair("Alexa", "6,702", "2015", "511", "2023",
+        "the chart-topper wiped by Amazon Echo (2014) · −92%", "#7C9FD6"), unsafe_allow_html=True)
     st.markdown("")
-    st.markdown(
-        "**Alexa** was a top-100 name with nearly 7,000 babies a year. Amazon named their voice assistant after it in 2014 "
-        "— and initially, the name *rose* (curiosity effect?). But by 2017, reports of children being bullied "
-        "(*'Alexa, do my homework'*) began spreading. The collapse was swift: −92% in 6 years."
-    )
-    st.markdown(
-        "**Siri** was a rising Scandinavian name — growing steadily from 8 babies (1997) to 94 (2010). "
-        "Then Apple launched their voice assistant in October 2011. By 2013, just 10 babies were named Siri. "
-        "A name that was *on its way up* was killed overnight by a product launch."
-    )
-
+    st.markdown(cassette_pair("Siri", "94", "2010", "7", "2023",
+        "a rising star cut off mid-climb by Apple Siri (2011) · −93%", "#C8A8E8"), unsafe_allow_html=True)
+    st.markdown("")
     st.info(
-        "💡 **The asymmetry:** Alexa had a bigger victim pool (6,702 babies/year) but Siri was the crueller kill "
+        "💡 **The asymmetry:** Alexa had a bigger victim pool (6,702/year) but Siri was the crueller kill "
         "— it was actively *growing* when Apple took it. Alexa was already past peak."
     )
-
     st.markdown("---")
 
     # ══════════════════════════════════════════════════════════════
-    # ⚠️ BANNED FROM THE AIRWAVES (Controversial Names)
+    # 🧟 BACK FROM THE DEAD (Zombie Names) — multitrack
     # ══════════════════════════════════════════════════════════════
-
-    st.markdown("### ⚠️ Banned from the Airwaves")
-    st.markdown(
-        "Some tracks don't fade naturally — they get **pulled from rotation**. "
-        "A name can carry a thousand years of history, then lose it all in a single news cycle."
-    )
-
-    st.markdown("")
-
-    # --- ISIS & OSAMA: "BROADCAST BAN" notices ---
-    st.markdown("#### 📵 Emergency Broadcast Bans")
-    st.markdown(
-        "These names weren't declining. They were healthy, growing, beloved — "
-        "until a global event made them radioactive overnight."
-    )
-
-    col_isis, col_osama = st.columns(2)
-
-    with col_isis:
-        isis_html = (
-            '<div style="'
-            'background: linear-gradient(135deg, #FFF5F5, #FED7D7, #FFF5F5);'
-            'border: 2px solid #FC8181;'
-            'border-radius: 16px;'
-            'padding: 28px 24px;'
-            'position: relative;'
-            'overflow: hidden;'
-            '">'
-            '<div style="'
-            'position: absolute;'
-            'top: 50%;'
-            'left: 50%;'
-            'transform: translate(-50%, -50%) rotate(-25deg);'
-            'font-size: 64px;'
-            'font-weight: 900;'
-            'color: rgba(229, 62, 62, 0.08);'
-            'letter-spacing: 12px;'
-            'white-space: nowrap;'
-            'pointer-events: none;'
-            '">BANNED</div>'
-            '<div style="'
-            'display: flex;'
-            'align-items: center;'
-            'gap: 12px;'
-            'margin-bottom: 16px;'
-            '">'
-            '<div style="'
-            'background: #E53E3E;'
-            'color: white;'
-            'padding: 4px 10px;'
-            'border-radius: 4px;'
-            'font-size: 11px;'
-            'font-weight: 700;'
-            'letter-spacing: 1px;'
-            '">BROADCAST BAN</div>'
-            '<span style="color: #A0AEC0; font-size: 12px;">June 2014</span>'
-            '</div>'
-            '<div style="'
-            'font-size: 42px;'
-            'font-weight: 800;'
-            'color: #2D3748;'
-            'margin-bottom: 4px;'
-            'text-decoration: line-through;'
-            'text-decoration-color: #E53E3E;'
-            'text-decoration-thickness: 3px;'
-            '">Isis</div>'
-            '<div style="'
-            'font-size: 13px;'
-            'color: #718096;'
-            'margin-bottom: 20px;'
-            '">Egyptian goddess of magic &amp; motherhood</div>'
-            '<div style="'
-            'display: grid;'
-            'grid-template-columns: 1fr 1fr;'
-            'gap: 12px;'
-            'margin-bottom: 16px;'
-            '">'
-            '<div style="background: white; border-radius: 8px; padding: 12px; text-align: center;">'
-            '<div style="font-size: 11px; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.5px;">Before</div>'
-            '<div style="font-size: 24px; font-weight: 700; color: #2D3748;">576</div>'
-            '<div style="font-size: 11px; color: #718096;">babies/year (2007)</div>'
-            '</div>'
-            '<div style="background: white; border-radius: 8px; padding: 12px; text-align: center;">'
-            '<div style="font-size: 11px; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.5px;">After</div>'
-            '<div style="font-size: 24px; font-weight: 700; color: #E53E3E;">8</div>'
-            '<div style="font-size: 11px; color: #718096;">babies/year (2018)</div>'
-            '</div>'
-            '</div>'
-            '<div style="'
-            'background: #E53E3E;'
-            'color: white;'
-            'border-radius: 8px;'
-            'padding: 10px 16px;'
-            'text-align: center;'
-            'font-weight: 700;'
-            'font-size: 18px;'
-            'margin-bottom: 12px;'
-            '">&minus;98.4%</div>'
-            '<div style="'
-            'background: rgba(72, 187, 120, 0.1);'
-            'border-left: 3px solid #48BB78;'
-            'padding: 8px 12px;'
-            'border-radius: 0 8px 8px 0;'
-            'font-size: 12px;'
-            'color: #2F855A;'
-            '">&#128225; Signal returning: 159 babies in 2023 — parents reclaiming the goddess</div>'
-            '</div>'
-        )
-        st.markdown(isis_html, unsafe_allow_html=True)
-
-    with col_osama:
-        osama_html = (
-            '<div style="'
-            'background: linear-gradient(135deg, #FFF5F5, #FED7D7, #FFF5F5);'
-            'border: 2px solid #FC8181;'
-            'border-radius: 16px;'
-            'padding: 28px 24px;'
-            'position: relative;'
-            'overflow: hidden;'
-            '">'
-            '<div style="'
-            'position: absolute;'
-            'top: 50%;'
-            'left: 50%;'
-            'transform: translate(-50%, -50%) rotate(-25deg);'
-            'font-size: 64px;'
-            'font-weight: 900;'
-            'color: rgba(229, 62, 62, 0.08);'
-            'letter-spacing: 12px;'
-            'white-space: nowrap;'
-            'pointer-events: none;'
-            '">BANNED</div>'
-            '<div style="'
-            'display: flex;'
-            'align-items: center;'
-            'gap: 12px;'
-            'margin-bottom: 16px;'
-            '">'
-            '<div style="'
-            'background: #E53E3E;'
-            'color: white;'
-            'padding: 4px 10px;'
-            'border-radius: 4px;'
-            'font-size: 11px;'
-            'font-weight: 700;'
-            'letter-spacing: 1px;'
-            '">BROADCAST BAN</div>'
-            '<span style="color: #A0AEC0; font-size: 12px;">September 2001</span>'
-            '</div>'
-            '<div style="'
-            'font-size: 42px;'
-            'font-weight: 800;'
-            'color: #2D3748;'
-            'margin-bottom: 4px;'
-            'text-decoration: line-through;'
-            'text-decoration-color: #E53E3E;'
-            'text-decoration-thickness: 3px;'
-            '">Osama</div>'
-            '<div style="'
-            'font-size: 13px;'
-            'color: #718096;'
-            'margin-bottom: 20px;'
-            '">Arabic: &quot;lion&quot; — a common name for centuries</div>'
-            '<div style="'
-            'display: grid;'
-            'grid-template-columns: 1fr 1fr;'
-            'gap: 12px;'
-            'margin-bottom: 16px;'
-            '">'
-            '<div style="background: white; border-radius: 8px; padding: 12px; text-align: center;">'
-            '<div style="font-size: 11px; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.5px;">Before</div>'
-            '<div style="font-size: 24px; font-weight: 700; color: #2D3748;">71</div>'
-            '<div style="font-size: 11px; color: #718096;">babies/year (1999)</div>'
-            '</div>'
-            '<div style="background: white; border-radius: 8px; padding: 12px; text-align: center;">'
-            '<div style="font-size: 11px; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.5px;">After</div>'
-            '<div style="font-size: 24px; font-weight: 700; color: #E53E3E;">3</div>'
-            '<div style="font-size: 11px; color: #718096;">babies/year (2009)</div>'
-            '</div>'
-            '</div>'
-            '<div style="'
-            'background: #E53E3E;'
-            'color: white;'
-            'border-radius: 8px;'
-            'padding: 10px 16px;'
-            'text-align: center;'
-            'font-weight: 700;'
-            'font-size: 18px;'
-            'margin-bottom: 12px;'
-            '">&minus;96%</div>'
-            '<div style="'
-            'background: rgba(113, 128, 150, 0.1);'
-            'border-left: 3px solid #718096;'
-            'padding: 8px 12px;'
-            'border-radius: 0 8px 8px 0;'
-            'font-size: 12px;'
-            'color: #4A5568;'
-            '">USA dropped to 0 instantly. England held on 3 more years.</div>'
-            '</div>'
-        )
-        st.markdown(osama_html, unsafe_allow_html=True)
-
-    st.markdown("")
-    st.markdown(
-        "Two names. Two histories stretching back millennia. "
-        "Both destroyed in under 24 months by a single association. "
-        "Isis — the Egyptian goddess who reassembled Osiris and birthed Horus — "
-        "became unsayable in a maternity ward. "
-        "Osama — meaning 'lion' in Arabic, used for centuries across the Muslim world — "
-        "vanished from American birth certificates within a year of September 11."
-    )
-
-    st.markdown("")
-
-    # --- KAREN: "Death by Meme" ---
-    st.markdown("#### 📉 Death by Meme")
-    st.markdown(
-        "Not every name dies from a single blow. Some are already fading — "
-        "and then the internet decides to make them a punchline."
-    )
-
-    karen_html = (
-        '<div style="'
-        'background: linear-gradient(135deg, #EEF2FF, #E8F4FD, #F0FFF4);'
-        'border: 2px solid #E2E8F0;'
-        'border-radius: 16px;'
-        'padding: 28px 32px;'
-        'max-width: 700px;'
-        '">'
-        '<div style="'
-        'display: flex;'
-        'justify-content: space-between;'
-        'align-items: center;'
-        'margin-bottom: 20px;'
-        '">'
-        '<div>'
-        '<div style="font-size: 36px; font-weight: 800; color: #2D3748;">Karen</div>'
-        '<div style="font-size: 13px; color: #718096;">Peak popularity: 1960s (outside our dataset)</div>'
-        '</div>'
-        '<div style="'
-        'background: #ECC94B;'
-        'color: #744210;'
-        'padding: 4px 10px;'
-        'border-radius: 4px;'
-        'font-size: 11px;'
-        'font-weight: 700;'
-        'letter-spacing: 1px;'
-        '">FADING + MEME</div>'
-        '</div>'
-        '<div style="'
-        'display: flex;'
-        'align-items: center;'
-        'gap: 0;'
-        'margin-bottom: 20px;'
-        '">'
-        '<div style="text-align: center; flex: 1;">'
-        '<div style="font-size: 20px; font-weight: 700; color: #2D3748;">2,588</div>'
-        '<div style="font-size: 10px; color: #A0AEC0;">1997</div>'
-        '</div>'
-        '<div style="flex: 0.5; text-align: center; color: #CBD5E0; font-size: 20px;">&rarr;</div>'
-        '<div style="text-align: center; flex: 1;">'
-        '<div style="font-size: 20px; font-weight: 700; color: #718096;">563</div>'
-        '<div style="font-size: 10px; color: #A0AEC0;">2017 (pre-meme)</div>'
-        '</div>'
-        '<div style="flex: 0.5; text-align: center;">'
-        '<div style="font-size: 16px;">&#128128;</div>'
-        '<div style="font-size: 9px; color: #E53E3E; font-weight: 600;">meme</div>'
-        '</div>'
-        '<div style="text-align: center; flex: 1;">'
-        '<div style="font-size: 20px; font-weight: 700; color: #E53E3E;">204</div>'
-        '<div style="font-size: 10px; color: #A0AEC0;">2021 (bottom)</div>'
-        '</div>'
-        '<div style="flex: 0.5; text-align: center; color: #CBD5E0; font-size: 20px;">&rarr;</div>'
-        '<div style="text-align: center; flex: 1;">'
-        '<div style="font-size: 20px; font-weight: 700; color: #48BB78;">238</div>'
-        '<div style="font-size: 10px; color: #A0AEC0;">2023</div>'
-        '</div>'
-        '</div>'
-        '<div style="'
-        'background: rgba(236, 201, 75, 0.1);'
-        'border-left: 3px solid #ECC94B;'
-        'padding: 12px 16px;'
-        'border-radius: 0 8px 8px 0;'
-        'font-size: 13px;'
-        'color: #744210;'
-        'line-height: 1.5;'
-        '">'
-        '<strong>The difference:</strong> Karen was already on a 40-year decline. '
-        "The &quot;Karen&quot; meme (2019-2020) didn't kill it — it accelerated an existing death. "
-        'From 2017 to 2021, it dropped 64%. Without the meme, the generational curve suggests '
-        'it would have fallen ~40% anyway. The meme added roughly 24 percentage points of extra damage.'
-        '</div>'
-        '</div>'
-    )
-    st.markdown(karen_html, unsafe_allow_html=True)
-
-    st.markdown("")
-
-    # --- Comparison / Insight ---
-    st.markdown(
-        "**The pattern:** Real-world violence creates **instant, total** bans "
-        "(Isis: −98%, Osama: −96%). Internet culture creates **accelerated fades** "
-        "(Karen: −64% in 4 years vs. an expected −40%). "
-        "One is a cliff. The other is a steeper slope."
-    )
-
-    # Recovery comparison cards
-    recovery_html = (
-        '<div style="'
-        'display: grid;'
-        'grid-template-columns: 1fr 1fr 1fr;'
-        'gap: 16px;'
-        'margin-top: 16px;'
-        '">'
-        '<div style="'
-        'background: linear-gradient(135deg, #F0FFF4, #C6F6D5);'
-        'border: 1px solid #9AE6B4;'
-        'border-radius: 12px;'
-        'padding: 16px;'
-        'text-align: center;'
-        '">'
-        '<div style="font-size: 13px; color: #276749; font-weight: 600;">Isis</div>'
-        '<div style="font-size: 24px; font-weight: 800; color: #22543D; margin: 4px 0;">&uarr; recovering</div>'
-        '<div style="font-size: 11px; color: #48BB78;">8 &rarr; 159 since 2018</div>'
-        '</div>'
-        '<div style="'
-        'background: linear-gradient(135deg, #FFFFF0, #FEFCBF);'
-        'border: 1px solid #ECC94B;'
-        'border-radius: 12px;'
-        'padding: 16px;'
-        'text-align: center;'
-        '">'
-        '<div style="font-size: 13px; color: #744210; font-weight: 600;">Osama</div>'
-        '<div style="font-size: 24px; font-weight: 800; color: #975A16; margin: 4px 0;">&#8599; slow return</div>'
-        '<div style="font-size: 11px; color: #B7791F;">3 &rarr; 32 over 14 years</div>'
-        '</div>'
-        '<div style="'
-        'background: linear-gradient(135deg, #FFF5F5, #FED7D7);'
-        'border: 1px solid #FC8181;'
-        'border-radius: 12px;'
-        'padding: 16px;'
-        'text-align: center;'
-        '">'
-        '<div style="font-size: 13px; color: #9B2C2C; font-weight: 600;">Karen</div>'
-        '<div style="font-size: 24px; font-weight: 800; color: #C53030; margin: 4px 0;">&darr; still falling</div>'
-        '<div style="font-size: 11px; color: #E53E3E;">generational decline continues</div>'
-        '</div>'
-        '</div>'
-    )
-    st.markdown(recovery_html, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # ══════════════════════════════════════════════════════════════
-    # 🧟 ZOMBIE NAMES
-    # ══════════════════════════════════════════════════════════════
-
     st.markdown("### 🧟 Back from the Dead")
     st.markdown(
-        "Some names flatline completely — years of silence, single digits, near-zero. "
-        "Then something happens. A TV show. A cultural shift. A vibe change. "
-        "And the name claws its way back."
+        "Some names flatline completely — years of single digits, near-zero. Then something happens: "
+        "a TV show, a cultural shift, a vibe change. And the name claws its way back. "
+        "Each track below is the name's own comeback clip:"
     )
-
-    st.markdown("")
-
-    # ─── Top 5 Zombie Cards ───────────────────────────────────────
-    zombies = [
-        {"name": "Wren", "trough": 3, "trough_year": 1999, "peak": "2,596", "peak_year": 2022, "ratio": "865x", "trigger": "Nature names + cottagecore + gender-neutral trend", "color": "#48BB78"},
-        {"name": "Salem", "trough": 9, "trough_year": 2000, "peak": "1,246", "peak_year": 2023, "ratio": "138x", "trigger": "WitchTok + Chilling Adventures of Sabrina (2018)", "color": "#9B6FD4"},
-        {"name": "Tru", "trough": 6, "trough_year": 2011, "peak": "720", "peak_year": 2022, "ratio": "120x", "trigger": "Authenticity culture — true to yourself", "color": "#ECC94B"},
-        {"name": "Octavia", "trough": 43, "trough_year": 2011, "peak": "1,577", "peak_year": 2021, "ratio": "37x", "trigger": "The 100 (CW, 2014-2020) — Octavia Blake", "color": "#F56565"},
-        {"name": "Xena", "trough": 10, "trough_year": 2004, "peak": "278", "peak_year": 2022, "ratio": "28x", "trigger": "Streaming brought Warrior Princess to a new generation", "color": "#7C9FD6"},
+    zombie_rows = [
+        ("Wren", "cottagecore + nature names", [3,6,5,14,11,17,24,54,41,86,107,159,203,288,419,504,569,855,1012,1053,1159,1325,1988,2596,2535], list(range(1999,2024)), "#48BB78", "865×"),
+        ("Salem", "WitchTok + Sabrina (2018)", [34,18,40,9,44,43,40,43,55,46,54,56,70,77,57,84,88,150,220,263,305,327,564,711,951,1152,1246], _years, "#9B6FD4", "138×"),
+        ("Octavia", "The 100 — Octavia Blake", [220,233,202,177,156,176,128,74,143,84,67,91,79,47,43,63,53,66,279,391,682,943,1066,1152,1577,1509,1441], _years, "#F56565", "37×"),
+        ("Xena", "streaming revival", [246,156,86,74,37,31,18,10,13,13,14,12,13,18,14,34,38,38,58,70,109,126,162,169,162,278,261], _years, "#7C9FD6", "28×"),
     ]
-
-    for z in zombies:
-        name = z["name"]
-        color = z["color"]
-        ratio = z["ratio"]
-        trigger = z["trigger"]
-        trough = str(z["trough"])
-        trough_year = str(z["trough_year"])
-        peak = z["peak"]
-        peak_year = str(z["peak_year"])
-
-        card_html = (
-            '<div style="'
-            'background: linear-gradient(135deg, #EEF2FF, #E8F4FD, #F0FFF4);'
-            'border: 1px solid #E2E8F0;'
-            'border-radius: 16px;'
-            'padding: 24px 28px;'
-            'margin-bottom: 16px;'
-            'display: grid;'
-            'grid-template-columns: 1fr auto 1fr auto;'
-            'align-items: center;'
-            'gap: 24px;'
-            '">'
-            '<div>'
-            '<div style="font-size: 28px; font-weight: 800; color: #2D3748;">'
-            + name +
-            '</div>'
-            '<div style="font-size: 12px; color: #718096; margin-top: 4px;">'
-            + trigger +
-            '</div>'
-            '</div>'
-            '<div style="text-align: center;">'
-            '<div style="font-size: 11px; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.5px;">Flatlined</div>'
-            '<div style="font-size: 22px; font-weight: 700; color: #E53E3E;">'
-            + trough +
-            '</div>'
-            '<div style="font-size: 10px; color: #718096;">'
-            + trough_year +
-            '</div>'
-            '</div>'
-            '<div style="font-size: 24px; color: ' + color + ';">&rarr;</div>'
-            '<div style="text-align: center;">'
-            '<div style="font-size: 11px; color: #A0AEC0; text-transform: uppercase; letter-spacing: 0.5px;">Comeback</div>'
-            '<div style="font-size: 22px; font-weight: 700; color: ' + color + ';">'
-            + peak +
-            '</div>'
-            '<div style="font-size: 10px; color: #718096;">'
-            + peak_year + ' (' + ratio + ')'
-            '</div>'
-            '</div>'
-            '</div>'
-        )
-        st.markdown(card_html, unsafe_allow_html=True)
-
-    st.markdown("")
-
-    # ─── Combined comeback chart ──────────────────────────────────
-    st.markdown("#### The Comeback Curves")
-
-    fig_zombie = go.Figure()
-
-    chart_data = {
-        "Wren": {"years": [1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023], "freqs": [3,6,5,14,11,17,24,54,41,86,107,159,203,288,419,504,569,855,1012,1053,1159,1325,1988,2596,2535], "color": "#48BB78"},
-        "Salem": {"years": [1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023], "freqs": [34,18,40,9,44,43,40,43,55,46,54,56,70,77,57,84,88,150,220,263,305,327,564,711,951,1152,1246], "color": "#9B6FD4"},
-        "Tru": {"years": [2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023], "freqs": [72,55,42,14,39,29,37,6,10,30,31,36,21,52,138,261,338,538,720,670], "color": "#ECC94B"},
-        "Octavia": {"years": [1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023], "freqs": [220,233,202,177,156,176,128,74,143,84,67,91,79,47,43,63,53,66,279,391,682,943,1066,1152,1577,1509,1441], "color": "#F56565"},
-        "Xena": {"years": [1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023], "freqs": [246,156,86,74,37,31,18,10,13,13,14,12,13,18,14,34,38,38,58,70,109,126,162,169,162,278,261], "color": "#7C9FD6"},
-    }
-
-    for name, data in chart_data.items():
-        fig_zombie.add_trace(go.Scatter(
-            x=data["years"],
-            y=data["freqs"],
-            mode="lines",
-            name=name,
-            line=dict(color=data["color"], width=2.5),
-        ))
-
-    fig_zombie.update_layout(
-        **CHART_LAYOUT,
-        title="",
-        xaxis_title="",
-        yaxis_title="Babies per year",
-        height=400,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="center",
-            x=0.5,
-        ),
-    )
-    st.plotly_chart(fig_zombie, use_container_width=True)
-
+    st.markdown(revival_panel(zombie_rows), unsafe_allow_html=True)
     st.markdown(
-        "**What brings a name back?** Streaming services resurrecting old shows (Xena). "
-        "A breakout character on a new series (Octavia). Aesthetic movements that go viral "
-        "(Salem, Wren). Or simply: culture circles back. The names that return aren't random — "
-        "they carry a *vibe* that suddenly fits again."
+        "**What brings a name back?** Streaming reviving old shows (Xena), a breakout character (Octavia), "
+        "or aesthetic movements going viral (Salem, Wren). Watch each waveform: silent for years, then it *erupts*."
     )
-
     st.markdown("---")
 
     # ══════════════════════════════════════════════════════════════
-    # 4. 🌊 NATURAL DISASTER
+    # 🕉️ IMMIGRATION WRITTEN IN NAMES — soundwave + risers multitrack
     # ══════════════════════════════════════════════════════════════
-
-    st.markdown("### 🌊 The Hurricane Effect")
-    st.markdown("Hurricane Katrina hit in August 2005. The name never recovered.")
-
-    katrina_years = [1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023]
-    katrina_freq = [1964,1792,1734,1782,1655,1480,1442,1473,1612,1123,664,585,445,402,304,341,304,274,272,217,212,166,144,128,137,142,139]
-
-    fig_katrina = go.Figure()
-    fig_katrina.add_trace(go.Scatter(x=katrina_years, y=katrina_freq, mode="lines+markers",
-        line=dict(color="#7C9FD6", width=3), marker=dict(size=5),
-        fill="tozeroy", fillcolor="rgba(124,159,214,0.1)"))
-    fig_katrina.add_vline(x=2005, line_dash="dash", line_color="#E63946", opacity=0.7)
-    fig_katrina.add_annotation(x=2005, y=1612, text="Hurricane Katrina<br>Aug 2005",
-        showarrow=True, arrowhead=2, font=dict(size=10, color="#E63946"), ax=50, ay=-20)
-    fig_katrina.update_layout(**CHART_LAYOUT, title="Katrina", xaxis_title="", yaxis_title="Babies per year", height=350)
-    st.plotly_chart(fig_katrina, use_container_width=True)
-
-    col_k1, col_k2, col_k3 = st.columns(3)
-    col_k1.metric("Before (2005)", "1,612")
-    col_k2.metric("Year 2 (2007)", "664", "-59%")
-    col_k3.metric("Now (2023)", "139", "-91%")
-
-    st.markdown(
-        "Unlike controversial names that sometimes recover (Isis is climbing back), "
-        "natural disaster names seem permanently stained. 18 years later, Katrina is still at rock bottom."
-    )
-
-    st.markdown("---")
-
-    # ══════════════════════════════════════════════════════════════
-    # 5. 🕉️ SANSKRIT / INDIAN DIASPORA
-    # ══════════════════════════════════════════════════════════════
-
     st.markdown("### 🕉️ Immigration Written in Names")
     st.markdown(
         "The Indian diaspora is large enough to register simultaneously in all 8 countries. "
-        "Sanskrit names grew **+1,902%** in 27 years."
+        "Sanskrit-rooted names surged across the Anglosphere this generation — a rising chord, not a fall:"
     )
+    indian_totals = [3814,4742,8167,7049,7626,7939,8321,9260,10366,10853,11960,12643,12549,13199,14990,18017,21308,24106,25156,27432,28523,29007,29177,26783,27775,28822,28607]
+    st.markdown(rising_eq_card("Sanskrit / Indian names — combined", indian_totals, _years, "#F6AD55",
+        "3,814 (1997) → 28,607 (2023) · +650% — the sound filling up across the Anglosphere"),
+        unsafe_allow_html=True)
 
-    indian_years = list(range(1997, 2024))
-    indian_totals_data = [924,1012,1150,1280,1450,1620,1890,2300,2850,3400,4100,4900,5600,6500,7400,8200,9100,10200,11500,12800,14200,15500,16800,17500,18000,18200,18503]
-
-    fig_indian = go.Figure()
-    fig_indian.add_trace(go.Scatter(x=indian_years, y=indian_totals_data, mode="lines+markers",
-        line=dict(color="#F6AD55", width=3), marker=dict(size=4),
-        fill="tozeroy", fillcolor="rgba(246,173,85,0.1)"))
-    fig_indian.update_layout(**CHART_LAYOUT, title="Sanskrit/Indian Names — Total Across Anglosphere", xaxis_title="", yaxis_title="Babies per year", height=350)
-    st.plotly_chart(fig_indian, use_container_width=True)
-
-    st.markdown("**Top risers:**")
-    col_i1, col_i2, col_i3, col_i4, col_i5 = st.columns(5)
-    col_i1.metric("Aria", "8,819", "+9,384%")
-    col_i2.metric("Zara", "2,840", "+593%")
-    col_i3.metric("Ayaan", "1,163", "+29,075%")
-    col_i4.metric("Aarav", "718", "+4,124%")
-    col_i5.metric("Kiaan", "579", "+19,200%")
-
-    st.markdown(
-        "These names have LOW countryness (2-4) — they're shared equally across diaspora countries. "
-        "Indian families name children the same way regardless of which country they're in."
+    st.markdown("**Top individual risers — each climbed from near-silence:**")
+    st.markdown(climb_cards([
+        ("Aria", "Sanskrit 'melody' / air", "93", 8819, "#F6AD55"),
+        ("Arya", "'noble'", "24", 2691, "#F5A9C0"),
+        ("Ayaan", "'gift of God'", "4", 1163, "#9B6FD4"),
+        ("Aarav", "'peaceful'", "0", 718, "#48BB78"),
+        ("Ishaan", "'the sun'", "0", 398, "#7C9FD6"),
+    ]), unsafe_allow_html=True)
+    st.info(
+        "💡 These names have LOW countryness (2–4) — shared equally across diaspora countries. "
+        "Indian families name children the same way regardless of which country they're in — "
+        "a global culture writing itself into eight national songbooks at once."
     )
-
     st.markdown("---")
 
     # ══════════════════════════════════════════════════════════════
-    # 6. ⚧️ GENDER-NEUTRAL NAMES
+    # 🎛️ THE 'J' COLLAPSE — mixing board faders (kept)
     # ══════════════════════════════════════════════════════════════
-
-    st.markdown("### ⚧️ The Gender-Neutral Wave")
-    st.markdown("Names that belong equally to boys and girls grew **84%** in 27 years.")
-
-    neutral_years = list(range(1997, 2022))
-    neutral_counts = [74,77,75,80,80,77,78,83,90,90,93,94,98,94,99,96,98,95,93,106,112,118,131,130,136]
-
-    fig_neutral = go.Figure()
-    fig_neutral.add_trace(go.Bar(x=neutral_years, y=neutral_counts,
-        marker_color="#C8A8E8", opacity=0.8))
-    fig_neutral.update_layout(**CHART_LAYOUT, title="Number of Gender-Neutral Names Per Year (>100 babies, >30% each sex)",
-        xaxis_title="", yaxis_title="Count of names", height=350)
-    st.plotly_chart(fig_neutral, use_container_width=True)
-
-    st.markdown("**Most balanced names** (nearly 50/50 boy/girl):")
+    st.markdown("### 🎛️ The Great 'J' Collapse")
     st.markdown(
-        "Riley (89% balanced), Casey (87%), Skyler (83%), Harley (82%), "
-        "Jamie (53% M), Quinn (63% F), River (52% M), Phoenix (54% M)"
+        "Every letter has its era. The 'J' names that defined the '90s — Jessica, Jason, Jennifer, Jacob — "
+        "are quietly vanishing. On the naming mixing board, each initial slid up or down since 1997:"
     )
-
-    st.markdown("---")
-
-    # ══════════════════════════════════════════════════════════════
-    # 7. ✂️ NAMES GETTING SHORTER
-    # ══════════════════════════════════════════════════════════════
-
-    st.markdown("### ✂️ Names Are Shrinking")
-    st.markdown("The average baby name lost a third of a letter in 27 years.")
-
-    length_years = list(range(1997, 2024))
-    avg_lengths = [6.06,6.04,6.02,6.00,5.97,5.95,5.91,5.89,5.88,5.88,5.87,5.86,5.85,5.84,5.83,5.82,5.82,5.82,5.81,5.81,5.79,5.77,5.76,5.75,5.72,5.74,5.73]
-
-    fig_length = go.Figure()
-    fig_length.add_trace(go.Scatter(x=length_years, y=avg_lengths, mode="lines+markers",
-        line=dict(color="#4A5568", width=3), marker=dict(size=5)))
-    fig_length.update_layout(**CHART_LAYOUT, title="Average Name Length (weighted by frequency)",
-        xaxis_title="", yaxis_title="Letters", height=300, yaxis_range=[5.6, 6.15])
-    st.plotly_chart(fig_length, use_container_width=True)
-
-    col_l1, col_l2 = st.columns(2)
-    col_l1.metric("Avg Length 1997", "6.06 letters")
-    col_l2.metric("Avg Length 2023", "5.73 letters", "-0.33")
-
-    st.markdown(
-        "Short names (4 letters or fewer) grew from **13.7%** to **20.3%** of all babies. "
-        "The winners: Mia, Leo, Ivy, Kai, Ava, Lux, Wren, Finn, Zoe, Max."
-    )
-
-    st.markdown("---")
-
-    # ══════════════════════════════════════════════════════════════
-    # 8. 😈 TABOO BREAKERS
-    # ══════════════════════════════════════════════════════════════
-
-    st.markdown("### 😈 Taboo Breakers")
-    st.markdown("Some names should be impossible. But culture finds a way.")
-
-    col_lucifer, col_adolf = st.columns(2)
-
-    with col_lucifer:
-        lucifer_years = [2016,2017,2018,2019,2020,2021,2022,2023]
-        lucifer_freq = [10,13,11,20,29,37,77,57]
-        fig_luc = go.Figure()
-        fig_luc.add_trace(go.Bar(x=lucifer_years, y=lucifer_freq, marker_color="#9B6FD4"))
-        fig_luc.update_layout(**CHART_LAYOUT, title="Lucifer — the taboo that broke", xaxis_title="", yaxis_title="Babies", height=300)
-        st.plotly_chart(fig_luc, use_container_width=True)
-        st.markdown(
-            "**Zero** babies named Lucifer until 2016. Then Netflix's *Lucifer* (2016-2021) "
-            "rebranded the devil as a charming protagonist. By 2022: **77 babies.**"
-        )
-
-    with col_adolf:
-        st.markdown(
-            '<div style="background: linear-gradient(135deg, #2D3748, #1A202C);'
-            'border-radius: 16px; padding: 40px 24px; text-align: center;'
-            'color: white; height: 280px; display: flex; flex-direction: column;'
-            'justify-content: center;">'
-            '<div style="font-size: 64px; margin-bottom: 12px;">0</div>'
-            '<div style="font-size: 18px; font-weight: 700;">Adolf</div>'
-            '<div style="font-size: 13px; color: #A0AEC0; margin-top: 8px;">'
-            'Zero babies. 8 countries. 27 years.<br>The ultimate name death.'
+    letter_change = [
+        ("J", -6.01, "#E63946"), ("C", -2.65, "#F56565"), ("D", -2.26, "#F6AD55"),
+        ("A", 1.74, "#7C9FD6"), ("E", 3.26, "#68B58A"), ("L", 3.65, "#48BB78"),
+    ]
+    max_abs = max(abs(v) for _, v, _ in letter_change)
+    faders = ""
+    for letter, val, color in letter_change:
+        rising = val >= 0
+        fill_h = int(abs(val) / max_abs * 70)
+        knob_bottom = 78 + fill_h if rising else 78 - fill_h
+        arrow = "▲" if rising else "▼"
+        faders += (
+            '<div style="text-align:center;">'
+            '<div style="position:relative;width:34px;height:160px;margin:0 auto;'
+            'background:linear-gradient(#E2E8F0,#EDF2F7);border-radius:8px;border:1px solid #DDE3EC;">'
+            '<div style="position:absolute;top:78px;left:0;right:0;height:2px;background:#CBD5E0;"></div>'
+            + (f'<div style="position:absolute;left:9px;width:14px;bottom:82px;height:{fill_h}px;'
+               f'background:{color};border-radius:6px 6px 0 0;"></div>' if rising else
+               f'<div style="position:absolute;left:9px;width:14px;top:78px;height:{fill_h}px;'
+               f'background:{color};border-radius:0 0 6px 6px;"></div>')
+            + f'<div style="position:absolute;left:4px;width:26px;height:12px;bottom:{knob_bottom-6}px;'
+              f'background:#fff;border:2px solid {color};border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,.15);"></div>'
             '</div>'
-            '<div style="font-size: 11px; color: #718096; margin-top: 16px;">'
-            '80+ years of erasure and counting'
+            f'<div style="font-family:Georgia,serif;font-size:1.6em;font-weight:800;color:{color};margin-top:8px;">{letter}</div>'
+            f'<div style="font-size:.8em;font-weight:700;color:{color};">{arrow} {val:+.1f}</div>'
             '</div>'
-            '</div>',
-            unsafe_allow_html=True,
         )
-
+    st.markdown(
+        '<div style="background:linear-gradient(135deg,#EEF2FF,#E8F4FD,#F0FFF4);'
+        'border:1px solid #E2E8F0;border-radius:16px;padding:24px 20px;box-shadow:0 4px 16px rgba(0,0,0,.06);">'
+        '<div style="text-align:center;font-size:.72em;letter-spacing:2px;color:#718096;'
+        'text-transform:uppercase;font-weight:700;margin-bottom:16px;">🎛️ THE NAMING MIXING BOARD · first-letter share, 1997 → 2023</div>'
+        '<div style="display:flex;justify-content:center;gap:22px;flex-wrap:wrap;">' + faders + '</div>'
+        '<div style="display:flex;justify-content:space-between;max-width:520px;margin:14px auto 0;">'
+        '<span style="font-size:.72em;color:#48BB78;font-weight:700;">▲ FADED UP</span>'
+        '<span style="font-size:.72em;color:#E63946;font-weight:700;">FADED DOWN ▼</span>'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "**'J' lost 6 percentage points** — a bigger drop than any other letter. Meanwhile soft-sounding "
+        "**'L'** (Liam, Luca, Lily) and **'E'** (Emma, Ella, Ethan) names gained the most."
+    )
     st.markdown("---")
 
     # ══════════════════════════════════════════════════════════════
-    # 9. 🎯 DIVERSITY EXPLOSION
+    # 😈 THE TABOO THAT BROKE — soundwave + two multitracks
     # ══════════════════════════════════════════════════════════════
-
-    st.markdown("### 🎯 The Diversity Explosion")
-    st.markdown("Parents are choosing more unique names than ever. The era of 'everyone is called John' is over.")
-
-    col_unique, col_top10 = st.columns(2)
-
-    with col_unique:
-        unique_years = [1997,2000,2003,2006,2009,2012,2015,2018,2021,2023]
-        unique_counts = [13889,14500,15200,17800,20100,22500,25000,28200,31500,33902]
-        fig_uniq = go.Figure()
-        fig_uniq.add_trace(go.Bar(x=unique_years, y=unique_counts, marker_color="#48BB78", opacity=0.8))
-        fig_uniq.update_layout(**CHART_LAYOUT, title="Unique Names Per Year", xaxis_title="", yaxis_title="Count", height=300)
-        st.plotly_chart(fig_uniq, use_container_width=True)
-
-    with col_top10:
-        top10_years = [1997,2005,2010,2015,2020,2023]
-        top10_pct = [8.8,6.7,6.0,5.7,5.5,4.5]
-        fig_top10 = go.Figure()
-        fig_top10.add_trace(go.Scatter(x=top10_years, y=top10_pct, mode="lines+markers",
-            line=dict(color="#E53E3E", width=3), marker=dict(size=8)))
-        fig_top10.update_layout(**CHART_LAYOUT, title="Top-10 Names as % of All Babies", xaxis_title="", yaxis_title="%", height=300, yaxis_range=[3, 10])
-        st.plotly_chart(fig_top10, use_container_width=True)
-
-    col_d1, col_d2, col_d3 = st.columns(3)
-    col_d1.metric("Unique Names", "33,902", "+144% since 1997")
-    col_d2.metric("Top-10 Share", "4.5%", "was 8.8% in 1997")
-    col_d3.metric("Name Pool", "2.4x bigger", "in 27 years")
-
+    st.markdown("### 😈 The Taboo That Broke")
     st.markdown(
-        "In 1997, the top 10 names accounted for nearly 1 in 11 babies. "
-        "By 2023, it's 1 in 22. The long tail of naming is getting longer every year."
+        "Some names sit behind an invisible line no one crosses — until pop culture quietly moves the line. "
+        "**Zero** babies were named Lucifer for years… then a hit show rebranded the devil as a charming lead."
     )
+    col_luc, col_note = st.columns([1, 1])
+    with col_luc:
+        st.markdown(volume_dial(77, 77, "#9B6FD4", "0 · silent", "77 · 2022",
+            "Netflix's Lucifer (2016) cranked the name from mute to loud"), unsafe_allow_html=True)
+    with col_note:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #F5F0FF, #EDE9FE); border-radius: 12px;
+                    padding: 24px; border: 1px solid #E2D9F3; height: 100%;
+                    display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 0.75em; color: #718096; text-transform: uppercase; letter-spacing: 1px;">Before 2016</div>
+            <div style="font-size: 2.4em; font-weight: 800; color: #9B6FD4;">0</div>
+            <div style="font-size: 0.85em; color: #4A5568; margin-bottom: 14px;">the name no one dared</div>
+            <div style="font-size: 0.75em; color: #718096; text-transform: uppercase; letter-spacing: 1px;">Peak (2022)</div>
+            <div style="font-size: 2.4em; font-weight: 800; color: #6B46C1;">77</div>
+        </div>
+        """, unsafe_allow_html=True)
 
+    st.markdown("#### 👑 Naming a Baby a Title")
+    st.markdown(
+        "You couldn't once call a child *King* or *Messiah* — it was arrogant, even blasphemous. "
+        "Today thousands do. Each track shows the taboo lifting:"
+    )
+    st.markdown(chart_countdown([
+        ("Legend", "pure aspiration", 3191, 2021, "#48BB78"),
+        ("King", "a title, not a name", 2778, 2017, "#ECC94B"),
+        ("Messiah", "once blasphemous", 2226, 2021, "#9B6FD4"),
+        ("Saint", "reverent → mainstream", 1216, 2023, "#7C9FD6"),
+    ]), unsafe_allow_html=True)
+
+    st.markdown("#### 🎬 Straight Out of Fiction")
+    st.markdown(
+        "Some names didn't exist at all until a screen invented them — flat silence, then a spike the "
+        "moment the show or film lands. Names with **no history before their premiere:**"
+    )
+    st.markdown(poster_wall([
+        ("Kylo", "Star Wars", 2015, "0 → 1,042", "#7C9FD6"),
+        ("Khaleesi", "Game of Thrones", 2011, "0 → 606", "#48BB78"),
+        ("Renesmee", "Twilight", 2008, "0 → 206", "#F56565"),
+        ("Draco", "Harry Potter", 2001, "0 → 143", "#ECC94B"),
+    ]), unsafe_allow_html=True)
+    st.markdown(
+        "**Khaleesi** (*Game of Thrones*, 2011) went 0 → 606. **Kylo** (*Star Wars*, 2015) exploded to over "
+        "1,000 a year. Each name literally did not exist until fiction spoke it into being."
+    )
     st.markdown("---")
 
-    # ══════════════════════════════════════════════════════════════
-    # 10. 🌏 AU/NZ TWINS
-    # ══════════════════════════════════════════════════════════════
-
-    st.markdown("### 🌏 The Antipodean Twins")
+    # ─── Closing note ─────────────────────────────────────────────
     st.markdown(
-        "Australia and New Zealand share a hemisphere, an accent, and a rivalry. "
-        "But their names tell different stories."
-    )
-
-    col_au, col_nz = st.columns(2)
-
-    with col_au:
-        st.markdown(
-            '<div style="background: linear-gradient(135deg, #FFFFF0, #FEFCBF);'
-            'border-radius: 12px; padding: 20px; text-align: center;'
-            'border: 1px solid #ECC94B;">'
-            '<div style="font-size: 0.8em; color: #744210; text-transform: uppercase;">Australia</div>'
-            '<div style="font-size: 2.5em; font-weight: 800; color: #975A16;">46</div>'
-            '<div style="font-size: 0.85em; color: #744210;">locked names</div>'
-            '<div style="font-size: 0.75em; color: #A0AEC0; margin-top: 8px;">'
-            'Narelle, Peta, Kym, Pippa, Darcy'
-            '</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-    with col_nz:
-        st.markdown(
-            '<div style="background: linear-gradient(135deg, #F0FFF4, #C6F6D5);'
-            'border-radius: 12px; padding: 20px; text-align: center;'
-            'border: 1px solid #9AE6B4;">'
-            '<div style="font-size: 0.8em; color: #276749; text-transform: uppercase;">New Zealand</div>'
-            '<div style="font-size: 2.5em; font-weight: 800; color: #22543D;">176</div>'
-            '<div style="font-size: 0.85em; color: #276749;">locked names</div>'
-            '<div style="font-size: 0.75em; color: #A0AEC0; margin-top: 8px;">'
-            'Ngaire, Aroha, Sione, Raewyn, Kauri'
-            '</div>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("")
-    st.markdown(
-        "**New Zealand has 4x more locked names** than Australia — thanks to Te Reo Maori "
-        "and Polynesian heritage. Australia's locked names are mostly Anglo slang "
-        "(Narelle, Kym) while NZ's carry deep cultural meaning (Aroha = love, Kauri = native tree)."
+        "<div style='text-align:center; color:#718096; font-style:italic; padding: 10px 0 30px;'>"
+        "Every one of these was hiding in the same 200 million names — you just had to know where to listen. 🎧"
+        "</div>",
+        unsafe_allow_html=True,
     )
