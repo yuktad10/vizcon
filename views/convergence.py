@@ -692,6 +692,15 @@ def render_leaderboard(df):
                 var audioEl = document.getElementById('audio-' + name);
                 if (audioEl) {{
                     audioEl.play();
+                    // Set progress bar to match actual audio duration
+                    var dur = audioEl.duration || 5;
+                    var progress = document.getElementById('np-progress');
+                    progress.style.transition = 'none';
+                    progress.style.width = '0%';
+                    setTimeout(function() {{
+                        progress.style.transition = 'width ' + dur + 's linear';
+                        progress.style.width = '100%';
+                    }}, 50);
                     audioEl.onended = function() {{
                         document.getElementById('np-play-btn').textContent = '▶';
                         isPlaying = false;
@@ -704,14 +713,7 @@ def render_leaderboard(df):
                 document.getElementById('np-stats').textContent = total + ' plays • 8 countries';
                 document.getElementById('np-rank').textContent = 'Score: ' + score;
                 
-                // Reset and animate progress bar
-                const progress = document.getElementById('np-progress');
-                progress.style.transition = 'none';
-                progress.style.width = '0%';
-                setTimeout(() => {{
-                    progress.style.transition = 'width 5s linear';
-                    progress.style.width = '100%';
-                }}, 50);
+                // Progress bar is now handled by the audio element below
                 
                 // Update play button
                 document.getElementById('np-play-btn').textContent = '⏸';
