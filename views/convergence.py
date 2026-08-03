@@ -1359,73 +1359,213 @@ def render_insights():
     st.markdown("""
     <div class="section-divider">
         <h2>💡 Liner Notes</h2>
-        <p>Six key discoveries about what makes a name travel — the science behind the Global Playlist</p>
+        <p>Four key discoveries about what makes a name travel — the science behind the Global Playlist</p>
     </div>
     """, unsafe_allow_html=True)
 
-    insights = [
-        {
-            "icon": "✂️",
-            "title": "Shorter Names Travel Better",
-            "stat": "5.8 vs 6.5",
-            "detail": "Global names average 5.8 characters vs 6.5 for local names. Compact names cross linguistic borders more easily — they're the pop singles of the naming world.",
-            "color": PURPLE,
-        },
-        {
-            "icon": "♀️",
-            "title": "Female Names Are More Global",
-            "stat": "58%",
-            "detail": "58% of the most global names are female. Women's names travel further, possibly because they share more cross-cultural phonetic patterns like soft vowel endings.",
-            "color": SAGE,
-        },
-        {
-            "icon": "📉",
-            "title": "Names Are Converging",
-            "stat": "−27%",
-            "detail": "Average countryness dropped 27% from 1997 to 2023. The Anglosphere is slowly syncing its naming playlist — streaming culture may be the DJ.",
-            "color": CORAL,
-        },
-        {
-            "icon": "🇨🇦",
-            "title": "Canada: The Cultural Gateway",
-            "stat": "47%",
-            "detail": "47% of global top names peak in Canada first. As the most multicultural Anglosphere nation, Canada acts as the gateway where international names first break through.",
-            "color": PURPLE,
-        },
-        {
-            "icon": "🎬",
-            "title": "Pop Culture Drives Global Names",
-            "stat": "Isabella",
-            "detail": "Twilight's Isabella, Frozen's Elsa, Harry Potter's Luna — pop culture creates instant global recognition. These names jumped from local to worldwide in a single media cycle.",
-            "color": SAGE,
-        },
-        {
-            "icon": "🔤",
-            "title": "Vowel Endings Cross Borders",
-            "stat": "-na, -ia, -ah",
-            "detail": "The most global names end in soft vowels: -na, -ah, -ia for girls; -on, -en, -an for boys. These phonetic patterns feel natural across English dialects worldwide.",
-            "color": CORAL,
-        },
-    ]
+    from streamlit.components.v1 import html as st_html_insights
 
-    # Render in 2-column grid
-    for i in range(0, len(insights), 2):
-        cols = st.columns(2)
-        for j, col in enumerate(cols):
-            if i + j < len(insights):
-                ins = insights[i + j]
-                with col:
-                    st.markdown(f"""
-                    <div class="insight-card">
-                        <div class="insight-icon">{ins['icon']}</div>
-                        <div class="insight-title">{ins['title']}</div>
-                        <div class="insight-stat" style="color:{ins['color']};">{ins['stat']}</div>
-                        <div class="insight-detail">{ins['detail']}</div>
+    insights_html = """
+    <html>
+    <head>
+    <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .insights-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 0.5rem;
+        }
+        .insight-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid #eee;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .insight-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+        }
+        .insight-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            border-radius: 16px 16px 0 0;
+        }
+        .card-scissors::before { background: linear-gradient(90deg, #667eea, #764ba2); }
+        .card-female::before { background: linear-gradient(90deg, #7c9a8e, #5a7d6f); }
+        .card-canada::before { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
+        .card-vowel::before { background: linear-gradient(90deg, #c99e85, #b8876d); }
+        
+        .insight-icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
+        .insight-title { font-size: 1rem; font-weight: 700; color: #2d3436; margin-bottom: 0.5rem; }
+        .insight-stat { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .insight-detail { font-size: 0.82rem; color: #636e72; line-height: 1.6; }
+        
+        /* Visual comparison bar for "5.8 vs 6.5" */
+        .compare-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 0.6rem 0;
+        }
+        .bar-segment {
+            height: 8px;
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+        .bar-label { font-size: 0.7rem; color: #999; white-space: nowrap; }
+        
+        /* Animated percentage ring */
+        .ring-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+        }
+        .ring {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(#7c9a8e 0% 58%, #eee 58% 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: ringFill 2s ease-out;
+        }
+        .ring-inner {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #7c9a8e;
+        }
+        
+        /* Vowel ending pills */
+        .vowel-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 0.6rem 0;
+        }
+        .vowel-pill {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            animation: pillPop 0.5s ease backwards;
+        }
+        .vowel-pill.girl { background: #fce4ec; color: #c62828; }
+        .vowel-pill.boy { background: #e3f2fd; color: #1565c0; }
+        .vowel-pill:nth-child(1) { animation-delay: 0.1s; }
+        .vowel-pill:nth-child(2) { animation-delay: 0.2s; }
+        .vowel-pill:nth-child(3) { animation-delay: 0.3s; }
+        .vowel-pill:nth-child(4) { animation-delay: 0.4s; }
+        .vowel-pill:nth-child(5) { animation-delay: 0.5s; }
+        .vowel-pill:nth-child(6) { animation-delay: 0.6s; }
+        
+        @keyframes pillPop {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Canada flag pulse */
+        .flag-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin: 0.5rem 0;
+        }
+        .flag-emoji {
+            font-size: 2.5rem;
+            animation: flagWave 2s ease-in-out infinite;
+        }
+        @keyframes flagWave {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        .flag-number {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #9b59b6;
+        }
+    </style>
+    </head>
+    <body>
+        <div class="insights-grid">
+            <!-- Card 1: Shorter Names -->
+            <div class="insight-card card-scissors">
+                <div class="insight-icon">✂️</div>
+                <div class="insight-title">Shorter Names Travel Better</div>
+                <div class="compare-bar">
+                    <span class="bar-label">Global</span>
+                    <div class="bar-segment" style="width: 58%; background: linear-gradient(90deg, #667eea, #764ba2);"></div>
+                    <span style="font-weight:800; color:#667eea; font-size:0.9rem;">5.8</span>
+                </div>
+                <div class="compare-bar">
+                    <span class="bar-label">Local&nbsp;&nbsp;</span>
+                    <div class="bar-segment" style="width: 65%; background: linear-gradient(90deg, #c99e85, #b8876d);"></div>
+                    <span style="font-weight:800; color:#c99e85; font-size:0.9rem;">6.5</span>
+                </div>
+                <div class="insight-detail">Compact names cross linguistic borders more easily — they're the pop singles of the naming world.</div>
+            </div>
+            
+            <!-- Card 2: Female Names -->
+            <div class="insight-card card-female">
+                <div class="insight-icon">♀️</div>
+                <div class="insight-title">Female Names Are More Global</div>
+                <div class="ring-container">
+                    <div class="ring">
+                        <div class="ring-inner">58%</div>
                     </div>
-                    """, unsafe_allow_html=True)
+                    <div style="font-size:0.82rem; color:#636e72; line-height:1.5;">
+                        of the most global names are <strong>female</strong> — soft vowel endings cross cultural boundaries.
+                    </div>
+                </div>
+                <div class="insight-detail">Women's names travel further, sharing more cross-cultural phonetic patterns.</div>
+            </div>
+            
+            <!-- Card 3: Canada Gateway -->
+            <div class="insight-card card-canada">
+                <div class="insight-icon">🇨🇦</div>
+                <div class="insight-title">Canada: The Cultural Gateway</div>
+                <div class="flag-stat">
+                    <div class="flag-emoji">🍁</div>
+                    <div class="flag-number">47%</div>
+                </div>
+                <div class="insight-detail">47% of global top names peak in Canada first. As the most multicultural Anglosphere nation, it acts as the gateway where international names first break through.</div>
+            </div>
+            
+            <!-- Card 4: Vowel Endings -->
+            <div class="insight-card card-vowel">
+                <div class="insight-icon">🔤</div>
+                <div class="insight-title">Vowel Endings Cross Borders</div>
+                <div class="vowel-pills">
+                    <span class="vowel-pill girl">-na</span>
+                    <span class="vowel-pill girl">-ia</span>
+                    <span class="vowel-pill girl">-ah</span>
+                    <span class="vowel-pill boy">-on</span>
+                    <span class="vowel-pill boy">-en</span>
+                    <span class="vowel-pill boy">-an</span>
+                </div>
+                <div class="insight-detail">The most global names end in soft vowels. These phonetic patterns feel natural across all English dialects worldwide.</div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    st_html_insights(insights_html, height=520)
 
 
-# ─── Main Render Function ─────────────────────────────────────────────────────
 def render():
     inject_styles()
 
